@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="Child" representedClassName="Child" syncable="YES" codeGenerationType="class">
+        <attribute name="allergies" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="dateOfBirth" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dietaryRequirements" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="firstName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="keyworkerName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="lastName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="medicalNotes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="photoConsent" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="roomName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <relationship name="diaryEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DiaryEntry" inverseName="child" inverseEntity="DiaryEntry"/>
+        <relationship name="incidents" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Incident" inverseName="child" inverseEntity="Incident"/>
+    </entity>
+    <entity name="DiaryEntry" representedClassName="DiaryEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="activityType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="duration" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="entryType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="eyfsArea" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="fluidIntake" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="fluidType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isSubmittedToManager" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="mealConsumed" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="mealDescription" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="moodRating" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="nappyType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="notes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="sleepPosition" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="diaryEntries" inverseEntity="Child"/>
+    </entity>
+    <entity name="Incident" representedClassName="Incident" syncable="YES" codeGenerationType="class">
+        <attribute name="bodyMapAnnotations" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="category" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="incidentDescription" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="immediateActionTaken" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="isParentNotified" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="location" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="managerCountersigned" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="parentNotificationTimestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="riddorRequired" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="severity" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="status" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="witnesses" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="incidents" inverseEntity="Child"/>
+    </entity>
+</model>
