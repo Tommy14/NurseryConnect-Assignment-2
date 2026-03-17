@@ -51,7 +51,7 @@ struct DiaryTimelineView: View {
                                     Circle()
                                         .stroke(Color.ncCardSurface, lineWidth: 2)
                                 )
-                            if index < group.value.count - 1 || group.key != grouped.last?.key {
+                            if index < group.value.count - 1 {
                                 Rectangle()
                                     .fill(Color.secondary.opacity(0.25))
                                     .frame(width: 2)

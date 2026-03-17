@@ -57,4 +57,20 @@ extension Date {
         formatter.timeStyle = .none
         return formatter.string(from: self)
     }
+
+    /// - Description: Human-readable early-years age from date of birth (years/months).
+    /// - Parameters:
+    ///   - dateOfBirth: Child’s date of birth.
+    ///   - reference: Date used as “today” for the calculation (defaults to now).
+    /// - Returns: Short age string such as “3 years” or “8 months”.
+    static func earlyYearsAgeDescription(dateOfBirth: Date, reference: Date = Date()) -> String {
+        let comps = Calendar.current.dateComponents([.year, .month], from: dateOfBirth, to: reference)
+        if let years = comps.year, years > 0 {
+            return "\(years) years"
+        }
+        if let months = comps.month {
+            return "\(months) months"
+        }
+        return "0 months"
+    }
 }
