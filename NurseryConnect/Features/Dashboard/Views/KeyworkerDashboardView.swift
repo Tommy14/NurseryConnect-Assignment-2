@@ -52,7 +52,7 @@ struct KeyworkerDashboardView: View {
                 .background(Color.ncBackground.ignoresSafeArea())
                 .navigationTitle("Dashboard")
                 .navigationDestination(for: KeyworkerChildSummary.self) { summary in
-                    DailyDiaryListView(summary: summary)
+                    DailyDiaryListView(summary: summary, managedObjectContext: context)
                 }
             }
             .tabItem {

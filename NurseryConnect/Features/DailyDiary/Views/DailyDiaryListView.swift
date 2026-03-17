@@ -24,14 +24,13 @@ struct DailyDiaryListView: View {
     @StateObject private var viewModel: DailyDiaryViewModel
     @State private var showAdd = false
 
-    init(summary: KeyworkerChildSummary) {
+    /// - Description: Creates a diary list bound to the supplied child summary and Core Data context.
+    /// - Parameters:
+    ///   - summary: Lightweight child metadata from the dashboard.
+    ///   - managedObjectContext: Main-queue context shared with the app.
+    init(summary: KeyworkerChildSummary, managedObjectContext: NSManagedObjectContext) {
         self.summary = summary
-        _viewModel = StateObject(wrappedValue: DailyDiaryViewModel(childID: summary.id, context: PersistenceController.shared.container.viewContext))
-    }
-
-    init(summary: KeyworkerChildSummary, context: NSManagedObjectContext) {
-        self.summary = summary
-        _viewModel = StateObject(wrappedValue: DailyDiaryViewModel(childID: summary.id, context: context))
+        _viewModel = StateObject(wrappedValue: DailyDiaryViewModel(childID: summary.id, context: managedObjectContext))
     }
 
     var body: some View {
@@ -116,7 +115,8 @@ struct DailyDiaryListView: View {
 }
 
 #Preview {
-    NavigationStack {
+    let ctx = PersistenceController.preview.container.viewContext
+    return NavigationStack {
         DailyDiaryListView(
             summary: KeyworkerChildSummary(
                 id: UUID(),
@@ -127,8 +127,8 @@ struct DailyDiaryListView: View {
                 dateOfBirth: Date(),
                 dot: .complete
             ),
-            context: PersistenceController.preview.container.viewContext
+            managedObjectContext: ctx
         )
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        .environment(\.managedObjectContext, ctx)
     }
 }
