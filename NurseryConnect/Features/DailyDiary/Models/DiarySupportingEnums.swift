@@ -65,6 +65,7 @@ enum MealConsumptionLevel: String, CaseIterable, Identifiable {
     case none = "none"
     case refused = "refused"
 
+    /// - Description: Stable identity for pickers and lists.
     var id: String { rawValue }
 
     var title: String {

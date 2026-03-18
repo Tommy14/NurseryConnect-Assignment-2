@@ -343,8 +343,10 @@ struct AddDiaryEntryView: View {
             entry.nappyType = nappyKind.rawValue
         case .wellbeing:
             entry.moodRating = moodRating
+            if notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                entry.notes = "Mood level \(moodRating)/5 recorded."
+            }
         case .milestone:
-            entry.entryType = DiaryEntryType.milestone.persistenceValue
             entry.activityType = milestoneText
             entry.eyfsArea = milestoneEyfs.rawValue
         }

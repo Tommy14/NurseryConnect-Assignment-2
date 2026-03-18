@@ -119,7 +119,7 @@ final class DailyDiaryViewModel: ObservableObject {
         default:
             break
         }
-        if notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if type != .wellbeing, notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             // Notes are required for every type in this MVP to support practitioner accountability.
             missing.append("Notes")
         }
