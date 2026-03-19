@@ -19,6 +19,7 @@ import SwiftUI
 /// - Description: Renders a chronological timeline for the supplied diary rows.
 struct DiaryTimelineView: View {
     let entries: [DiaryEntry]
+    @ObservedObject var viewModel: DailyDiaryViewModel
 
     private var grouped: [(key: String, value: [DiaryEntry])] {
         let formatter = DateFormatter()
@@ -62,8 +63,13 @@ struct DiaryTimelineView: View {
                         }
                         .frame(width: 18)
 
-                        diaryCard(for: entry, type: type)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        NavigationLink {
+                            DiaryEntryDetailView(entry: entry, viewModel: viewModel)
+                        } label: {
+                            diaryCard(for: entry, type: type)
+                        }
+                        .buttonStyle(.plain)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                     .padding(.bottom, 12)
                 }

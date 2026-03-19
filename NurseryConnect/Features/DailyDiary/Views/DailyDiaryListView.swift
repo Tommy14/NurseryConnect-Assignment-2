@@ -46,7 +46,7 @@ struct DailyDiaryListView: View {
                         )
                         .padding(.top, 24)
                     } else {
-                        DiaryTimelineView(entries: viewModel.entries)
+                        DiaryTimelineView(entries: viewModel.entries, viewModel: viewModel)
                             .animation(.spring(response: 0.45, dampingFraction: 0.86), value: viewModel.entries.count)
                     }
                 }

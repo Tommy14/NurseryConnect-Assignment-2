@@ -21,6 +21,7 @@ struct DiaryEntryDetailView: View {
     @ObservedObject var entry: DiaryEntry
     @ObservedObject var viewModel: DailyDiaryViewModel
 
+    @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
 
     private var type: DiaryEntryType {
@@ -57,7 +58,10 @@ struct DiaryEntryDetailView: View {
         }
         .alert("Delete this diary entry?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
-                Task { await viewModel.delete(entry: entry) }
+                Task {
+                    await viewModel.delete(entry: entry)
+                    dismiss()
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
