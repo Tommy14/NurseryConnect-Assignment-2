@@ -48,6 +48,7 @@ final class IncidentViewModel: ObservableObject {
     @Published var filter: IncidentListFilter = .today
     @Published var errorMessage: String?
     @Published private(set) var parentNotificationBanners: [ParentNotificationBanner] = []
+    @Published private(set) var assignableChildren: [Child] = []
 
     // MARK: - Properties
 
@@ -67,12 +68,21 @@ final class IncidentViewModel: ObservableObject {
     /// - Description: Reloads incidents for the keyworker cohort and refreshes compliance banners.
     func refresh() async {
         do {
+            try loadAssignableChildren()
             let fetched = try fetchIncidents()
             incidents = filterIncidents(fetched)
             parentNotificationBanners = computeParentNotificationBanners(from: fetched)
         } catch {
             errorMessage = "Could not load incidents."
         }
+    }
+
+    /// - Description: Loads children assigned to the demo keyworker for pickers.
+    func loadAssignableChildren() throws {
+        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        request.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+        assignableChildren = try context.fetch(request)
     }
 
     /// - Description: Suggests whether RIDDOR reporting should be toggled from category alone.
