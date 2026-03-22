@@ -102,11 +102,16 @@ struct NewIncidentFormView: View {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Child & category", subtitle: "Choose who this incident relates to.")
                 Picker("Child", selection: $selectedChildID) {
-                    Text("Select a child").tag(UUID?.none)
-                    ForEach(viewModel.assignableChildren, id: \.objectID) { child in
-                        if let id = child.id {
-                            Text("\(child.firstName ?? "") \(child.lastName ?? "")").tag(Optional(id))
-                        }
+                    Text("Select a child").tag(Optional<UUID>.none)
+                    ForEach(
+                        viewModel.assignableChildren.compactMap { child -> (UUID, String)? in
+                            guard let id = child.id else { return nil }
+                            let name = "\(child.firstName ?? "") \(child.lastName ?? "")"
+                            return (id, name)
+                        },
+                        id: \.0
+                    ) { item in
+                        Text(item.1).tag(Optional(item.0))
                     }
                 }
                 IncidentCategoryPicker(selection: $category)

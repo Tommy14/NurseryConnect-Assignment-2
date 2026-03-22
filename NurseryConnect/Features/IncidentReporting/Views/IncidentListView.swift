@@ -18,6 +18,7 @@ import SwiftUI
 
 /// - Description: Lists incidents for the keyworker with quick filters and navigation to detail.
 struct IncidentListView: View {
+    @Environment(\.managedObjectContext) private var context
     @StateObject private var viewModel: IncidentViewModel
     @State private var showComposer = false
     @State private var timerToken = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
@@ -95,7 +96,7 @@ struct IncidentListView: View {
         .navigationTitle("Incidents")
         .sheet(isPresented: $showComposer) {
             NewIncidentFormView(viewModel: viewModel)
-                .environment(\.managedObjectContext, viewModelIncidentsContext)
+                .environment(\.managedObjectContext, context)
         }
         .task {
             await viewModel.refresh()
@@ -116,15 +117,12 @@ struct IncidentListView: View {
         }
     }
 
-    /// - Description: Accesses the same managed object context used by the view model for sheets.
-    private var viewModelIncidentsContext: NSManagedObjectContext {
-        // IncidentViewModel keeps a private context reference; reuse shared container for sheets.
-        PersistenceController.shared.container.viewContext
-    }
 }
 
 #Preview {
-    NavigationStack {
-        IncidentListView(managedObjectContext: PersistenceController.preview.container.viewContext)
+    let ctx = PersistenceController.preview.container.viewContext
+    return NavigationStack {
+        IncidentListView(managedObjectContext: ctx)
     }
+    .environment(\.managedObjectContext, ctx)
 }
