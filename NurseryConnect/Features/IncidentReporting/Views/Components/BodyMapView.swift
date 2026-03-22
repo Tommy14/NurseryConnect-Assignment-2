@@ -60,7 +60,7 @@ struct BodyMapView: View {
 
             if isInteractive {
                 Button("Clear all markers") {
-                    annotations.removeAll { $0.side == side }
+                    annotations.removeAll()
                 }
                 .buttonStyle(.borderless)
             }
