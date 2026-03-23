@@ -71,6 +71,13 @@ struct DailyDiaryListView: View {
             .accessibilityHint("Opens the form to log a new diary observation.")
         }
         .navigationTitle("\(summary.firstName) \(summary.lastName)")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink("Profile") {
+                    ChildProfileView(childId: summary.id, context: context)
+                }
+            }
+        }
         .sheet(isPresented: $showAdd) {
             AddDiaryEntryView(childID: summary.id, viewModel: viewModel)
                 .environment(\.managedObjectContext, context)
