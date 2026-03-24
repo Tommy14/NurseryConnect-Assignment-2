@@ -16,11 +16,11 @@
 import SwiftUI
 
 extension Color {
-    /// - Description: Primary calm blue from assets (`Primary`).
-    static let ncPrimary = Color("Primary")
+    /// - Description: Primary calm blue from assets (`BrandPrimary`).
+    static let ncPrimary = Color("BrandPrimary")
 
-    /// - Description: Secondary nurturing green from assets (`Secondary`).
-    static let ncSecondary = Color("Secondary")
+    /// - Description: Secondary nurturing green from assets (`BrandSecondary`).
+    static let ncSecondary = Color("BrandSecondary")
 
     /// - Description: Warm amber accent from assets (`AccentWarm`).
     static let ncAccentWarm = Color("AccentWarm")

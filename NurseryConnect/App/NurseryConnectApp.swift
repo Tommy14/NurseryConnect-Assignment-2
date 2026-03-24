@@ -13,6 +13,7 @@
 // 100426     Tommy1914   Created the file with persistence, seeding, and environment wiring.
 // -----------------------------------------------------------------
 
+import CoreData
 import SwiftUI
 
 @main
