@@ -13,6 +13,7 @@
 // 090426     Tommy1914   Created the file with targeted fetch by UUID.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import Foundation
 

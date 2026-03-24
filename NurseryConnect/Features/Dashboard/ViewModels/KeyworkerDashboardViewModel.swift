@@ -13,6 +13,7 @@
 // 020426     Tommy1914   Created the file with fetches and completeness scoring.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import Foundation
 

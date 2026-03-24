@@ -13,6 +13,7 @@
 // 060426     Tommy1914   Created the file with filters, warnings, and RIDDOR helpers.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import Foundation
 
