@@ -36,8 +36,8 @@ struct ActivityLogCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            if !entry.activityType.isEmpty {
-                Text(entry.activityType)
+            if let activity = entry.activityType, !activity.isEmpty {
+                Text(activity)
                     .font(.subheadline.weight(.semibold))
             }
             if !entry.eyfsArea.isEmpty {
