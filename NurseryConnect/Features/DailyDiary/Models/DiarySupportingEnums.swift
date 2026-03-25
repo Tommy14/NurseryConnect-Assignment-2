@@ -71,6 +71,9 @@ enum MealConsumptionLevel: String, CaseIterable, Identifiable {
     var title: String {
         rawValue.capitalized
     }
+
+    /// - Description: Value written to Core Data `mealConsumed` attribute.
+    var persistenceValue: String { rawValue }
 }
 
 /// - Description: Fluid types for hydration logging.

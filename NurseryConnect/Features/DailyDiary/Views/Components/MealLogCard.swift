@@ -32,7 +32,7 @@ struct MealLogCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Text(entry.mealDescription)
+            Text(entry.mealDescription ?? "")
                 .font(.subheadline.weight(.semibold))
             Text("Consumed: \(entry.mealConsumed)")
                 .font(.footnote)
