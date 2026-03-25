@@ -62,7 +62,7 @@ struct KeyworkerDashboardView: View {
             .accessibilityIdentifier(AppConstants.AccessibilityID.myChildrenTab)
 
             NavigationStack {
-                IncidentListView()
+                IncidentListView(managedObjectContext: context)
             }
             .tabItem {
                 Label("Incidents", systemImage: "exclamationmark.triangle.fill")
