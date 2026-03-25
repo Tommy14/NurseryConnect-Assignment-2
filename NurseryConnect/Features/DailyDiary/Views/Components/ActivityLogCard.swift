@@ -40,8 +40,8 @@ struct ActivityLogCard: View {
                 Text(activity)
                     .font(.subheadline.weight(.semibold))
             }
-            if !entry.eyfsArea.isEmpty {
-                Text(entry.eyfsArea)
+            if let eyfs = entry.eyfsArea, !eyfs.isEmpty {
+                Text(eyfs)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
