@@ -7,10 +7,22 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		AA0000032F8BCE4B00B7638C /* NurseryConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurseryConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurseryConnectUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4840D402F8BCE4B00B7638C /* NurseryConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NurseryConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AA0000012F8BCE4B00B7638C /* NurseryConnectTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NurseryConnectTests;
+			sourceTree = "<group>";
+		};
+		AA0000022F8BCE4B00B7638C /* NurseryConnectUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NurseryConnectUITests;
+			sourceTree = "<group>";
+		};
 		D4840D422F8BCE4B00B7638C /* NurseryConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = NurseryConnect;
@@ -19,6 +31,20 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AA0000082F8BCE4B00B7638C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000C2F8BCE4B00B7638C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4840D3D2F8BCE4B00B7638C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
