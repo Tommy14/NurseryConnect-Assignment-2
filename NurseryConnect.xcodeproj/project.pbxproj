@@ -194,6 +194,14 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					AA0000052F8BCE4B00B7638C = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = D4840D3F2F8BCE4B00B7638C;
+					};
+					AA0000062F8BCE4B00B7638C = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = D4840D3F2F8BCE4B00B7638C;
+					};
 					D4840D3F2F8BCE4B00B7638C = {
 						CreatedOnToolsVersion = 26.2;
 					};
