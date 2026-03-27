@@ -54,11 +54,38 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
+/* Begin PBXContainerItemProxy section */
+		AA00000D2F8BCE4B00B7638C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4840D382F8BCE4B00B7638C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D4840D3F2F8BCE4B00B7638C;
+			remoteInfo = NurseryConnect;
+		};
+		AA0000102F8BCE4B00B7638C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4840D382F8BCE4B00B7638C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D4840D3F2F8BCE4B00B7638C;
+			remoteInfo = NurseryConnect;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXGroup section */
+		AA0000202F8BCE4B00B7638C /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000012F8BCE4B00B7638C /* NurseryConnectTests */,
+				AA0000022F8BCE4B00B7638C /* NurseryConnectUITests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		D4840D372F8BCE4B00B7638C = {
 			isa = PBXGroup;
 			children = (
 				D4840D422F8BCE4B00B7638C /* NurseryConnect */,
+				AA0000202F8BCE4B00B7638C /* Tests */,
 				D4840D412F8BCE4B00B7638C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,6 +94,8 @@
 			isa = PBXGroup;
 			children = (
 				D4840D402F8BCE4B00B7638C /* NurseryConnect.app */,
+				AA0000032F8BCE4B00B7638C /* NurseryConnectTests.xctest */,
+				AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
