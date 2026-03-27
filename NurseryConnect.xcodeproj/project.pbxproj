@@ -103,6 +103,52 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA0000052F8BCE4B00B7638C /* NurseryConnectTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000112F8BCE4B00B7638C /* Build configuration list for PBXNativeTarget "NurseryConnectTests" */;
+			buildPhases = (
+				AA0000072F8BCE4B00B7638C /* Sources */,
+				AA0000082F8BCE4B00B7638C /* Frameworks */,
+				AA00000A2F8BCE4B00B7638C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA00000E2F8BCE4B00B7638C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA0000012F8BCE4B00B7638C /* NurseryConnectTests */,
+			);
+			name = NurseryConnectTests;
+			packageProductDependencies = (
+			);
+			productName = NurseryConnectTests;
+			productReference = AA0000032F8BCE4B00B7638C /* NurseryConnectTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA0000062F8BCE4B00B7638C /* NurseryConnectUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000142F8BCE4B00B7638C /* Build configuration list for PBXNativeTarget "NurseryConnectUITests" */;
+			buildPhases = (
+				AA00000B2F8BCE4B00B7638C /* Sources */,
+				AA00000C2F8BCE4B00B7638C /* Frameworks */,
+				AA0000182F8BCE4B00B7638C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA00000F2F8BCE4B00B7638C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA0000022F8BCE4B00B7638C /* NurseryConnectUITests */,
+			);
+			name = NurseryConnectUITests;
+			packageProductDependencies = (
+			);
+			productName = NurseryConnectUITests;
+			productReference = AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		D4840D3F2F8BCE4B00B7638C /* NurseryConnect */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D4840D4B2F8BCE4D00B7638C /* Build configuration list for PBXNativeTarget "NurseryConnect" */;
@@ -126,6 +172,19 @@
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXTargetDependency section */
+		AA00000E2F8BCE4B00B7638C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D4840D3F2F8BCE4B00B7638C /* NurseryConnect */;
+			targetProxy = AA00000D2F8BCE4B00B7638C /* PBXContainerItemProxy */;
+		};
+		AA00000F2F8BCE4B00B7638C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D4840D3F2F8BCE4B00B7638C /* NurseryConnect */;
+			targetProxy = AA0000102F8BCE4B00B7638C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		D4840D382F8BCE4B00B7638C /* Project object */ = {
@@ -155,11 +214,27 @@
 			projectRoot = "";
 			targets = (
 				D4840D3F2F8BCE4B00B7638C /* NurseryConnect */,
+				AA0000052F8BCE4B00B7638C /* NurseryConnectTests */,
+				AA0000062F8BCE4B00B7638C /* NurseryConnectUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AA00000A2F8BCE4B00B7638C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000182F8BCE4B00B7638C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4840D3E2F8BCE4B00B7638C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -170,6 +245,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AA0000072F8BCE4B00B7638C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000B2F8BCE4B00B7638C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4840D3C2F8BCE4B00B7638C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
