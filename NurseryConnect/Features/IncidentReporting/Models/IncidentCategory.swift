@@ -11,10 +11,10 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 010426     Tommy1914   Created the file with category metadata and severity mapping hooks.
+// 120426     Tommy1914   Removed unused SwiftUI import after build hygiene pass.
 // -----------------------------------------------------------------
 
 import Foundation
-import SwiftUI
 
 /// - Description: High-level incident classification stored as `Incident.category` in Core Data.
 enum IncidentCategory: String, CaseIterable, Identifiable {
