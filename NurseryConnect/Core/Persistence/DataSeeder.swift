@@ -24,14 +24,18 @@ enum DataSeeder {
     /// - Parameters:
     ///   - context: Managed object context to insert into (main queue).
     static func seedIfNeeded(context: NSManagedObjectContext) {
-        let fetch: NSFetchRequest<Child> = Child.fetchRequest()
-        fetch.fetchLimit = 1
         do {
+            let fetch: NSFetchRequest<Child> = Child.fetchRequest()
+            fetch.fetchLimit = 1
             let count = try context.count(for: fetch)
-            guard count == 0 else { return }
-            insertSampleChildren(into: context)
-            try context.save()
-            UserDefaults.standard.set(true, forKey: AppConstants.hasSeededSampleDataKey)
+            if count == 0 {
+                insertSampleChildren(into: context)
+                UserDefaults.standard.set(true, forKey: AppConstants.hasSeededSampleDataKey)
+            }
+            try assignDemoKeyworkerToOrphansIfNeeded(in: context)
+            if context.hasChanges {
+                try context.save()
+            }
         } catch {
             assertionFailure("Seeding failed: \(error.localizedDescription)")
         }
@@ -54,6 +58,21 @@ enum DataSeeder {
     /// - Description: Builds four diverse sample children assigned to the demo keyworker.
     /// - Parameters:
     ///   - context: Insertion context.
+    /// - Description: Ensures legacy or partially migrated `Child` rows match the demo keyworker so the dashboard predicate returns them.
+    /// - Parameters:
+    ///   - context: Context to read and update.
+    private static func assignDemoKeyworkerToOrphansIfNeeded(in context: NSManagedObjectContext) throws {
+        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        request.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "keyworkerName == nil"),
+            NSPredicate(format: "keyworkerName == %@", "")
+        ])
+        let orphans = try context.fetch(request)
+        for child in orphans {
+            child.keyworkerName = AppConstants.keyworkerDisplayName
+        }
+    }
+
     private static func insertSampleChildren(into context: NSManagedObjectContext) {
         // GDPR: Synthetic demo records only; minimise fields to what the MVP surfaces.
         let samples: [(String, String, Date, String, String, String, String, Bool)] = [

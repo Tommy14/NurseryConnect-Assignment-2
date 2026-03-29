@@ -33,17 +33,31 @@ struct KeyworkerDashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         greetingHeader
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(viewModel.childSummaries) { summary in
-                                Button {
-                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                                        childPath.append(summary)
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 48)
+                        } else if viewModel.childSummaries.isEmpty {
+                            ContentUnavailableView(
+                                "No children to show",
+                                systemImage: "figure.child",
+                                description: Text("Sample children load on first launch. If this stays empty, reset the simulator (Device → Erase All Content and Settings) and run again.")
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 24)
+                        } else {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                                ForEach(viewModel.childSummaries) { summary in
+                                    Button {
+                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                            childPath.append(summary)
+                                        }
+                                    } label: {
+                                        ChildCardView(summary: summary)
                                     }
-                                } label: {
-                                    ChildCardView(summary: summary)
+                                    .buttonStyle(.plain)
+                                    .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
                             }
                         }
                     }

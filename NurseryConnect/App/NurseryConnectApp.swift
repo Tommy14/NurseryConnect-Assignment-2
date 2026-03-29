@@ -24,9 +24,6 @@ struct NurseryConnectApp: App {
         WindowGroup {
             KeyworkerDashboardView(context: persistence.container.viewContext)
                 .environment(\.managedObjectContext, persistence.container.viewContext)
-                .task {
-                    DataSeeder.seedIfNeeded(context: persistence.container.viewContext)
-                }
         }
     }
 }

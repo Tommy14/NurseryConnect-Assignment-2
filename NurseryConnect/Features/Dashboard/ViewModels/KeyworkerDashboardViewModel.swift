@@ -41,6 +41,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
     // MARK: - Published State
 
     @Published private(set) var childSummaries: [KeyworkerChildSummary] = []
+    @Published private(set) var isLoading = true
     @Published var errorMessage: String?
 
     // MARK: - Properties
@@ -60,6 +61,9 @@ final class KeyworkerDashboardViewModel: ObservableObject {
 
     /// - Description: Reloads children assigned to the demo keyworker and refreshes completeness dots.
     func refresh() async {
+        isLoading = true
+        defer { isLoading = false }
+        DataSeeder.seedIfNeeded(context: context)
         do {
             let children = try fetchAssignedChildren()
             var rows: [KeyworkerChildSummary] = []
