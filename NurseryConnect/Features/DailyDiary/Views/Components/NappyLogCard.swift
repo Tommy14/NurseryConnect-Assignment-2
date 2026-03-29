@@ -33,7 +33,7 @@ struct NappyLogCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Text("Type: \(entry.nappyType)")
+            Text("Type: \(entry.nappyType ?? "")")
                 .font(.subheadline)
             Text(entry.notes ?? "")
                 .font(.footnote)
