@@ -13,6 +13,7 @@
 // 090426     Tommy1914   Created the file with navigation into `ChildProfileView`.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 

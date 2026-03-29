@@ -13,6 +13,7 @@
 // 040426     Tommy1914   Created the file with consumption and fluid summary.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 
@@ -34,9 +35,9 @@ struct MealLogCard: View {
             }
             Text(entry.mealDescription ?? "")
                 .font(.subheadline.weight(.semibold))
-            Text("Consumed: \(entry.mealConsumed)")
+            Text("Consumed: \(entry.mealConsumed ?? "")")
                 .font(.footnote)
-            Text("Fluids: \(entry.fluidIntake) ml (\(entry.fluidType))")
+            Text("Fluids: \(entry.fluidIntake) ml (\(entry.fluidType ?? ""))")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             Text(entry.notes ?? "")

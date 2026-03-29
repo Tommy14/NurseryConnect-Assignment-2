@@ -13,6 +13,7 @@
 // 040426     Tommy1914   Created the file with duration and position summary.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 

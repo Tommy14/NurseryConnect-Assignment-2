@@ -13,6 +13,7 @@
 // 090426     Tommy1914   Created the file with medical and dietary sections.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 

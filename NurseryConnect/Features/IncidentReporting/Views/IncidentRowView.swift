@@ -13,6 +13,7 @@
 // 070426     Tommy1914   Created the file with compact metadata and accessibility IDs.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 

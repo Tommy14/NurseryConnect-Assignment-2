@@ -13,6 +13,7 @@
 // 040426     Tommy1914   Created the file with type and notes summary.
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 
