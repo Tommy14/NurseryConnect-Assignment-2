@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 020426     Tommy1914   Created the file with tabs, navigation stack, and greeting header.
+// 120426     Tommy1914   Loading and empty states for the child grid.
 // -----------------------------------------------------------------
 
 import CoreData
@@ -41,7 +42,7 @@ struct KeyworkerDashboardView: View {
                             ContentUnavailableView(
                                 "No children to show",
                                 systemImage: "figure.child",
-                                description: Text("Sample children load on first launch. If this stays empty, reset the simulator (Device → Erase All Content and Settings) and run again.")
+                                description: Text("Assigned children appear here after the list loads. Delete and reinstall the app if sample data never appears.")
                             )
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 24)

@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 020426     Tommy1914   Created the file with fetches and completeness scoring.
+// 120426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
 // -----------------------------------------------------------------
 
 import Combine

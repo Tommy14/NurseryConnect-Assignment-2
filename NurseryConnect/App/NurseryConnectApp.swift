@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 100426     Tommy1914   Created the file with persistence, seeding, and environment wiring.
+// 120426     Tommy1914   Seeding moved into dashboard refresh to avoid racing tasks.
 // -----------------------------------------------------------------
 
 import CoreData
