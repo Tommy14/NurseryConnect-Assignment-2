@@ -23,7 +23,7 @@ struct NurseryConnectApp: App {
 
     var body: some Scene {
         WindowGroup {
-            KeyworkerDashboardView(context: persistence.container.viewContext)
+            KeyworkerDashboardView(managedObjectContext: persistence.container.viewContext)
                 .environment(\.managedObjectContext, persistence.container.viewContext)
         }
     }

@@ -29,6 +29,11 @@ struct KeyworkerDashboardView: View {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
     }
 
+    /// - Description: Same as `init(context:)`; matches common Core Data environment naming.
+    init(managedObjectContext: NSManagedObjectContext) {
+        self.init(context: managedObjectContext)
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack(path: $childPath) {

@@ -35,8 +35,9 @@ struct SleepLogCard: View {
             }
             Text("Duration: \(entry.duration) minutes")
                 .font(.subheadline)
-            if let position = entry.sleepPosition, !position.isEmpty {
-                Text("Position: \(position)")
+            let positionText = entry.sleepPosition ?? ""
+            if !positionText.isEmpty {
+                Text("Position: \(positionText)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
