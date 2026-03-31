@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with grouped sections and connector line.
+// 130426     Tommy1914   Time-band headers with index accent for dossier-style timeline.
 // -----------------------------------------------------------------
 
 import Combine
@@ -38,10 +39,28 @@ struct DiaryTimelineView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(grouped, id: \.key) { group in
-                Text("Around \(group.key)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.ncPrimary.opacity(0.85), Color.cyan.opacity(0.45)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 3, height: 14)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Time segment")
+                            .font(.caption2.weight(.bold))
+                            .tracking(0.4)
+                            .foregroundStyle(.tertiary)
+                        Text("Around \(group.key)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.bottom, 8)
                 ForEach(Array(group.value.enumerated()), id: \.element.objectID) { index, entry in
                     let type = DiaryEntryType.fromPersistence(entry.entryType ?? "")
                     HStack(alignment: .top, spacing: 12) {
