@@ -39,7 +39,7 @@ struct BodyMapView: View {
                                 .fill(Color.ncPrimary.opacity(0.06))
                         )
 
-                    ForEach(displayAnnotations, id: \.self) { marker in
+                    ForEach(displayAnnotations) { marker in
                         Circle()
                             .fill(Color.ncDanger)
                             .frame(width: 12, height: 12)

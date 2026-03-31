@@ -39,15 +39,23 @@ extension View {
 enum NCHaptics {
     /// - Description: Light impact for standard button taps.
     static func impactLight() {
+        #if targetEnvironment(simulator)
+        return
+        #else
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.prepare()
         generator.impactOccurred()
+        #endif
     }
 
     /// - Description: Success notification feedback for completed workflows.
     static func success() {
+        #if targetEnvironment(simulator)
+        return
+        #else
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.success)
+        #endif
     }
 }

@@ -25,10 +25,31 @@ enum BodyMapSide: String, Codable, CaseIterable, Identifiable {
 }
 
 /// - Description: Single tap marker stored in `Incident.bodyMapAnnotations` as JSON bytes.
-struct BodyMapAnnotation: Codable, Hashable {
+struct BodyMapAnnotation: Codable, Hashable, Identifiable {
+    /// - Description: Stable identity for SwiftUI lists; persisted for round-trips when encoded.
+    var id: UUID
     var side: BodyMapSide
     var normalizedX: Double
     var normalizedY: Double
+
+    init(id: UUID = UUID(), side: BodyMapSide, normalizedX: Double, normalizedY: Double) {
+        self.id = id
+        self.side = side
+        self.normalizedX = normalizedX
+        self.normalizedY = normalizedY
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, side, normalizedX, normalizedY
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        side = try c.decode(BodyMapSide.self, forKey: .side)
+        normalizedX = try c.decode(Double.self, forKey: .normalizedX)
+        normalizedY = try c.decode(Double.self, forKey: .normalizedY)
+    }
 }
 
 /// - Description: Encodes and decodes annotation arrays for Core Data `Data` storage.
