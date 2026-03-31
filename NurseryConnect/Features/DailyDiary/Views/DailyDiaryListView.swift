@@ -11,6 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with coral header, timeline, and FAB sheet.
+// 130426     Tommy1914   FAB + scroll inset when embedded in keyworker floating tab bar.
+// 130426     Tommy1914   Inline nav title + dossier header (no duplicate name); studio backdrop.
 // -----------------------------------------------------------------
 
 import Combine
@@ -22,6 +24,7 @@ struct DailyDiaryListView: View {
     let summary: KeyworkerChildSummary
 
     @Environment(\.managedObjectContext) private var context
+    @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
     @StateObject private var viewModel: DailyDiaryViewModel
     @State private var showAdd = false
 
@@ -38,7 +41,7 @@ struct DailyDiaryListView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    header
+                    sessionDossierHeader
                     if viewModel.entries.isEmpty {
                         EmptyStateView(
                             symbolName: "calendar.badge.clock",
@@ -47,13 +50,33 @@ struct DailyDiaryListView: View {
                         )
                         .padding(.top, 24)
                     } else {
-                        DiaryTimelineView(entries: viewModel.entries, viewModel: viewModel)
-                            .animation(.spring(response: 0.45, dampingFraction: 0.86), value: viewModel.entries.count)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "list.bullet.rectangle.fill")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Today’s observations")
+                                    .font(.caption.weight(.bold))
+                                    .tracking(0.6)
+                                    .foregroundStyle(.secondary)
+                                Spacer(minLength: 0)
+                            }
+                            DiaryTimelineView(entries: viewModel.entries, viewModel: viewModel)
+                                .animation(.spring(response: 0.45, dampingFraction: 0.86), value: viewModel.entries.count)
+                        }
                     }
                 }
                 .padding()
+                .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
             }
-            .background(Color.ncBackground.ignoresSafeArea())
+            .scrollIndicators(.hidden)
+            .scrollContentBackground(.hidden)
 
             Button {
                 showAdd = true
@@ -62,20 +85,37 @@ struct DailyDiaryListView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Color.white)
                     .frame(width: 56, height: 56)
-                    .background(Color.ncPrimary)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.ncPrimary, Color.cyan.opacity(0.75)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous))
-                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 12, x: 0, y: 6)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.35), lineWidth: 1)
+                    }
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 16 + (usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance : 0))
             .accessibilityIdentifier(AppConstants.AccessibilityID.addDiaryFAB)
             .accessibilityLabel("Add diary entry")
             .accessibilityHint("Opens the form to log a new diary observation.")
         }
-        .navigationTitle("\(summary.firstName) \(summary.lastName)")
+        .ncStudioScreenBackdrop()
+        .navigationTitle("Daily journal")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.clear, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                NavigationLink("Profile") {
+                NavigationLink {
                     ChildProfileView(childId: summary.id, context: context)
+                } label: {
+                    Label("Profile", systemImage: "person.crop.circle")
                 }
             }
         }
@@ -98,27 +138,99 @@ struct DailyDiaryListView: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(summary.firstName) \(summary.lastName)")
-                        .font(AppTheme.headlineRounded())
-                    Text("\(Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth)) • \(summary.roomName)")
-                        .font(.subheadline)
+    /// Single place for the child’s full name; nav uses screen title instead to avoid repetition.
+    private var sessionDossierHeader: some View {
+        HStack(alignment: .top, spacing: 0) {
+            Capsule(style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.ncPrimary.opacity(0.95), Color.cyan.opacity(0.55)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 5)
+                .padding(.vertical, 14)
+                .padding(.leading, 2)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.ncPrimary)
+                    Text("LIVE SESSION")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.1)
                         .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                    Text(Date.now.formatted(.dateTime.day().month(.abbreviated)))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .monospacedDigit()
                 }
-                Spacer()
+
+                HStack(alignment: .center, spacing: 14) {
+                    ChildAvatarView(
+                        firstName: summary.firstName,
+                        lastName: summary.lastName,
+                        childId: summary.id,
+                        showsAccentRing: true,
+                        dimension: 56
+                    )
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(summary.firstName) \(summary.lastName)")
+                            .font(AppTheme.greetingRounded())
+                            .foregroundStyle(.primary)
+                        HStack(spacing: 6) {
+                            Label {
+                                Text(Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth))
+                            } icon: {
+                                Image(systemName: "calendar")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            Text("·")
+                                .foregroundStyle(.quaternary)
+                            Label {
+                                Text(summary.roomName)
+                            } icon: {
+                                Image(systemName: "door.left.hand.open")
+                                    .font(.caption.weight(.semibold))
+                            }
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                if !summary.allergies.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    // GDPR: Surface allergies on care screens where food and health judgements are made.
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Allergies on file — \(summary.allergies)")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(Color.ncDanger)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.ncDanger.opacity(0.11))
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.ncDanger.opacity(0.32), lineWidth: 1)
+                    }
+                }
             }
-            if !summary.allergies.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                // GDPR: Surface allergies on care screens where food and health judgements are made.
-                StatusBadge(text: "Allergies: \(summary.allergies)", color: .ncDanger)
-            }
+            .padding(.leading, 12)
+            .padding(.trailing, 16)
+            .padding(.vertical, 16)
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.ncDiaryNappy.opacity(0.35))
-        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous))
+        .ncStudioElevatedSurface(cornerRadius: 22)
     }
 }
 
