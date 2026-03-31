@@ -58,6 +58,9 @@ enum AppConstants {
     /// - Description: Floating action button corner radius (points).
     static let fabCornerRadius: CGFloat = 24
 
+    /// - Description: Extra bottom inset for FABs when `KeyworkerDashboardView`’s floating glass tab bar sits above the home indicator (system safe area does not always reserve enough for custom `safeAreaInset` chrome).
+    static let floatingTabBarClearance: CGFloat = 80
+
     /// - Description: Maximum characters for incident free-text fields where a cap improves form usability.
     static let incidentDescriptionMaxLength = 2_000
 
