@@ -12,6 +12,7 @@
 // -----------------------------------------------------------------
 // 020426     Tommy1914   Created the file with fetches and completeness scoring.
 // 120426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
+// 120426     Tommy1914   Refresh summaries when `DiaryEntry` saves (no restart required).
 // -----------------------------------------------------------------
 
 import Combine
@@ -48,6 +49,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
     // MARK: - Properties
 
     private let context: NSManagedObjectContext
+    private var saveObserver: NSObjectProtocol?
 
     // MARK: - Lifecycle
 
@@ -56,14 +58,34 @@ final class KeyworkerDashboardViewModel: ObservableObject {
     ///   - context: Main-queue Core Data context.
     init(context: NSManagedObjectContext) {
         self.context = context
+        saveObserver = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextDidSave,
+            object: context,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard Self.notificationInvolvesDiaryEntry(notification) else { return }
+            Task { await self.reloadChildSummariesFromStore(showLoading: false) }
+        }
+    }
+
+    deinit {
+        if let saveObserver {
+            NotificationCenter.default.removeObserver(saveObserver)
+        }
     }
 
     // MARK: - Public Methods
 
     /// - Description: Reloads children assigned to the demo keyworker and refreshes completeness dots.
     func refresh() async {
-        isLoading = true
-        defer { isLoading = false }
+        await reloadChildSummariesFromStore(showLoading: true)
+    }
+
+    /// - Description: Recomputes dashboard rows; use `showLoading: false` after saves so the list does not flash a spinner.
+    func reloadChildSummariesFromStore(showLoading: Bool) async {
+        if showLoading { isLoading = true }
+        defer { if showLoading { isLoading = false } }
         DataSeeder.seedIfNeeded(context: context)
         do {
             let children = try fetchAssignedChildren()
@@ -86,6 +108,21 @@ final class KeyworkerDashboardViewModel: ObservableObject {
         } catch {
             errorMessage = "Could not load children. Please try again."
         }
+    }
+
+    /// - Description: True when a save notification includes diary rows (insert/update/delete).
+    private static func notificationInvolvesDiaryEntry(_ notification: Notification) -> Bool {
+        let keys = [NSInsertedObjectsKey, NSUpdatedObjectsKey, NSDeletedObjectsKey]
+        for key in keys {
+            if let set = notification.userInfo?[key] as? Set<NSManagedObject> {
+                if set.contains(where: { $0 is DiaryEntry }) { return true }
+            } else if let set = notification.userInfo?[key] as? NSSet {
+                for case let obj as NSManagedObject in set {
+                    if obj is DiaryEntry { return true }
+                }
+            }
+        }
+        return false
     }
 
     // MARK: - Private Methods
