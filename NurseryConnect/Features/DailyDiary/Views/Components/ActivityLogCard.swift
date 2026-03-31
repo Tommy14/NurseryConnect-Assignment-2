@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with activity metadata and timestamp.
+// 120426     Tommy1914   Studio tint card; conditional notes.
 // -----------------------------------------------------------------
 
 import Combine
@@ -25,36 +26,54 @@ struct ActivityLogCard: View {
         DiaryEntryType.fromPersistence(entry.entryType ?? "")
     }
 
+    private var tint: Color { AppTheme.diaryColor(for: type) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: "figure.play")
-                    .foregroundStyle(AppTheme.diaryColor(for: type))
-                Text(type == .milestone ? "Milestone" : "Activity")
-                    .font(.headline)
-                Spacer()
-                Text((entry.timestamp ?? Date()).formattedTime())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        let activityText = (entry.activityType ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let eyfsText = (entry.eyfsArea ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let noteText = (entry.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [tint.opacity(0.5), tint.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    Image(systemName: type == .milestone ? "star.fill" : "figure.play")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(type == .milestone ? "Milestone" : "Activity")
+                        .font(.headline)
+                    Text((entry.timestamp ?? Date()).formattedTime())
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
             }
-            let activityText = entry.activityType ?? ""
             if !activityText.isEmpty {
                 Text(activityText)
                     .font(.subheadline.weight(.semibold))
             }
-            let eyfsText = entry.eyfsArea ?? ""
             if !eyfsText.isEmpty {
                 Text(eyfsText)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            Text(entry.notes ?? "")
-                .font(.footnote)
-                .foregroundStyle(.primary)
+            if !noteText.isEmpty {
+                Text(noteText)
+                    .font(.footnote)
+            }
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppTheme.diaryColor(for: type).opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .ncStudioTintedCard(tint: tint, cornerRadius: 16)
     }
 }
