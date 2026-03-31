@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with card chrome and haptic helpers.
+// 120426     Tommy1914   `ncStudioElevatedSurface` for glassy gradient-bordered panels (decorative overlays non-interactive).
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -32,6 +33,103 @@ extension View {
     /// - Returns: View with `frame(minWidth:minHeight:)` using `AppConstants.minimumTouchTarget`.
     func ncMinimumTouchTarget() -> some View {
         frame(minWidth: AppConstants.minimumTouchTarget, minHeight: AppConstants.minimumTouchTarget)
+    }
+
+    /// - Description: Frosted, elevated panel with gradient wash and border — use after padding on content. Decorative layers do not absorb touches.
+    func ncStudioElevatedSurface(cornerRadius: CGFloat = 18) -> some View {
+        background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 8)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.ncPrimary.opacity(0.08),
+                            Color.cyan.opacity(0.05),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.55),
+                            Color.ncPrimary.opacity(0.22),
+                            Color.cyan.opacity(0.12)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// - Description: Pastel-tinted card with gradient rim (diary log tiles, chips).
+    func ncStudioTintedCard(tint: Color, cornerRadius: CGFloat = 14) -> some View {
+        background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(tint.opacity(0.14))
+                .shadow(color: tint.opacity(0.12), radius: 10, x: 0, y: 5)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.55), tint.opacity(0.45), Color.cyan.opacity(0.12)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// - Description: Soft screen backdrop: solid background plus a short top gradient (pair with `scrollContentBackground(.hidden)` on lists when needed).
+    func ncStudioScreenBackdrop() -> some View {
+        background {
+            ZStack(alignment: .top) {
+                Color.ncBackground
+                LinearGradient(
+                    colors: [
+                        Color.ncPrimary.opacity(0.06),
+                        Color.cyan.opacity(0.035),
+                        Color.ncBackground.opacity(0.001)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 220)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .allowsHitTesting(false)
+            }
+            .ignoresSafeArea()
+        }
+    }
+}
+
+// MARK: - Keyworker shell layout
+
+private struct UsesFloatingTabBarShellKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// - Description: True when the view is under `KeyworkerDashboardView` with the custom floating tab bar (`safeAreaInset`).
+    var usesFloatingTabBarShell: Bool {
+        get { self[UsesFloatingTabBarShellKey.self] }
+        set { self[UsesFloatingTabBarShellKey.self] = newValue }
     }
 }
 
