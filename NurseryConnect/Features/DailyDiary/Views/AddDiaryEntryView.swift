@@ -11,6 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 050426     Tommy1914   Created the file with type chips, validation, and save flow.
+// 120426     Tommy1914   Card chrome, symbol chips, atmosphere background (iOS-native polish).
+// 120426     Tommy1914   Decorative overlays use allowsHitTesting(false) so fields remain tappable.
 // -----------------------------------------------------------------
 
 import Combine
@@ -52,28 +54,245 @@ struct AddDiaryEntryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    typeChips
-                    SectionHeader(title: "Details", subtitle: "Required fields are highlighted if missing.")
-                    typeSpecificFields
-                    notesField
+                VStack(alignment: .leading, spacing: 18) {
+                    diaryTypeChipStrip
+                    detailsCard
+                    notesCard
                     if showValidation && !validation.isValid {
-                        validationBanner
+                        validationCallout
                     }
                 }
                 .padding()
             }
-            .background(Color.ncBackground.ignoresSafeArea())
+            .scrollIndicators(.hidden)
+            .background { diaryFormAtmosphereBackground }
             .navigationTitle("New entry")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Close", role: .cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
+                        .fontWeight(.semibold)
+                        .tint(Color.ncPrimary)
                         .accessibilityIdentifier(AppConstants.AccessibilityID.saveDiaryEntry)
                 }
             }
+        }
+        .tint(Color.ncPrimary)
+    }
+
+    private var diaryFormAtmosphereBackground: some View {
+        ZStack(alignment: .top) {
+            Color.ncBackground
+            LinearGradient(
+                colors: [
+                    Color.ncPrimary.opacity(0.07),
+                    Color.cyan.opacity(0.04),
+                    Color.ncBackground.opacity(0.001)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 240)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        }
+    }
+
+    private var diaryTypeChipStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(DiaryEntryType.allCases, id: \.self) { type in
+                    let selected = selectedType == type
+                    Button {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            selectedType = type
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: Self.symbolName(for: type))
+                                .font(.subheadline.weight(.semibold))
+                                .symbolRenderingMode(.hierarchical)
+                            Text(chipTitle(for: type))
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(selected ? Color.white : Color.primary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background {
+                            if selected {
+                                Capsule(style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.ncPrimary, Color.cyan.opacity(0.78)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 8, x: 0, y: 4)
+                            } else {
+                                Capsule(style: .continuous)
+                                    .fill(Color.ncCardSurface)
+                                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                            }
+                        }
+                        .overlay {
+                            if !selected {
+                                Capsule(style: .continuous)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [Color.secondary.opacity(0.2), Color.ncPrimary.opacity(0.08)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(chipTitle(for: type))
+                }
+            }
+        }
+    }
+
+    private var detailsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Details", subtitle: "Required fields are highlighted if missing.")
+            VStack(alignment: .leading, spacing: 14) {
+                typeSpecificFields
+            }
+            .tint(Color.ncPrimary)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 10)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.ncPrimary.opacity(0.06),
+                            Color.cyan.opacity(0.04),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.55),
+                            Color.ncPrimary.opacity(0.2),
+                            Color.cyan.opacity(0.1)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var notesCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Notes", systemImage: "note.text")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.primary)
+            TextEditor(text: $notes)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 110)
+                .padding(12)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.secondary.opacity(0.18), Color.ncPrimary.opacity(0.14)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                        .allowsHitTesting(false)
+                }
+                .overlay(alignment: .topLeading) {
+                    if notes.isEmpty {
+                        Text("Add observations, context, or follow-up…")
+                            .font(.body)
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 20)
+                            .allowsHitTesting(false)
+                    }
+                }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.ncCardSurface)
+                .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: 6)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var validationCallout: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(Color.ncDanger, Color.ncDanger.opacity(0.35))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Almost there")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+                Text("Please complete:")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                ForEach(validation.missingFields, id: \.self) { field in
+                    Text(field)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Color.ncDanger)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.ncDanger.opacity(0.08))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.ncDanger.opacity(0.45), Color.ncDanger.opacity(0.15)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1
+                )
+                .allowsHitTesting(false)
         }
     }
 
@@ -88,30 +307,6 @@ struct AddDiaryEntryView: View {
         )
     }
 
-    private var typeChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(DiaryEntryType.allCases, id: \.self) { type in
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            selectedType = type
-                        }
-                    } label: {
-                        Text(chipTitle(for: type))
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(selectedType == type ? Color.ncPrimary.opacity(0.2) : Color.ncCardSurface)
-                            .foregroundStyle(selectedType == type ? Color.ncPrimary : Color.primary)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .ncMinimumTouchTarget()
-                }
-            }
-        }
-    }
-
     @ViewBuilder
     private var typeSpecificFields: some View {
         switch selectedType {
@@ -121,11 +316,13 @@ struct AddDiaryEntryView: View {
                     Text(kind.rawValue).tag(kind)
                 }
             }
+            .pickerStyle(.menu)
             Picker("EYFS area", selection: $eyfsArea) {
                 ForEach(EyfsArea.allCases) { area in
                     Text(area.rawValue).tag(area)
                 }
             }
+            .pickerStyle(.menu)
             Stepper("Duration: \(durationMinutes) minutes", value: $durationMinutes, in: 5...180, step: 5)
         case .sleep:
             DatePicker("Start", selection: $sleepStart, displayedComponents: [.hourAndMinute])
@@ -135,6 +332,7 @@ struct AddDiaryEntryView: View {
                     Text(pos.rawValue).tag(pos)
                 }
             }
+            .pickerStyle(.menu)
             Toggle("Disturbances noted", isOn: $sleepDisturbances)
         case .meal:
             Picker("Meal", selection: $mealSlot) {
@@ -142,8 +340,15 @@ struct AddDiaryEntryView: View {
                     Text(slot.rawValue).tag(slot)
                 }
             }
+            .pickerStyle(.menu)
             TextField("Food description", text: $mealDescription)
-                .textFieldStyle(.roundedBorder)
+                .padding(12)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+                }
             mealConsumptionPicker
             Stepper("Fluid intake: \(fluidIntake) ml", value: $fluidIntake, in: 0...1000, step: 25)
             Picker("Fluid type", selection: $fluidKind) {
@@ -151,12 +356,14 @@ struct AddDiaryEntryView: View {
                     Text(fluid.rawValue).tag(fluid)
                 }
             }
+            .pickerStyle(.menu)
         case .nappy:
             Picker("Nappy type", selection: $nappyKind) {
                 ForEach(NappyObservationKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
                 }
             }
+            .pickerStyle(.menu)
             Toggle("Concern flagged", isOn: $nappyConcern)
             Toggle("Cream applied", isOn: $nappyCream)
         case .wellbeing:
@@ -167,32 +374,68 @@ struct AddDiaryEntryView: View {
                     Text(area.rawValue).tag(area)
                 }
             }
+            .pickerStyle(.menu)
             TextField("Milestone description", text: $milestoneText, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
+                .lineLimit(3...8)
+                .padding(12)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+                }
             TextField("Next steps", text: $milestoneNextSteps, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...6)
+                .padding(12)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+                }
             TextField("Evidence note", text: $milestoneEvidence, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...6)
+                .padding(12)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+                }
         }
     }
 
     private var mealConsumptionPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Amount eaten")
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(MealConsumptionLevel.allCases) { level in
+                        let on = mealConsumption == level
                         Button {
-                            mealConsumption = level
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                                mealConsumption = level
+                            }
                         } label: {
                             Text(level.title)
-                                .font(.footnote.weight(.semibold))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(consumptionColor(for: level).opacity(mealConsumption == level ? 0.35 : 0.12))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 9)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(consumptionColor(for: level).opacity(on ? 0.42 : 0.14))
+                                }
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(
+                                            on ? consumptionColor(for: level).opacity(0.85) : Color.clear,
+                                            lineWidth: on ? 1.5 : 0
+                                        )
+                                }
+                                .shadow(color: on ? consumptionColor(for: level).opacity(0.25) : .clear, radius: 6, x: 0, y: 3)
                                 .foregroundStyle(Color.primary)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
@@ -202,52 +445,47 @@ struct AddDiaryEntryView: View {
     }
 
     private var moodPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Mood")
-                .font(.subheadline.weight(.semibold))
-            HStack(spacing: 12) {
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 0) {
                 ForEach(1...5, id: \.self) { value in
+                    let on = moodRating == Int16(value)
                     Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
                             moodRating = Int16(value)
                         }
                     } label: {
                         Image(systemName: moodSymbol(for: value))
-                            .font(.title2)
-                            .foregroundStyle(moodRating == value ? Color.ncPrimary : Color.secondary)
-                            .scaleEffect(moodRating == value ? 1.15 : 1.0)
+                            .font(.title3)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(on ? Color.ncPrimary : Color.secondary)
+                            .background {
+                                if on {
+                                    Circle()
+                                        .fill(Color.ncPrimary.opacity(0.12))
+                                        .frame(width: 44, height: 44)
+                                }
+                            }
+                            .scaleEffect(on ? 1.12 : 1.0)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Mood level \(value) out of five")
                 }
             }
-        }
-    }
-
-    private var notesField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
-                .font(.subheadline.weight(.semibold))
-            TextEditor(text: $notes)
-                .frame(minHeight: 120)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
-        }
-    }
-
-    private var validationBanner: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Please complete:")
-                .font(.footnote.weight(.bold))
-                .foregroundStyle(Color.ncDanger)
-            ForEach(validation.missingFields, id: \.self) { field in
-                Text("• \(field)")
-                    .foregroundStyle(Color.ncDanger)
-                    .font(.footnote)
+            .padding(6)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(Color.ncCardSurface)
+                    .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
+            }
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
             }
         }
-        .padding()
-        .background(Color.ncDanger.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func chipTitle(for type: DiaryEntryType) -> String {
@@ -258,6 +496,17 @@ struct AddDiaryEntryView: View {
         case .nappy: return "Nappy"
         case .wellbeing: return "Wellbeing"
         case .milestone: return "Milestone"
+        }
+    }
+
+    private static func symbolName(for type: DiaryEntryType) -> String {
+        switch type {
+        case .activity: return "figure.run"
+        case .sleep: return "moon.zzz.fill"
+        case .meal: return "fork.knife"
+        case .nappy: return "drop.fill"
+        case .wellbeing: return "heart.text.square.fill"
+        case .milestone: return "star.fill"
         }
     }
 
