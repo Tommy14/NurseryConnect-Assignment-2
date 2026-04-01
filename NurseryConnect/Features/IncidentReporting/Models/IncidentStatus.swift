@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 010426     Tommy1914   Created the file with status/severity bridging and display metadata.
+// 120426     Tommy1914   SF Symbol names for the vertical workflow timeline.
 // -----------------------------------------------------------------
 
 import Foundation
@@ -47,6 +48,17 @@ enum IncidentStatus: String, CaseIterable, Identifiable {
         case .managerReviewed: return 2
         case .parentNotified: return 3
         case .acknowledged: return 4
+        }
+    }
+
+    /// - Description: SF Symbol for the vertical workflow timeline (filled variants read well at small sizes).
+    var workflowSymbolName: String {
+        switch self {
+        case .draft: return "square.and.pencil.circle.fill"
+        case .submitted: return "paperplane.circle.fill"
+        case .managerReviewed: return "checkmark.seal.fill"
+        case .parentNotified: return "bubble.left.and.bubble.right.fill"
+        case .acknowledged: return "hand.thumbsup.circle.fill"
         }
     }
 
