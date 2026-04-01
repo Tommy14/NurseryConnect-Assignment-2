@@ -11,6 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 070426     Tommy1914   Created the file with compact metadata and accessibility IDs.
+// 120426     Tommy1914   Gradient icon well; trailing chevron for tappability (scroll layout has no list disclosure).
+// 130426     Tommy1914   Deeper icon well, rounded headline, monospaced time for readout feel.
 // -----------------------------------------------------------------
 
 import Combine
@@ -31,23 +33,44 @@ struct IncidentRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: category.symbolName)
-                .font(.title3)
-                .foregroundStyle(Color.ncPrimary)
-                .frame(width: 32, height: 32)
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.ncPrimary.opacity(0.32), Color.cyan.opacity(0.16)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+                    .shadow(color: Color.ncPrimary.opacity(0.22), radius: 6, x: 0, y: 3)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                    .frame(width: 44, height: 44)
+                Image(systemName: category.symbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.ncPrimary)
+                    .symbolRenderingMode(.hierarchical)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Text(childName)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
                 Text(category.title)
-                    .font(.subheadline)
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 IncidentStatusBadge(status: status)
             }
-            Spacer()
-            if let timestamp = incident.timestamp {
-                Text(timestamp.formattedTime())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            HStack(alignment: .center, spacing: 6) {
+                if let timestamp = incident.timestamp {
+                    Text(timestamp.formattedTime())
+                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.vertical, 6)
