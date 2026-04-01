@@ -11,6 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 080426     Tommy1914   Created the file with stepped flow, validation, and submission animation.
+// 120426     Tommy1914   Step rail, grouped review card, footer bar; explicit steps (no TabView paging).
+// 130426     Tommy1914   Inline navigation title when presented full-screen over root chrome.
 // -----------------------------------------------------------------
 
 import Combine
@@ -41,25 +43,32 @@ struct NewIncidentFormView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                stepIndicator
-                TabView(selection: $step) {
-                    stepChildAndCategory.tag(0)
-                    stepDetails.tag(1)
-                    stepBodyMap.tag(2)
-                    stepReview.tag(3)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.spring(), value: step)
+            VStack(spacing: 0) {
+                stepRail
+                    .padding(.top, 8)
+                    .padding(.bottom, 12)
 
-                navigationButtons
+                Group {
+                    switch step {
+                    case 0: stepChildAndCategory
+                    case 1: stepDetails
+                    case 2: stepBodyMap
+                    case 3: stepReview
+                    default: EmptyView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .animation(.spring(response: 0.38, dampingFraction: 0.86), value: step)
+
+                incidentFormNavigationFooter
             }
-            .padding()
+            .padding(.horizontal, 16)
             .background(Color.ncBackground.ignoresSafeArea())
             .navigationTitle(existingIncident == nil ? "New incident" : "Edit draft")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Close", role: .cancel) { dismiss() }
                 }
             }
             .overlay(alignment: .center) {
@@ -87,16 +96,61 @@ struct NewIncidentFormView: View {
         }
     }
 
-    private var stepIndicator: some View {
-        HStack {
-            ForEach(0..<4, id: \.self) { index in
-                Circle()
-                    .fill(index <= step ? Color.ncPrimary : Color.secondary.opacity(0.3))
-                    .frame(width: 10, height: 10)
+    private var stepRail: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 0) {
+                ForEach(0..<4, id: \.self) { index in
+                    IncidentFormStepBubble(
+                        index: index,
+                        currentStep: step,
+                        symbol: Self.formSteps[index].symbol
+                    )
+                    if index < 3 {
+                        IncidentFormStepConnector(filled: step > index)
+                    }
+                }
             }
+            Text(Self.formSteps[step].title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
         }
-        .accessibilityHidden(true)
+        .padding(14)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.ncCardSurface)
+                .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.ncPrimary.opacity(0.28),
+                                    Color.cyan.opacity(0.15),
+                                    Color.ncPrimary.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Step \(step + 1) of 4, \(Self.formSteps[step].title)")
     }
+
+    private static let formSteps: [(title: String, symbol: String)] = [
+        ("Child & category", "person.crop.circle.fill"),
+        ("Details", "text.alignleft.fill"),
+        ("Body map", "figure.stand"),
+        ("Review", "checkmark.seal.fill")
+    ]
 
     private var stepChildAndCategory: some View {
         ScrollView {
@@ -148,7 +202,7 @@ struct NewIncidentFormView: View {
                         .font(.subheadline.weight(.semibold))
                     TextEditor(text: $descriptionText)
                         .frame(minHeight: 120)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
                     Text("\(descriptionText.count) / \(AppConstants.incidentDescriptionMaxLength)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -158,7 +212,7 @@ struct NewIncidentFormView: View {
                         .font(.subheadline.weight(.semibold))
                     TextEditor(text: $actionText)
                         .frame(minHeight: 100)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
                 }
                 TextField("Witnesses", text: $witnessesText)
                     .textFieldStyle(.roundedBorder)
@@ -179,41 +233,163 @@ struct NewIncidentFormView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Review & submit", subtitle: "Confirm details before notifying leadership.")
-                Group {
-                    Text(childNameLabel).font(.headline)
-                    Text(category.title).font(.subheadline)
-                    Text("Severity: \(severity.title)").font(.footnote)
-                    Text("Location: \(locationText)").font(.footnote)
-                    Text("Description: \(descriptionText)").font(.footnote)
-                    Text("Action: \(actionText)").font(.footnote)
+                VStack(spacing: 0) {
+                    IncidentReviewInfoRow(
+                        icon: "person.fill",
+                        title: "Child",
+                        value: childNameLabel
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "folder.fill",
+                        title: "Category",
+                        value: category.title
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "exclamationmark.triangle.fill",
+                        title: "Severity",
+                        value: severity.title
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "mappin.and.ellipse",
+                        title: "Location",
+                        value: displayValue(locationText)
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "text.alignleft",
+                        title: "Description",
+                        value: displayValue(descriptionText)
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "cross.case.fill",
+                        title: "Immediate action",
+                        value: displayValue(actionText)
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "person.wave.2.fill",
+                        title: "Witnesses",
+                        value: displayValue(witnessesText)
+                    )
+                    IncidentReviewDivider()
+                    IncidentReviewInfoRow(
+                        icon: "figure.stand",
+                        title: "Body map",
+                        value: bodyMapReviewSummary
+                    )
                 }
-                Toggle("RIDDOR required", isOn: $riddorRequired)
-                    .tint(Color.ncPrimary)
+                .padding(.vertical, 4)
+                .background(Color.ncCardSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
+
+                riddorReviewCard
+
                 PrimaryButton(title: "Submit to room leader") {
                     Task { await submit() }
                 }
                 .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
             }
+            .padding(.bottom, 8)
         }
     }
 
-    private var navigationButtons: some View {
-        HStack {
-            Button("Back") {
-                withAnimation(.spring()) {
-                    step = max(step - 1, 0)
-                }
+    private var riddorReviewCard: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.title3)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.ncAccentWarm, Color.orange.opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("RIDDOR required")
+                    .font(.subheadline.weight(.semibold))
+                Text("Toggle if this must be reported to the regulator (HSE).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .disabled(step == 0)
-            Spacer()
-            if step < 3 {
-                Button("Next") {
-                    withAnimation(.spring()) {
-                        step = min(step + 1, 3)
+            Spacer(minLength: 8)
+            Toggle("RIDDOR required", isOn: $riddorRequired)
+                .labelsHidden()
+                .tint(Color.ncPrimary)
+        }
+        .padding(16)
+        .background(Color.ncCardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var bodyMapReviewSummary: String {
+        let n = annotations.count
+        if n == 0 { return "No markers placed" }
+        return "\(n) marker\(n == 1 ? "" : "s")"
+    }
+
+    private func displayValue(_ raw: String) -> String {
+        let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? "—" : t
+    }
+
+    private var incidentFormNavigationFooter: some View {
+        VStack(spacing: 0) {
+            Divider()
+                .opacity(0.35)
+            HStack(spacing: 12) {
+                Button {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                        step = max(step - 1, 0)
                     }
+                } label: {
+                    Label("Back", systemImage: "chevron.backward")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
+                .disabled(step == 0)
+
+                Spacer(minLength: 0)
+
+                if step < 3 {
+                    Button {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                            step = min(step + 1, 3)
+                        }
+                    } label: {
+                        Label("Next", systemImage: "chevron.forward")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.ncPrimary)
+                }
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+        }
+        .padding(.horizontal, -16)
+        .padding(.bottom, 4)
+        .background {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .bottom)
         }
     }
 
@@ -296,5 +472,132 @@ struct NewIncidentFormView: View {
         await MainActor.run {
             dismiss()
         }
+    }
+}
+
+// MARK: - Step rail components
+
+private struct IncidentFormStepBubble: View {
+    let index: Int
+    let currentStep: Int
+    let symbol: String
+
+    private var isDone: Bool { index < currentStep }
+    private var isCurrent: Bool { index == currentStep }
+
+    var body: some View {
+        ZStack {
+            if isDone {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.ncPrimary, Color.cyan.opacity(0.75)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 30, height: 30)
+                    .shadow(color: Color.ncPrimary.opacity(0.25), radius: 4, x: 0, y: 2)
+                Image(systemName: "checkmark")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+            } else if isCurrent {
+                Circle()
+                    .fill(Color.ncCardSurface)
+                    .frame(width: 30, height: 30)
+                    .overlay {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    }
+                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 6, x: 0, y: 0)
+                Image(systemName: symbol)
+                    .font(.caption)
+                    .foregroundStyle(Color.ncPrimary)
+                    .symbolRenderingMode(.hierarchical)
+            } else {
+                Circle()
+                    .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1.5)
+                    .background(Circle().fill(Color.ncCardSurface.opacity(0.65)))
+                    .frame(width: 30, height: 30)
+                Image(systemName: symbol)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .symbolRenderingMode(.hierarchical)
+            }
+        }
+        .frame(width: 34, height: 34)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct IncidentFormStepConnector: View {
+    let filled: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
+            .fill(
+                filled
+                    ? LinearGradient(
+                        colors: [Color.ncPrimary.opacity(0.95), Color.cyan.opacity(0.55)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    : LinearGradient(
+                        colors: [Color.secondary.opacity(0.22), Color.secondary.opacity(0.22)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+            )
+            .frame(height: 4)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 2)
+            .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Review summary rows
+
+private struct IncidentReviewInfoRow: View {
+    let icon: String
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundStyle(Color.ncPrimary)
+                .frame(width: 26, alignment: .center)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct IncidentReviewDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.secondary.opacity(0.12))
+            .frame(height: 1)
+            .padding(.leading, 52)
     }
 }
