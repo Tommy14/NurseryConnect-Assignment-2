@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 060426     Tommy1914   Created the file with icon and title layout.
+// 120426     Tommy1914   Studio capsule presentation.
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -31,11 +32,29 @@ struct IncidentSeverityIndicator: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .foregroundStyle(Color.ncDanger)
+                .font(.title3)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.ncDanger, Color.orange.opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             Text(severity.title)
-                .font(.footnote.weight(.semibold))
+                .font(.subheadline.weight(.semibold))
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.ncCardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.ncDanger.opacity(0.2), lineWidth: 1)
+                .allowsHitTesting(false)
         }
         .accessibilityElement(children: .combine)
     }
