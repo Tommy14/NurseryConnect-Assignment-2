@@ -11,9 +11,16 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 070426     Tommy1914   Created the file with Path silhouettes and normalised taps.
+// 120426     Tommy1914   Keep Front/Back picker enabled when read-only; only taps/clear respect `isInteractive`.
+// 120426     Tommy1914   Asset catalog body illustrations (front/back) instead of vector shapes.
+// 120426     Tommy1914   Taller map area (400pt) for easier tapping and visibility.
+// 120426     Tommy1914   `scaledToFill` so wide assets fill the tile (no letterboxing).
 // -----------------------------------------------------------------
 
 import SwiftUI
+
+/// Vertical space reserved for the body illustration and markers.
+private let bodyMapAreaHeight: CGFloat = 420
 
 /// - Description: Interactive or read-only body map for marking injury locations.
 struct BodyMapView: View {
@@ -28,35 +35,48 @@ struct BodyMapView: View {
                 Text("Back").tag(BodyMapSide.back)
             }
             .pickerStyle(.segmented)
-            .disabled(!isInteractive)
 
             GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
                 ZStack {
-                    BodySilhouetteShape(side: side)
-                        .stroke(Color.primary.opacity(0.35), lineWidth: 2)
-                        .background(
-                            BodySilhouetteShape(side: side)
-                                .fill(Color.ncPrimary.opacity(0.06))
-                        )
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.ncPrimary.opacity(0.06))
+                        .allowsHitTesting(false)
+
+                    Image(bodyAssetName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: w, height: h)
+                        .clipped()
+                        .accessibilityHidden(true)
 
                     ForEach(displayAnnotations) { marker in
                         Circle()
                             .fill(Color.ncDanger)
-                            .frame(width: 12, height: 12)
-                            .position(x: marker.normalizedX * geo.size.width,
-                                      y: marker.normalizedY * geo.size.height)
+                            .frame(width: 14, height: 14)
+                            .overlay(Circle().stroke(Color.white.opacity(0.45), lineWidth: 1))
+                            .position(x: marker.normalizedX * w, y: marker.normalizedY * h)
                     }
+                }
+                .frame(width: w, height: h)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.ncPrimary.opacity(0.12), lineWidth: 1)
+                        .allowsHitTesting(false)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { location in
                     guard isInteractive else { return }
-                    let nx = Double(location.x / max(geo.size.width, 1))
-                    let ny = Double(location.y / max(geo.size.height, 1))
+                    let nx = Double(location.x / max(w, 1))
+                    let ny = Double(location.y / max(h, 1))
                     annotations.append(BodyMapAnnotation(side: side, normalizedX: nx, normalizedY: ny))
                     NCHaptics.impactLight()
                 }
             }
-            .frame(height: 320)
+            .frame(maxWidth: .infinity)
+            .frame(height: bodyMapAreaHeight)
 
             if isInteractive {
                 Button("Clear all markers") {
@@ -67,41 +87,12 @@ struct BodyMapView: View {
         }
     }
 
+    private var bodyAssetName: String {
+        side == .front ? "BodyMapFront" : "BodyMapBack"
+    }
+
     private var displayAnnotations: [BodyMapAnnotation] {
         annotations.filter { $0.side == side }
-    }
-}
-
-/// - Description: Simple child silhouette used for annotation scaling (not anatomically exact).
-private struct BodySilhouetteShape: Shape {
-    let side: BodyMapSide
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width
-        let h = rect.height
-        let head = CGRect(x: w * 0.38, y: h * 0.05, width: w * 0.24, height: h * 0.14)
-        path.addEllipse(in: head)
-
-        let torso = CGRect(x: w * 0.30, y: h * 0.20, width: w * 0.40, height: h * 0.38)
-        path.addRoundedRect(in: torso, cornerSize: CGSize(width: 18, height: 18))
-
-        let armLeft = CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.18, height: h * 0.10)
-        let armRight = CGRect(x: w * 0.70, y: h * 0.22, width: w * 0.18, height: h * 0.10)
-        path.addRoundedRect(in: armLeft, cornerSize: CGSize(width: 10, height: 10))
-        path.addRoundedRect(in: armRight, cornerSize: CGSize(width: 10, height: 10))
-
-        let legLeft = CGRect(x: w * 0.34, y: h * 0.56, width: w * 0.12, height: h * 0.32)
-        let legRight = CGRect(x: w * 0.54, y: h * 0.56, width: w * 0.12, height: h * 0.32)
-        path.addRoundedRect(in: legLeft, cornerSize: CGSize(width: 10, height: 10))
-        path.addRoundedRect(in: legRight, cornerSize: CGSize(width: 10, height: 10))
-
-        if side == .back {
-            path.move(to: CGPoint(x: w * 0.42, y: h * 0.12))
-            path.addLine(to: CGPoint(x: w * 0.58, y: h * 0.12))
-        }
-
-        return path
     }
 }
 
