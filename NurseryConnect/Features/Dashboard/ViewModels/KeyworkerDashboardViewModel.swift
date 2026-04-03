@@ -13,6 +13,7 @@
 // 020426     Tommy1914   Created the file with fetches and completeness scoring.
 // 120426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
 // 120426     Tommy1914   Refresh summaries when `DiaryEntry` saves (no restart required).
+// 130426     Tommy1914   Marked save-notification helper `nonisolated` to avoid main-actor sync warning pauses.
 // -----------------------------------------------------------------
 
 import Combine
@@ -111,7 +112,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
     }
 
     /// - Description: True when a save notification includes diary rows (insert/update/delete).
-    private static func notificationInvolvesDiaryEntry(_ notification: Notification) -> Bool {
+    nonisolated private static func notificationInvolvesDiaryEntry(_ notification: Notification) -> Bool {
         let keys = [NSInsertedObjectsKey, NSUpdatedObjectsKey, NSDeletedObjectsKey]
         for key in keys {
             if let set = notification.userInfo?[key] as? Set<NSManagedObject> {

@@ -20,6 +20,8 @@
 // 130426     Tommy1914   Floating tab bar uses `ncBackground` to match dashboard (not material blur).
 // 130426     Tommy1914   Dashboard scroll + nav bar flat `ncBackground`; hero card matches child tile surface.
 // 130426     Tommy1914   Futuristic dashboard polish: atmosphere orbs, hero snapshot rail, Today capsule.
+// 130426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
+// 130426     Tommy1914   Manual in-content title for tighter top spacing control.
 // -----------------------------------------------------------------
 
 import Combine
@@ -46,15 +48,12 @@ struct KeyworkerDashboardView: View {
 
     var body: some View {
         ZStack {
-            myChildrenRoot
-                .opacity(selectedTab == 0 ? 1 : 0)
-                .allowsHitTesting(selectedTab == 0)
-                .accessibilityHidden(selectedTab != 0)
-
-            incidentsRoot
-                .opacity(selectedTab == 1 ? 1 : 0)
-                .allowsHitTesting(selectedTab == 1)
-                .accessibilityHidden(selectedTab != 1)
+            Color.ncBackground.ignoresSafeArea()
+            if selectedTab == 0 {
+                myChildrenRoot
+            } else {
+                incidentsRoot
+            }
         }
         .animation(.easeInOut(duration: 0.22), value: selectedTab)
         .environment(\.usesFloatingTabBarShell, true)
@@ -91,6 +90,10 @@ struct KeyworkerDashboardView: View {
         NavigationStack(path: $childPath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    Text("Dashboard")
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .padding(.top, 2)
                     dashboardHeroHeader
                     if viewModel.isLoading {
                         ProgressView()
@@ -131,7 +134,7 @@ struct KeyworkerDashboardView: View {
             .scrollContentBackground(.hidden)
             .background { dashboardAtmosphereBackground }
             .toolbarBackground(Color.ncBackground, for: .navigationBar)
-            .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: KeyworkerChildSummary.self) { summary in
                 DailyDiaryListView(summary: summary, managedObjectContext: context)
             }

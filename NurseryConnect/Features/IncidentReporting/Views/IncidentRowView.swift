@@ -13,6 +13,7 @@
 // 070426     Tommy1914   Created the file with compact metadata and accessibility IDs.
 // 120426     Tommy1914   Gradient icon well; trailing chevron for tappability (scroll layout has no list disclosure).
 // 130426     Tommy1914   Deeper icon well, rounded headline, monospaced time for readout feel.
+// 130426     Tommy1914   Category-driven icon palette for stronger visual separation in incident inbox rows.
 // -----------------------------------------------------------------
 
 import Combine
@@ -31,25 +32,36 @@ struct IncidentRowView: View {
         IncidentStatus.fromPersistence(incident.status ?? "")
     }
 
+    private var accentColor: Color {
+        switch category {
+        case .accidentMinor: return Color.ncAccentWarm
+        case .accidentFirstAid: return Color.ncPrimary
+        case .safeguardingConcern: return Color.ncDanger
+        case .nearMiss: return Color.orange
+        case .allergicReaction: return Color.purple
+        case .medicalIncident: return Color.teal
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.ncPrimary.opacity(0.32), Color.cyan.opacity(0.16)],
+                            colors: [accentColor.opacity(0.32), accentColor.opacity(0.14)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 44, height: 44)
-                    .shadow(color: Color.ncPrimary.opacity(0.22), radius: 6, x: 0, y: 3)
+                    .shadow(color: accentColor.opacity(0.22), radius: 6, x: 0, y: 3)
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
                     .frame(width: 44, height: 44)
                 Image(systemName: category.symbolName)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.ncPrimary)
+                    .foregroundStyle(accentColor)
                     .symbolRenderingMode(.hierarchical)
             }
             VStack(alignment: .leading, spacing: 6) {
