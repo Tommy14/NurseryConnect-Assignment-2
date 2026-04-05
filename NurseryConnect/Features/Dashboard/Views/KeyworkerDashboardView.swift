@@ -98,7 +98,7 @@ struct KeyworkerDashboardView: View {
                     Text("Dashboard")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
-                        .padding(.top, 2)
+                        .padding(.top, 0)
                     dashboardHeroHeader
                     if viewModel.isLoading {
                         ProgressView()
@@ -133,12 +133,13 @@ struct KeyworkerDashboardView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
+                .padding(.top, 8)
             }
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
             .background { dashboardAtmosphereBackground }
-            .toolbarBackground(Color.ncBackground, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: KeyworkerChildSummary.self) { summary in
                 DailyDiaryListView(summary: summary, managedObjectContext: context)

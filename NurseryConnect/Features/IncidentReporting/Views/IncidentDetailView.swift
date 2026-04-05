@@ -55,8 +55,9 @@ struct IncidentDetailView: View {
         .scrollContentBackground(.hidden)
         .background(Color.ncBackground)
         .navigationTitle("Incident")
+        .toolbarBackground(.thinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.ncBackground, for: .navigationBar)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if status == .draft {

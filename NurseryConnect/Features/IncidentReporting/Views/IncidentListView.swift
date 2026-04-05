@@ -43,7 +43,7 @@ struct IncidentListView: View {
                     Text("Incidents")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
-                        .padding(.top, 2)
+                        .padding(.top, 0)
                     if !viewModel.parentNotificationBanners.isEmpty {
                         ForEach(viewModel.parentNotificationBanners) { banner in
                             parentNotificationUrgencyBanner(childFirstName: banner.childFirstName)
@@ -142,7 +142,9 @@ struct IncidentListView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
+                .padding(.top, 8)
                 .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
             }
             .scrollIndicators(.hidden)
@@ -178,7 +180,6 @@ struct IncidentListView: View {
         }
         .background { incidentAtmosphereBackground }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.ncBackground, for: .navigationBar)
         .fullScreenCover(isPresented: $composerPresented) {
             NewIncidentFormView(viewModel: viewModel)
                 .environment(\.managedObjectContext, context)
@@ -279,6 +280,7 @@ struct IncidentListView: View {
                 )
             )
     }
+
 }
 
 #Preview {
