@@ -16,14 +16,20 @@
 // 130426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
 // -----------------------------------------------------------------
 
+import Combine
 import CoreData
 import SwiftUI
 import UIKit
 
+@MainActor
 @main
 struct NurseryConnectApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     private let persistence = PersistenceController.shared
+    @StateObject private var networkMonitor = NetworkMonitor.shared
+    private let syncQueue = SyncQueueService.shared
     @State private var isShowingLaunchAnimation = true
+    @State private var syncTimer = Timer.publish(every: 90, on: .main, in: .common).autoconnect()
     private let launchDurationNanoseconds: UInt64 = {
 #if targetEnvironment(simulator)
         return 1_200_000_000
@@ -58,11 +64,24 @@ struct NurseryConnectApp: App {
                 }
             }
             .task {
+                networkMonitor.startIfNeeded()
+                await syncQueue.processQueueIfPossible()
                 guard isShowingLaunchAnimation else { return }
                 try? await Task.sleep(nanoseconds: launchDurationNanoseconds)
                 withAnimation(.easeOut(duration: 0.35)) {
                     isShowingLaunchAnimation = false
                 }
+            }
+            .onChange(of: networkMonitor.isOnline) { _, isOnline in
+                guard isOnline else { return }
+                Task { await syncQueue.processQueueIfPossible(force: true) }
+            }
+            .onReceive(syncTimer) { _ in
+                Task { await syncQueue.processQueueIfPossible() }
+            }
+            .onChange(of: scenePhase) { _, nextPhase in
+                guard nextPhase == .active else { return }
+                Task { await syncQueue.processQueueIfPossible(force: true) }
             }
         }
     }

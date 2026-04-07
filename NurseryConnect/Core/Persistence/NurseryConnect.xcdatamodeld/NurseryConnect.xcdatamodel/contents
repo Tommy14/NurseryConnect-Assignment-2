@@ -28,7 +28,11 @@
         <attribute name="moodRating" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="nappyType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="notes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="lastSyncError" optional="YES" attributeType="String" usesScalarValueType="NO"/>
         <attribute name="sleepPosition" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="syncAttemptCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="syncEnqueuedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="syncState" attributeType="String" defaultValueString="synced" usesScalarValueType="NO"/>
         <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="diaryEntries" inverseEntity="Child"/>
     </entity>
@@ -44,7 +48,11 @@
         <attribute name="parentNotificationTimestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="riddorRequired" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="severity" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="lastSyncError" optional="YES" attributeType="String" usesScalarValueType="NO"/>
         <attribute name="status" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="syncAttemptCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="syncEnqueuedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="syncState" attributeType="String" defaultValueString="synced" usesScalarValueType="NO"/>
         <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="witnesses" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="incidents" inverseEntity="Child"/>
