@@ -32,6 +32,10 @@ struct IncidentRowView: View {
         IncidentStatus.fromPersistence(incident.status ?? "")
     }
 
+    private var syncState: SyncState {
+        SyncState.fromPersistence(incident.syncState)
+    }
+
     private var accentColor: Color {
         switch category {
         case .accidentMinor: return Color.ncAccentWarm
@@ -70,6 +74,7 @@ struct IncidentRowView: View {
                 Text(category.title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
+                SyncStateBadgeView(state: syncState)
                 IncidentStatusBadge(status: status)
             }
             Spacer(minLength: 8)

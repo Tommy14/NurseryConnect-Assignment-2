@@ -108,8 +108,7 @@ struct DailyDiaryListView: View {
         }
         .ncStudioScreenBackdrop()
         .navigationTitle("Daily journal")
-        .toolbarBackground(.thinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

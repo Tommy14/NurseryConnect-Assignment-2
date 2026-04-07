@@ -56,14 +56,16 @@ final class IncidentViewModel: ObservableObject {
     // MARK: - Properties
 
     private let context: NSManagedObjectContext
+    private let syncQueue: SyncQueueService
 
     // MARK: - Lifecycle
 
     /// - Description: Creates a view model for the supplied Core Data context.
     /// - Parameters:
     ///   - context: Main-queue managed object context.
-    init(context: NSManagedObjectContext) {
+    init(context: NSManagedObjectContext, syncQueue: SyncQueueService? = nil) {
         self.context = context
+        self.syncQueue = syncQueue ?? .shared
     }
 
     // MARK: - Public Methods
@@ -103,6 +105,7 @@ final class IncidentViewModel: ObservableObject {
         incident.status = IncidentStatus.submitted.persistenceValue
         do {
             try context.save()
+            await syncQueue.enqueueIncident(incident)
             await refresh()
         } catch {
             errorMessage = "Unable to submit incident."
@@ -115,6 +118,7 @@ final class IncidentViewModel: ObservableObject {
     func saveDraft(incident: Incident) async {
         do {
             try context.save()
+            await syncQueue.enqueueIncident(incident)
             await refresh()
         } catch {
             errorMessage = "Unable to save draft."
@@ -130,10 +134,22 @@ final class IncidentViewModel: ObservableObject {
         incident.status = IncidentStatus.parentNotified.persistenceValue
         do {
             try context.save()
+            await syncQueue.enqueueIncident(incident)
             await refresh()
         } catch {
             errorMessage = "Unable to update parent notification state."
         }
+    }
+
+    /// - Description: Returns effective queue state for incident sync status badges.
+    func syncState(for incident: Incident) -> SyncState {
+        SyncState.fromPersistence(incident.syncState)
+    }
+
+    /// - Description: Manually retries sync for incidents that failed transport.
+    func retrySync(for incident: Incident) async {
+        await syncQueue.retryIncident(incident)
+        await refresh()
     }
 
     // MARK: - Private Methods

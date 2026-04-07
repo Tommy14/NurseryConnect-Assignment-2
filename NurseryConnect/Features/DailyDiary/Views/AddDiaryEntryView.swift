@@ -70,7 +70,9 @@ struct AddDiaryEntryView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
@@ -79,7 +81,9 @@ struct AddDiaryEntryView: View {
                         .accessibilityIdentifier(AppConstants.AccessibilityID.saveDiaryEntry)
                 }
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
+        .background(Color.ncBackground.ignoresSafeArea())
         .tint(Color.ncPrimary)
     }
 
@@ -172,7 +176,7 @@ struct AddDiaryEntryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(Color.ncCardSurface)
                 .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 10)
         }
         .overlay {

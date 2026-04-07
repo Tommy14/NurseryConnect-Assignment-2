@@ -68,7 +68,9 @@ struct NewIncidentFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
                 }
             }
             .overlay(alignment: .center) {
@@ -386,11 +388,7 @@ struct NewIncidentFormView: View {
         }
         .padding(.horizontal, -16)
         .padding(.bottom, 4)
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .bottom)
-        }
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea(edges: .bottom))
     }
 
     private var successOverlay: some View {

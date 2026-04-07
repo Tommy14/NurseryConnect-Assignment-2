@@ -35,6 +35,7 @@ final class DailyDiaryViewModel: ObservableObject {
 
     private let childID: UUID
     private let context: NSManagedObjectContext
+    private let syncQueue: SyncQueueService
 
     // MARK: - Lifecycle
 
@@ -42,9 +43,14 @@ final class DailyDiaryViewModel: ObservableObject {
     /// - Parameters:
     ///   - childID: Stable UUID for the child record.
     ///   - context: Managed object context (main queue).
-    init(childID: UUID, context: NSManagedObjectContext) {
+    init(
+        childID: UUID,
+        context: NSManagedObjectContext,
+        syncQueue: SyncQueueService? = nil
+    ) {
         self.childID = childID
         self.context = context
+        self.syncQueue = syncQueue ?? .shared
     }
 
     // MARK: - Public Methods
@@ -65,6 +71,7 @@ final class DailyDiaryViewModel: ObservableObject {
         do {
             guard context.hasChanges else { return }
             try context.save()
+            await syncQueue.enqueueDiary(entry)
             await loadEntries()
         } catch {
             context.delete(entry)
@@ -87,6 +94,17 @@ final class DailyDiaryViewModel: ObservableObject {
     func delete(entry: DiaryEntry) async {
         context.delete(entry)
         await persistDelete()
+    }
+
+    /// - Description: Returns effective queue state for sync status badges.
+    func syncState(for entry: DiaryEntry) -> SyncState {
+        SyncState.fromPersistence(entry.syncState)
+    }
+
+    /// - Description: Manually retries a failed diary sync from detail/list views.
+    func retrySync(for entry: DiaryEntry) async {
+        await syncQueue.retryDiary(entry)
+        await loadEntries()
     }
 
     /// - Description: Validates type-specific mandatory fields for the add form.

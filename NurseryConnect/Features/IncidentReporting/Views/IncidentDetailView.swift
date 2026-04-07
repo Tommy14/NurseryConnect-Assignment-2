@@ -37,6 +37,10 @@ struct IncidentDetailView: View {
         IncidentStatus.fromPersistence(incident.status ?? "")
     }
 
+    private var syncState: SyncState {
+        viewModel.syncState(for: incident)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -55,7 +59,7 @@ struct IncidentDetailView: View {
         .scrollContentBackground(.hidden)
         .background(Color.ncBackground)
         .navigationTitle("Incident")
-        .toolbarBackground(.thinMaterial, for: .navigationBar)
+        .toolbarBackground(Color.ncBackground, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -108,6 +112,22 @@ struct IncidentDetailView: View {
                     .foregroundStyle(Color.ncPrimary.opacity(0.9))
             }
             IncidentStatusBadge(status: status)
+            HStack(spacing: 10) {
+                SyncStateBadgeView(state: syncState)
+                if syncState == .failed {
+                    Button("Retry sync") {
+                        Task { await viewModel.retrySync(for: incident) }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.ncDanger)
+                }
+            }
+            if syncState == .failed, let lastSyncError = incident.lastSyncError, !lastSyncError.isEmpty {
+                Text(lastSyncError)
+                    .font(.caption)
+                    .foregroundStyle(Color.ncDanger)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
