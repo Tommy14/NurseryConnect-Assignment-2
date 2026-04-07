@@ -59,8 +59,6 @@ struct NewIncidentFormView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .animation(.spring(response: 0.38, dampingFraction: 0.86), value: step)
-
-                incidentFormNavigationFooter
             }
             .padding(.horizontal, 16)
             .background(Color.ncBackground.ignoresSafeArea())
@@ -68,8 +66,30 @@ struct NewIncidentFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) { dismiss() } label: {
-                        Image(systemName: "xmark")
+                    if step == 0 {
+                        Button(role: .cancel) { dismiss() } label: {
+                            Image(systemName: "xmark")
+                        }
+                    } else {
+                        Button {
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                step = max(step - 1, 0)
+                            }
+                        } label: {
+                            Label("Back", systemImage: "chevron.backward")
+                        }
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if step < 3 {
+                        Button {
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                step = min(step + 1, 3)
+                            }
+                        } label: {
+                            Text("Next")
+                        }
+                        .fontWeight(.semibold)
                     }
                 }
             }
@@ -158,18 +178,37 @@ struct NewIncidentFormView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Child & category", subtitle: "Choose who this incident relates to.")
-                Picker("Child", selection: $selectedChildID) {
-                    Text("Select a child").tag(Optional<UUID>.none)
-                    ForEach(
-                        viewModel.assignableChildren.compactMap { child -> (UUID, String)? in
-                            guard let id = child.id else { return nil }
-                            let name = "\(child.firstName ?? "") \(child.lastName ?? "")"
-                            return (id, name)
-                        },
-                        id: \.0
-                    ) { item in
-                        Text(item.1).tag(Optional(item.0))
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.crop.circle.badge.checkmark")
+                            .foregroundStyle(Color.ncPrimary)
+                        Text("Child")
+                            .font(.headline)
                     }
+                    Picker("Child", selection: $selectedChildID) {
+                        Text("Select a child").tag(Optional<UUID>.none)
+                        ForEach(
+                            viewModel.assignableChildren.compactMap { child -> (UUID, String)? in
+                                guard let id = child.id else { return nil }
+                                let name = "\(child.firstName ?? "") \(child.lastName ?? "")"
+                                return (id, name)
+                            },
+                            id: \.0
+                        ) { item in
+                            Text(item.1).tag(Optional(item.0))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.ncPrimary.opacity(0.09))
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.ncPrimary.opacity(0.22), lineWidth: 1)
                 }
                 IncidentCategoryPicker(selection: $category)
                 IncidentSeverityIndicator(severity: severity)
@@ -187,8 +226,13 @@ struct NewIncidentFormView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding()
-                .background(Color.ncCardSurface)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.ncDanger.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.ncDanger.opacity(0.28), lineWidth: 1)
+                }
             }
         }
     }
@@ -351,44 +395,6 @@ struct NewIncidentFormView: View {
     private func displayValue(_ raw: String) -> String {
         let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         return t.isEmpty ? "—" : t
-    }
-
-    private var incidentFormNavigationFooter: some View {
-        VStack(spacing: 0) {
-            Divider()
-                .opacity(0.35)
-            HStack(spacing: 12) {
-                Button {
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                        step = max(step - 1, 0)
-                    }
-                } label: {
-                    Label("Back", systemImage: "chevron.backward")
-                }
-                .buttonStyle(.bordered)
-                .disabled(step == 0)
-
-                Spacer(minLength: 0)
-
-                if step < 3 {
-                    Button {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                            step = min(step + 1, 3)
-                        }
-                    } label: {
-                        Label("Next", systemImage: "chevron.forward")
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.ncPrimary)
-                }
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-        }
-        .padding(.horizontal, -16)
-        .padding(.bottom, 4)
-        .background(Color(uiColor: .systemBackground).ignoresSafeArea(edges: .bottom))
     }
 
     private var successOverlay: some View {
