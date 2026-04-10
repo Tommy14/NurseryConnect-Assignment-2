@@ -55,6 +55,9 @@ struct AddDiaryEntryView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    Text("Fields marked * are required.")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                     diaryTypeChipStrip
                     detailsCard
                     notesCard
@@ -214,7 +217,7 @@ struct AddDiaryEntryView: View {
 
     private var notesCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Notes", systemImage: "note.text")
+            Label(notesLabelText, systemImage: "note.text")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.primary)
             TextEditor(text: $notes)
@@ -258,6 +261,10 @@ struct AddDiaryEntryView: View {
                 .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                 .allowsHitTesting(false)
         }
+    }
+
+    private var notesLabelText: String {
+        selectedType == .wellbeing ? "Notes" : "Notes *"
     }
 
     private var validationCallout: some View {
@@ -315,13 +322,13 @@ struct AddDiaryEntryView: View {
     private var typeSpecificFields: some View {
         switch selectedType {
         case .activity:
-            Picker("Activity type", selection: $activityKind) {
+            Picker("Activity type *", selection: $activityKind) {
                 ForEach(DiaryActivityKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
                 }
             }
             .pickerStyle(.menu)
-            Picker("EYFS area", selection: $eyfsArea) {
+            Picker("EYFS area *", selection: $eyfsArea) {
                 ForEach(EyfsArea.allCases) { area in
                     Text(area.rawValue).tag(area)
                 }
@@ -345,7 +352,7 @@ struct AddDiaryEntryView: View {
                 }
             }
             .pickerStyle(.menu)
-            TextField("Food description", text: $mealDescription)
+            TextField("Food description *", text: $mealDescription)
                 .padding(12)
                 .background(Color.ncCardSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -379,7 +386,7 @@ struct AddDiaryEntryView: View {
                 }
             }
             .pickerStyle(.menu)
-            TextField("Milestone description", text: $milestoneText, axis: .vertical)
+            TextField("Milestone description *", text: $milestoneText, axis: .vertical)
                 .lineLimit(3...8)
                 .padding(12)
                 .background(Color.ncCardSurface)

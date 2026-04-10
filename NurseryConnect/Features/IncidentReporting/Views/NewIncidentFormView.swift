@@ -39,6 +39,7 @@ struct NewIncidentFormView: View {
     @State private var bodySide: BodyMapSide = .front
     @State private var riddorRequired: Bool = false
     @State private var showValidationAlert = false
+    @State private var validationAlertMessage = "Please complete the required fields before continuing."
     @State private var showSuccess = false
 
     var body: some View {
@@ -83,9 +84,7 @@ struct NewIncidentFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     if step < 3 {
                         Button {
-                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                step = min(step + 1, 3)
-                            }
+                            advanceStepIfValid()
                         } label: {
                             Text("Next")
                         }
@@ -101,7 +100,7 @@ struct NewIncidentFormView: View {
             .alert("Missing information", isPresented: $showValidationAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("Please complete description and immediate action before submitting.")
+                Text(validationAlertMessage)
             }
             .task {
                 await viewModel.refresh()
@@ -177,13 +176,15 @@ struct NewIncidentFormView: View {
     private var stepChildAndCategory: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                Text("Fields marked * are required.")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 SectionHeader(title: "Child & category", subtitle: "Choose who this incident relates to.")
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         Image(systemName: "person.crop.circle.badge.checkmark")
                             .foregroundStyle(Color.ncPrimary)
-                        Text("Child")
-                            .font(.headline)
+                        requiredFieldTitle("Child")
                     }
                     Picker("Child", selection: $selectedChildID) {
                         Text("Select a child").tag(Optional<UUID>.none)
@@ -241,11 +242,15 @@ struct NewIncidentFormView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Details", subtitle: "Describe what happened and the response.")
-                TextField("Location", text: $locationText)
-                    .textFieldStyle(.roundedBorder)
-                VStack(alignment: .leading) {
-                    Text("Description")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Location")
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    TextField("Location", text: $locationText)
+                        .textFieldStyle(.roundedBorder)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    requiredFieldTitle("Description")
                     TextEditor(text: $descriptionText)
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
@@ -253,15 +258,19 @@ struct NewIncidentFormView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                VStack(alignment: .leading) {
-                    Text("Immediate action taken")
-                        .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 6) {
+                    requiredFieldTitle("Immediate action taken")
                     TextEditor(text: $actionText)
                         .frame(minHeight: 100)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
                 }
-                TextField("Witnesses", text: $witnessesText)
-                    .textFieldStyle(.roundedBorder)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Witnesses")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    TextField("Witnesses", text: $witnessesText)
+                        .textFieldStyle(.roundedBorder)
+                }
             }
         }
     }
@@ -395,6 +404,41 @@ struct NewIncidentFormView: View {
     private func displayValue(_ raw: String) -> String {
         let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         return t.isEmpty ? "—" : t
+    }
+
+    @ViewBuilder
+    private func requiredFieldTitle(_ title: String) -> some View {
+        HStack(spacing: 2) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            Text("*")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.ncDanger)
+        }
+    }
+
+    private func advanceStepIfValid() {
+        switch step {
+        case 0:
+            guard selectedChildID != nil else {
+                validationAlertMessage = "Please select a child before continuing."
+                showValidationAlert = true
+                return
+            }
+        case 1:
+            guard descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false,
+                  actionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+                validationAlertMessage = "Please complete Description and Immediate action taken before continuing."
+                showValidationAlert = true
+                return
+            }
+        default:
+            break
+        }
+
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+            step = min(step + 1, 3)
+        }
     }
 
     private var successOverlay: some View {
