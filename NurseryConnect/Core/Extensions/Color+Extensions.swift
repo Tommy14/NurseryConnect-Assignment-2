@@ -28,11 +28,15 @@ extension Color {
     /// - Description: Incident and alert red from assets (`Danger`).
     static let ncDanger = Color("Danger")
 
-    /// - Description: Screen background from assets (`Background`).
-    static let ncBackground = Color("Background")
+    /// - Description: Futuristic screen base used app-wide.
+    static let ncBackground = Color(red: 0.93, green: 0.95, blue: 0.99)
 
-    /// - Description: Card surface from assets (`CardSurface`).
-    static let ncCardSurface = Color("CardSurface")
+    /// - Description: Elevated card base used app-wide.
+    static let ncCardSurface = Color(red: 0.97, green: 0.98, blue: 1.0)
+
+    /// - Description: Futuristic accent helper tones for subtle atmospheric gradients.
+    static let ncGlowBlue = Color(red: 0.24, green: 0.73, blue: 0.96)
+    static let ncGlowViolet = Color(red: 0.52, green: 0.56, blue: 0.98)
 
     /// - Description: Diary entry accent colours (pastel-friendly).
     static let ncDiaryActivity = Color("DiaryActivity")

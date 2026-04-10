@@ -21,7 +21,7 @@ import Foundation
 /// - Description: Application-wide identity and branding strings for the keyworker MVP.
 enum AppConstants {
     /// - Description: Display name shown in greetings and sample data for the logged-in keyworker (no auth UI in MVP).
-    static let keyworkerDisplayName = "Sarah"
+    static let keyworkerDisplayName = "Thamindu V D"
 
     /// - Description: Official setting name for assignment copy and seed data.
     static let nurseryDisplayName = "Little Stars Nursery & Daycare"
