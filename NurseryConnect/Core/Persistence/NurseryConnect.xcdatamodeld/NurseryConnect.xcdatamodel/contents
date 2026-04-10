@@ -5,6 +5,7 @@
         <attribute name="dateOfBirth" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="dietaryRequirements" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="firstName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="gender" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="keyworkerName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="lastName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
