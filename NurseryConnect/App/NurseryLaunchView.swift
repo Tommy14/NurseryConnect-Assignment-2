@@ -4,14 +4,14 @@
 //
 //  Feature: App
 //  Role: Keyworker
-//  Created: 13 April 2026
+//  Created: 10 April 2026
 //  Description: UK nursery-themed animated loading screen shown briefly at app start.
 //
 // -----------------------------------------------------------------
 // Date       Name        What has done
 // -----------------------------------------------------------------
-// 130426     Tommy1914   Created launch animation with playful nursery motifs and loading indicator.
-// 130426     Tommy1914   Added rotating safeguarding subtitles for a more dynamic launch experience.
+// 100426     Tommy1914   Created launch animation with playful nursery motifs and loading indicator.
+// 100426     Tommy1914   Added rotating safeguarding subtitles for a more dynamic launch experience.
 // -----------------------------------------------------------------
 
 import Combine
