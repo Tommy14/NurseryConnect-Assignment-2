@@ -11,7 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with card chrome and haptic helpers.
-// 120426     Tommy1914   `ncStudioElevatedSurface` for glassy gradient-bordered panels (decorative overlays non-interactive).
+// 100426     Tommy1914   `ncStudioElevatedSurface` for glassy gradient-bordered panels (decorative overlays non-interactive).
+// 180426     Tommy1914   `ncDiaryTimelineCard` — toned down to light tint + single shadow (diary list).
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -26,7 +27,20 @@ extension View {
         self
             .background(Color.ncCardSurface)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
+            .overlay {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.88), Color.ncGlowBlue.opacity(0.34), Color.ncGlowViolet.opacity(0.28)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
+                    .allowsHitTesting(false)
+            }
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+            .shadow(color: Color.ncGlowBlue.opacity(0.2), radius: 22, x: 0, y: 12)
     }
 
     /// - Description: Ensures a minimum 44pt hit target for accessibility.
@@ -39,18 +53,14 @@ extension View {
     func ncStudioElevatedSurface(cornerRadius: CGFloat = 18) -> some View {
         background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 8)
+                .fill(Color.ncCardSurface)
+                .shadow(color: Color.black.opacity(0.09), radius: 14, x: 0, y: 8)
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [
-                            Color.ncPrimary.opacity(0.08),
-                            Color.cyan.opacity(0.05),
-                            Color.clear
-                        ],
+                        colors: [Color.ncGlowBlue.opacity(0.14), Color.ncGlowViolet.opacity(0.12), Color.clear],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -61,15 +71,11 @@ extension View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.55),
-                            Color.ncPrimary.opacity(0.22),
-                            Color.cyan.opacity(0.12)
-                        ],
+                        colors: [Color.white.opacity(0.8), Color.ncGlowBlue.opacity(0.35), Color.ncGlowViolet.opacity(0.26)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1
+                    lineWidth: 1.2
                 )
                 .allowsHitTesting(false)
         }
@@ -79,21 +85,46 @@ extension View {
     func ncStudioTintedCard(tint: Color, cornerRadius: CGFloat = 14) -> some View {
         background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(tint.opacity(0.14))
-                .shadow(color: tint.opacity(0.12), radius: 10, x: 0, y: 5)
+                .fill(tint.opacity(0.2))
+                .shadow(color: tint.opacity(0.18), radius: 10, x: 0, y: 5)
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.55), tint.opacity(0.45), Color.cyan.opacity(0.12)],
+                        colors: [Color.white.opacity(0.75), tint.opacity(0.6), Color.ncGlowBlue.opacity(0.24)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1
+                    lineWidth: 1.2
                 )
                 .allowsHitTesting(false)
         }
+    }
+
+    /// - Description: Diary timeline tile: soft type tint, **type-coloured outline** (readable on light bg), light shadow.
+    func ncDiaryTimelineCard(tint: Color, cornerRadius: CGFloat = 14) -> some View {
+        background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(tint.opacity(0.11))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            tint.opacity(0.55),
+                            tint.opacity(0.32),
+                            Color.primary.opacity(0.14)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.5
+                )
+                .allowsHitTesting(false)
+        }
+        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
     }
 
     /// - Description: Soft screen backdrop: solid background plus a short top gradient (pair with `scrollContentBackground(.hidden)` on lists when needed).
@@ -102,15 +133,11 @@ extension View {
             ZStack(alignment: .top) {
                 Color.ncBackground
                 LinearGradient(
-                    colors: [
-                        Color.ncPrimary.opacity(0.06),
-                        Color.cyan.opacity(0.035),
-                        Color.ncBackground.opacity(0.001)
-                    ],
+                    colors: [Color.ncGlowBlue.opacity(0.22), Color.ncGlowViolet.opacity(0.18), Color.clear],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 220)
+                .frame(height: 320)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .allowsHitTesting(false)
             }

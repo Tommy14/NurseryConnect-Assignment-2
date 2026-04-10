@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 300326     Tommy1914   Created the file with four seeded children for the keyworker demo.
-// 120426     Tommy1914   Orphan keyworker fix-up and single save after seed.
+// 100426     Tommy1914   Keyworker fix-up and single save after seed.
 // -----------------------------------------------------------------
 
 import CoreData
@@ -34,6 +34,7 @@ enum DataSeeder {
                 UserDefaults.standard.set(true, forKey: AppConstants.hasSeededSampleDataKey)
             }
             try assignDemoKeyworkerToOrphansIfNeeded(in: context)
+            try backfillChildGenderIfNeeded(in: context)
             if context.hasChanges {
                 try context.save()
             }
@@ -74,13 +75,27 @@ enum DataSeeder {
         }
     }
 
+    /// - Description: Fills missing child gender values for existing stores after model updates.
+    private static func backfillChildGenderIfNeeded(in context: NSManagedObjectContext) throws {
+        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        request.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "gender == nil"),
+            NSPredicate(format: "gender == %@", "")
+        ])
+        let children = try context.fetch(request)
+        for child in children {
+            child.gender = "unspecified"
+        }
+    }
+
     private static func insertSampleChildren(into context: NSManagedObjectContext) {
         // GDPR: Synthetic demo records only; minimise fields to what the MVP surfaces.
-        let samples: [(String, String, Date, String, String, String, String, Bool)] = [
-            ("Emma", "Wilson", Calendar.current.date(byAdding: .year, value: -3, to: Date()) ?? Date(), "Sunshine Room", "Peanuts", "Vegetarian options", "Asthma inhaler on site", true),
-            ("Oliver", "Patel", Calendar.current.date(byAdding: .month, value: -42, to: Date()) ?? Date(), "Rainbow Room", "", "Halal meals", "", true),
-            ("Sophie", "Nguyen", Calendar.current.date(byAdding: .month, value: -30, to: Date()) ?? Date(), "Sunshine Room", "Egg", "", "Eczema cream in bag", true),
-            ("Noah", "Brown", Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date(), "Rainbow Room", "Dairy", "Lactose-free milk", "", false)
+        let samples: [(String, String, Date, String, String, String, String, Bool, String)] = [
+            ("Kavindu", "Adithya", Calendar.current.date(byAdding: .year, value: -3, to: Date()) ?? Date(), "Sunshine Room", "Peanuts", "Vegetarian options", "Asthma inhaler on site", true, "male"),
+            ("Yeil", "Avyan", Calendar.current.date(byAdding: .month, value: -42, to: Date()) ?? Date(), "Sunshine Room", "", "Halal meals", "", true, "male"),
+            ("Ayaan", "Gunawardena", Calendar.current.date(byAdding: .month, value: -30, to: Date()) ?? Date(), "Sunshine Room", "Egg", "", "Eczema cream in bag", true, "male"),
+            ("Jithev", "Yevan", Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date(), "Sunshine Room", "Dairy", "Lactose-free milk", "", false, "male"),
+            ("Sara", "Tiana", Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date(), "Sunshine Room", "Dairy", "Lactose-free milk", "", false, "female")
         ]
 
         for row in samples {
@@ -94,6 +109,7 @@ enum DataSeeder {
             child.dietaryRequirements = row.5
             child.medicalNotes = row.6
             child.photoConsent = row.7
+            child.gender = row.8
             child.keyworkerName = AppConstants.keyworkerDisplayName
         }
     }
