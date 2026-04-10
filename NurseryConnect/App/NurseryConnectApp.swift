@@ -11,9 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 100426     Tommy1914   Created the file with persistence, seeding, and environment wiring.
-// 120426     Tommy1914   Seeding moved into dashboard refresh to avoid racing tasks.
-// 130426     Tommy1914   Added UK nursery-themed launch loading animation before dashboard handoff.
-// 130426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
+// 100426     Tommy1914   Seeding moved into dashboard refresh to avoid racing tasks.
+// 100426     Tommy1914   Added UK nursery-themed launch loading animation before dashboard handoff.
+// 100426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
 // -----------------------------------------------------------------
 
 import Combine
@@ -41,9 +41,9 @@ struct NurseryConnectApp: App {
     init() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterial)
-        appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.18)
-        appearance.shadowColor = UIColor.white.withAlphaComponent(0.18)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.32)
+        appearance.shadowColor = UIColor.systemTeal.withAlphaComponent(0.16)
 
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
