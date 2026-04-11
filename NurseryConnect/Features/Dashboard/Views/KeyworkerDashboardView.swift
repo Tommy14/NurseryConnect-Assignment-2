@@ -11,18 +11,18 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 020426     Tommy1914   Created the file with tabs, navigation stack, and greeting header.
-// 120426     Tommy1914   Loading and empty states for the child grid.
-// 120426     Tommy1914   Vertical list of child cards (full width) instead of two-column grid.
-// 120426     Tommy1914   Hero header (material + gradient), Today section label, soft top atmosphere.
-// 120426     Tommy1914   Refresh child rows when returning to dashboard or switching tabs (diary saves).
-// 130426     Tommy1914   Custom glass tab bar without per-tab selection capsule (dual stacks).
-// 130426     Tommy1914   Incident composer binding + dismiss when leaving Incidents tab.
-// 130426     Tommy1914   Floating tab bar uses `ncBackground` to match dashboard (not material blur).
-// 130426     Tommy1914   Dashboard scroll + nav bar flat `ncBackground`; hero card matches child tile surface.
-// 130426     Tommy1914   Futuristic dashboard polish: atmosphere orbs, hero snapshot rail, Today capsule.
-// 130426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
-// 130426     Tommy1914   Manual in-content title for tighter top spacing control.
-// 130426     Tommy1914   Greeting tile now updates by real time (message, icon, and date readout).
+// 100426     Tommy1914   Loading and empty states for the child grid.
+// 100426     Tommy1914   Vertical list of child cards (full width) instead of two-column grid.
+// 100426     Tommy1914   Hero header (material + gradient), Today section label, soft top atmosphere.
+// 100426     Tommy1914   Refresh child rows when returning to dashboard or switching tabs (diary saves).
+// 100426     Tommy1914   Custom glass tab bar without per-tab selection capsule (dual stacks).
+// 100426     Tommy1914   Incident composer binding + dismiss when leaving Incidents tab.
+// 100426     Tommy1914   Floating tab bar uses `ncBackground` to match dashboard (not material blur).
+// 100426     Tommy1914   Dashboard scroll + nav bar flat `ncBackground`; hero card matches child tile surface.
+// 100426     Tommy1914   Futuristic dashboard polish: atmosphere orbs, hero snapshot rail, Today capsule.
+// 100426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
+// 100426     Tommy1914   Manual in-content title for tighter top spacing control.
+// 100426     Tommy1914   Greeting tile now updates by real time (message, icon, and date readout).
 // -----------------------------------------------------------------
 
 import Combine
@@ -38,6 +38,7 @@ struct KeyworkerDashboardView: View {
     /// Owned here so tab switches can dismiss the composer; presentation covers the custom tab bar.
     @State private var incidentComposerPresented = false
     @State private var currentDate = Date()
+    @State private var childSearchText = ""
 
     init(context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
@@ -115,9 +116,10 @@ struct KeyworkerDashboardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 24)
                     } else {
-                        todaySectionLabel(count: viewModel.childSummaries.count)
+                        todaySectionLabel(count: filteredChildSummaries.count)
+                        dashboardSearchField
                         LazyVStack(spacing: 10) {
-                            ForEach(viewModel.childSummaries) { summary in
+                            ForEach(filteredChildSummaries) { summary in
                                 Button {
                                     withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
                                         childPath.append(summary)
@@ -134,7 +136,7 @@ struct KeyworkerDashboardView: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.bottom)
+                .padding(.bottom, AppConstants.floatingTabBarClearance + 12)
                 .padding(.top, 8)
             }
             .scrollIndicators(.hidden)
@@ -147,6 +149,45 @@ struct KeyworkerDashboardView: View {
         }
     }
 
+    private var dashboardSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search children", text: $childSearchText)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.ncCardSurface)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        }
+    }
+
+    private var filteredChildSummaries: [KeyworkerChildSummary] {
+        let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query.isEmpty == false else { return viewModel.childSummaries }
+        return viewModel.childSummaries.filter { summary in
+            let fullName = "\(summary.firstName) \(summary.lastName)"
+            let ageText = Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth)
+            return fullName.localizedCaseInsensitiveContains(query)
+                || summary.roomName.localizedCaseInsensitiveContains(query)
+                || ageText.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private var assignedRoomName: String {
+        let firstNonEmpty = viewModel.childSummaries
+            .map(\.roomName)
+            .first { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false }
+        return firstNonEmpty ?? "Unassigned room"
+    }
+
     private var incidentsRoot: some View {
         NavigationStack {
             IncidentListView(managedObjectContext: context, composerPresented: $incidentComposerPresented)
@@ -154,10 +195,10 @@ struct KeyworkerDashboardView: View {
     }
 
     private var glassTabBar: some View {
-        let corner: CGFloat = 28
+        let corner: CGFloat = 24
         return HStack(spacing: 0) {
             glassTabButton(
-                title: "My Children",
+                title: "Children",
                 systemImage: "figure.child",
                 index: 0,
                 accessibilityID: AppConstants.AccessibilityID.myChildrenTab
@@ -169,28 +210,17 @@ struct KeyworkerDashboardView: View {
                 accessibilityID: AppConstants.AccessibilityID.incidentsTab
             )
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 6)
-        .background(Color.ncBackground, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
+        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.35),
-                            Color.ncPrimary.opacity(0.22),
-                            Color.cyan.opacity(0.15)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.5
-                )
+                .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
         }
         .compositingGroup()
-        .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 6)
+        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+        .padding(.horizontal, 18)
+        .padding(.bottom, 8)
     }
 
     /// Soft radial “haze” behind the dashboard so it feels less flat than a single flat fill.
@@ -198,26 +228,27 @@ struct KeyworkerDashboardView: View {
         ZStack {
             Color.ncBackground
             Circle()
-                .fill(Color.ncPrimary.opacity(0.07))
+                .fill(Color.ncGlowBlue.opacity(0.13))
                 .frame(width: 320, height: 320)
                 .blur(radius: 70)
-                .offset(x: -130, y: -200)
+                .offset(x: -130, y: -210)
             Circle()
-                .fill(Color.cyan.opacity(0.055))
-                .frame(width: 260, height: 260)
-                .blur(radius: 55)
+                .fill(Color.ncGlowViolet.opacity(0.11))
+                .frame(width: 280, height: 280)
+                .blur(radius: 62)
                 .offset(x: 150, y: -120)
             Circle()
-                .fill(Color.ncPrimary.opacity(0.04))
+                .fill(Color.ncPrimary.opacity(0.08))
                 .frame(width: 200, height: 200)
-                .blur(radius: 45)
-                .offset(x: 40, y: 120)
+                .blur(radius: 40)
+                .offset(x: 40, y: 150)
         }
         .ignoresSafeArea()
     }
 
     private func glassTabButton(title: String, systemImage: String, index: Int, accessibilityID: String) -> some View {
         let selected = selectedTab == index
+        let selectedTint = selectedTabTint(for: index)
         return Button {
             withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
                 selectedTab = index
@@ -225,14 +256,22 @@ struct KeyworkerDashboardView: View {
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 21, weight: selected ? .semibold : .regular))
-                    .symbolRenderingMode(.monochrome)
+                    .font(.system(size: 20, weight: selected ? .semibold : .regular))
+                    .symbolRenderingMode(.hierarchical)
                 Text(title)
-                    .font(.caption2.weight(selected ? .semibold : .medium))
+                    .font(.caption2.weight(selected ? .semibold : .regular))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
-            .foregroundStyle(selected ? Color.ncPrimary : Color.secondary)
+            .foregroundStyle(selected ? selectedTint : Color.secondary)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(selected ? selectedTint.opacity(0.14) : Color.clear)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(selected ? selectedTint.opacity(0.42) : Color.clear, lineWidth: 0.8)
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -241,37 +280,61 @@ struct KeyworkerDashboardView: View {
         .accessibilityIdentifier(accessibilityID)
     }
 
-    private var dashboardHeroHeader: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.green.opacity(0.95), Color.green.opacity(0.35)],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 5
-                        )
-                    )
-                    .frame(width: 8, height: 8)
-                    .shadow(color: Color.green.opacity(0.45), radius: 4, x: 0, y: 0)
-                Text("LIVE SNAPSHOT")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.3)
-                    .foregroundStyle(Color.secondary)
-            }
-            .accessibilityHidden(true)
+    private func selectedTabTint(for index: Int) -> Color {
+        switch index {
+        case 0: return Color.blue
+        case 1: return Color.orange
+        default: return Color.ncPrimary
+        }
+    }
 
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+    private var dashboardHeroHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.green.opacity(0.95), Color.green.opacity(0.35)],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 5
+                            )
+                        )
+                        .frame(width: 8, height: 8)
+                        .shadow(color: Color.green.opacity(0.45), radius: 4, x: 0, y: 0)
+                    Text("LIVE SNAPSHOT")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(1.3)
+                        .foregroundStyle(Color.secondary)
+                }
+                .accessibilityHidden(true)
+                Spacer(minLength: 8)
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(Color.ncPrimary)
+                    Text(currentDate.formattedMediumDate())
+                        .font(.footnote.weight(.medium).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.ncPrimary.opacity(0.08))
+                )
+            }
+
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(greetingText)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                    Text("\(AppConstants.keyworkerDisplayName) 👋")
+                    Text(AppConstants.keyworkerDisplayName)
                         .font(AppTheme.greetingRounded())
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.ncPrimary, Color.cyan.opacity(0.88)],
+                                colors: [Color.ncPrimary, Color.ncGlowBlue],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -279,49 +342,56 @@ struct KeyworkerDashboardView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: greetingSymbolName)
-                    .font(.title2)
+                    .font(.system(size: 34, weight: .semibold))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(greetingPrimaryColor, greetingSecondaryColor)
-                    .shadow(color: greetingPrimaryColor.opacity(0.35), radius: 10, x: 0, y: 2)
+                    .padding(8)
+                    .background(
+                        Circle()
+                            .fill(greetingPrimaryColor.opacity(0.1))
+                    )
+                    .shadow(color: greetingPrimaryColor.opacity(0.35), radius: 12, x: 0, y: 3)
+                    .offset(x: -10)
                     .accessibilityHidden(true)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Label {
-                    Text(currentDate.formattedMediumDate())
-                        .font(.footnote.weight(.medium).monospacedDigit())
-                } icon: {
-                    Image(systemName: "calendar")
-                        .foregroundStyle(Color.ncPrimary)
-                }
-                .foregroundStyle(.secondary)
-                Label {
-                    Text(AppConstants.nurseryDisplayName)
-                        .fixedSize(horizontal: false, vertical: true)
-                } icon: {
-                    Image(systemName: "building.2.fill")
-                        .foregroundStyle(Color.ncPrimary.opacity(0.85))
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                Image(systemName: "door.left.hand.open")
+                    .foregroundStyle(Color.ncPrimary.opacity(0.85))
+                Text(assignedRoomName)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(18)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color.ncCardSurface)
                 .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 8)
-                .shadow(color: Color.ncPrimary.opacity(0.12), radius: 28, x: 0, y: 12)
+                .shadow(color: Color.ncPrimary.opacity(0.14), radius: 20, x: 0, y: 10)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            ZStack {
+                Circle()
+                    .fill(Color.ncGlowBlue.opacity(0.13))
+                    .frame(width: 140, height: 140)
+                    .blur(radius: 24)
+                Circle()
+                    .fill(Color.ncGlowViolet.opacity(0.11))
+                    .frame(width: 100, height: 100)
+                    .blur(radius: 18)
+                    .offset(x: -18, y: -16)
+            }
+            .offset(x: 24, y: 26)
+            .allowsHitTesting(false)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.75),
-                            Color.ncPrimary.opacity(0.22),
-                            Color.cyan.opacity(0.14)
-                        ],
+                        colors: [Color.white.opacity(0.65), Color.ncPrimary.opacity(0.22), Color.ncGlowBlue.opacity(0.18)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -329,21 +399,9 @@ struct KeyworkerDashboardView: View {
                 )
                 .allowsHitTesting(false)
         }
-        .overlay(alignment: .top) {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.45), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(height: 56)
-                .allowsHitTesting(false)
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            "\(greetingText) \(AppConstants.keyworkerDisplayName). \(currentDate.formattedMediumDate()). \(AppConstants.nurseryDisplayName)."
+            "\(greetingText) \(AppConstants.keyworkerDisplayName). \(currentDate.formattedMediumDate()). Room: \(assignedRoomName)."
         )
     }
 
@@ -389,13 +447,7 @@ struct KeyworkerDashboardView: View {
             HStack(spacing: 8) {
                 Image(systemName: "waveform.path.ecg")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.ncPrimary, Color.cyan.opacity(0.75)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .foregroundStyle(Color.ncPrimary)
                     .accessibilityHidden(true)
                 Text("TODAY")
                     .font(.caption.weight(.heavy))
