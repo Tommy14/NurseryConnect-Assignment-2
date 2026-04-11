@@ -11,7 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with grouped sections and connector line.
-// 130426     Tommy1914   Time-band headers with index accent for dossier-style timeline.
+// 100426     Tommy1914   Time-band headers with index accent for dossier-style timeline.
+// 180426     Tommy1914   Sync badge on tile; calmer time-band marker.
 // -----------------------------------------------------------------
 
 import Combine
@@ -41,21 +42,14 @@ struct DiaryTimelineView: View {
             ForEach(grouped, id: \.key) { group in
                 HStack(spacing: 10) {
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.ncPrimary.opacity(0.85), Color.cyan.opacity(0.45)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 3, height: 14)
+                        .fill(Color.ncPrimary.opacity(0.45))
+                        .frame(width: 3, height: 12)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Time segment")
-                            .font(.caption2.weight(.bold))
-                            .tracking(0.4)
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(.tertiary)
                         Text("Around \(group.key)")
-                            .font(.caption.weight(.semibold))
+                            .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
@@ -86,15 +80,16 @@ struct DiaryTimelineView: View {
                         NavigationLink {
                             DiaryEntryDetailView(entry: entry, viewModel: viewModel)
                         } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                SyncStateBadgeView(state: viewModel.syncState(for: entry))
+                            ZStack(alignment: .topTrailing) {
                                 diaryCard(for: entry, type: type)
+                                SyncStateBadgeView(state: viewModel.syncState(for: entry))
+                                    .padding(8)
                             }
                         }
                         .buttonStyle(.plain)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 18)
                 }
             }
         }
