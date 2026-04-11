@@ -11,8 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 050426     Tommy1914   Created the file with type chips, validation, and save flow.
-// 120426     Tommy1914   Card chrome, symbol chips, atmosphere background (iOS-native polish).
-// 120426     Tommy1914   Decorative overlays use allowsHitTesting(false) so fields remain tappable.
+// 100426     Tommy1914   Card chrome, symbol chips, atmosphere background (iOS-native polish).
+// 100426     Tommy1914   Decorative overlays use allowsHitTesting(false) so fields remain tappable.
 // -----------------------------------------------------------------
 
 import Combine
@@ -70,7 +70,7 @@ struct AddDiaryEntryView: View {
             .scrollIndicators(.hidden)
             .background { diaryFormAtmosphereBackground }
             .navigationTitle("New entry")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) { dismiss() } label: {
@@ -84,29 +84,15 @@ struct AddDiaryEntryView: View {
                         .accessibilityIdentifier(AppConstants.AccessibilityID.saveDiaryEntry)
                 }
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(Color.ncBackground, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
         .background(Color.ncBackground.ignoresSafeArea())
         .tint(Color.ncPrimary)
     }
 
     private var diaryFormAtmosphereBackground: some View {
-        ZStack(alignment: .top) {
-            Color.ncBackground
-            LinearGradient(
-                colors: [
-                    Color.ncPrimary.opacity(0.07),
-                    Color.cyan.opacity(0.04),
-                    Color.ncBackground.opacity(0.001)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 240)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-        }
+        Color.ncBackground.ignoresSafeArea()
     }
 
     private var diaryTypeChipStrip: some View {
@@ -132,14 +118,8 @@ struct AddDiaryEntryView: View {
                         .background {
                             if selected {
                                 Capsule(style: .continuous)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.ncPrimary, Color.cyan.opacity(0.78)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 8, x: 0, y: 4)
+                                    .fill(Color.ncPrimary)
+                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                             } else {
                                 Capsule(style: .continuous)
                                     .fill(Color.ncCardSurface)
@@ -149,14 +129,7 @@ struct AddDiaryEntryView: View {
                         .overlay {
                             if !selected {
                                 Capsule(style: .continuous)
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [Color.secondary.opacity(0.2), Color.ncPrimary.opacity(0.08)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1
-                                    )
+                                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                             }
                         }
                     }
@@ -184,33 +157,7 @@ struct AddDiaryEntryView: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.ncPrimary.opacity(0.06),
-                            Color.cyan.opacity(0.04),
-                            Color.clear
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .allowsHitTesting(false)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.55),
-                            Color.ncPrimary.opacity(0.2),
-                            Color.cyan.opacity(0.1)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
                 .allowsHitTesting(false)
         }
     }

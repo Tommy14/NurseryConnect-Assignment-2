@@ -11,8 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 090426     Tommy1914   Created the file with medical and dietary sections.
-// 120426     Tommy1914   Hero header + studio info rows (read-only).
-// 130426     Tommy1914   Bottom scroll inset when shown under keyworker floating tab bar.
+// 100426     Tommy1914   Hero header + studio info rows (read-only).
+// 100426     Tommy1914   Bottom scroll inset when shown under keyworker floating tab bar.
+// 180426     Tommy1914   Photo consent row: read-only green tick / red cross from stored data.
 // -----------------------------------------------------------------
 
 import Combine
@@ -61,12 +62,7 @@ struct ChildProfileView: View {
                         text: child.keyworkerName ?? "",
                         symbol: "person.fill"
                     )
-                    Toggle("Photo consent on file", isOn: .constant(child.photoConsent))
-                        .disabled(true)
-                        .tint(Color.ncPrimary)
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .ncStudioElevatedSurface(cornerRadius: 16)
+                    photoConsentRow(for: child)
                 }
                 .padding()
                 .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
@@ -79,7 +75,7 @@ struct ChildProfileView: View {
         .scrollContentBackground(.hidden)
         .background(Color.ncBackground)
         .navigationTitle("Profile")
-        .toolbarBackground(.thinMaterial, for: .navigationBar)
+        .toolbarBackground(Color.ncBackground, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .task {
             await viewModel.loadChild(id: childId)
@@ -130,7 +126,7 @@ struct ChildProfileView: View {
                 .font(.title3)
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.ncPrimary, Color.cyan.opacity(0.8)],
+                        colors: [Color.ncPrimary, Color.ncGlowBlue],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -158,7 +154,7 @@ struct ChildProfileView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.55), Color.ncPrimary.opacity(0.14), Color.cyan.opacity(0.08)],
+                        colors: [Color.white.opacity(0.6), Color.ncPrimary.opacity(0.14), Color.ncGlowBlue.opacity(0.1)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -167,5 +163,26 @@ struct ChildProfileView: View {
                 .allowsHitTesting(false)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func photoConsentRow(for child: Child) -> some View {
+        let isOn = child.photoConsent
+        return HStack(alignment: .center, spacing: 12) {
+            Text("Photo consent on file")
+                .font(.body)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: isOn ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.title2)
+                .foregroundStyle(isOn ? Color.green : Color.red)
+                .accessibilityHidden(true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ncStudioElevatedSurface(cornerRadius: 16)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            "Photo consent on file. \(isOn ? "Consent is on file." : "No consent on file.")"
+        )
     }
 }
