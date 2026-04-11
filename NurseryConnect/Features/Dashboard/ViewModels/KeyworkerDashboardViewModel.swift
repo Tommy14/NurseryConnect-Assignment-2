@@ -11,9 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 020426     Tommy1914   Created the file with fetches and completeness scoring.
-// 120426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
-// 120426     Tommy1914   Refresh summaries when `DiaryEntry` saves (no restart required).
-// 130426     Tommy1914   Marked save-notification helper `nonisolated` to avoid main-actor sync warning pauses.
+// 100426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
+// 100426     Tommy1914   Refresh summaries when `DiaryEntry` saves (no restart required).
+// 100426     Tommy1914   Marked save-notification helper `nonisolated` to avoid main-actor sync warning pauses.
 // -----------------------------------------------------------------
 
 import Combine
@@ -27,6 +27,17 @@ enum DiaryCompletenessDot: String, CaseIterable {
     case none
 }
 
+/// - Description: Display-oriented gender marker for quick tile scanning.
+enum ChildGenderTag: String, CaseIterable {
+    case male
+    case female
+    case unspecified
+
+    static func fromPersistence(_ value: String) -> ChildGenderTag {
+        ChildGenderTag(rawValue: value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) ?? .unspecified
+    }
+}
+
 /// - Description: Lightweight row model for dashboard cards (avoids binding views directly to managed objects).
 struct KeyworkerChildSummary: Identifiable, Hashable {
     let id: UUID
@@ -35,6 +46,7 @@ struct KeyworkerChildSummary: Identifiable, Hashable {
     let roomName: String
     let allergies: String
     let dateOfBirth: Date
+    let genderTag: ChildGenderTag
     let dot: DiaryCompletenessDot
 }
 
@@ -101,6 +113,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                     roomName: child.roomName ?? "",
                     allergies: child.allergies ?? "",
                     dateOfBirth: child.dateOfBirth ?? Date(),
+                    genderTag: ChildGenderTag.fromPersistence(child.gender ?? ""),
                     dot: dot
                 )
                 rows.append(summary)
@@ -162,4 +175,5 @@ final class KeyworkerDashboardViewModel: ObservableObject {
         }
         return .partial
     }
+
 }
