@@ -11,7 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with activity metadata and timestamp.
-// 120426     Tommy1914   Studio tint card; conditional notes.
+// 100426     Tommy1914   Studio tint card; conditional notes.
+// 180426     Tommy1914   Simpler timeline tile (less chrome).
+// 180426     Tommy1914   Field labels for activity, EYFS, notes.
 // -----------------------------------------------------------------
 
 import Combine
@@ -34,46 +36,47 @@ struct ActivityLogCard: View {
         let noteText = (entry.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [tint.opacity(0.5), tint.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 40)
-                    Image(systemName: type == .milestone ? "star.fill" : "figure.play")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(type == .milestone ? "Milestone" : "Activity")
-                        .font(.headline)
-                    Text((entry.timestamp ?? Date()).formattedTime())
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-            }
+            DiaryEntryCardHeader(
+                title: type == .milestone ? "Milestone" : "Activity",
+                systemImage: type == .milestone ? "star.fill" : "figure.play",
+                timestamp: entry.timestamp ?? Date(),
+                tint: tint
+            )
             if !activityText.isEmpty {
-                Text(activityText)
-                    .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(type == .milestone ? "Milestone" : "What we did")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(activityText)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             if !eyfsText.isEmpty {
-                Text(eyfsText)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("EYFS area")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(eyfsText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
             }
             if !noteText.isEmpty {
-                Text(noteText)
-                    .font(.footnote)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Notes")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(noteText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary.opacity(0.92))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .ncStudioTintedCard(tint: tint, cornerRadius: 16)
+        .ncDiaryTimelineCard(tint: tint, cornerRadius: 14)
     }
 }
