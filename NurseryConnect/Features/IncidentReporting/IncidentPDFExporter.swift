@@ -11,8 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 080426     Tommy1914   Created the file with UIGraphicsPDFRenderer output.
-// 120426     Tommy1914   Sectioned layout, wrapped text, body-map images + markers, multi-page.
-// 120426     Tommy1914   Futuristic dossier styling: gradient hero, panels, accent rails, map chrome.
+// 100426     Tommy1914   Sectioned layout, wrapped text, body-map images + markers, multi-page.
+// 100426     Tommy1914   Futuristic dossier styling: gradient hero, panels, accent rails, map chrome.
 // -----------------------------------------------------------------
 
 import CoreData
