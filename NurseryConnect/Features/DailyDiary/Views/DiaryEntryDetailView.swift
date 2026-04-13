@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 050426     Tommy1914   Created the file with manager toggle, delete alert, and layout.
+// 120426     Tommy1914   Studio surfaces + atmosphere backdrop (read-only detail polish).
 // -----------------------------------------------------------------
 
 import Combine
@@ -31,22 +32,47 @@ struct DiaryEntryDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text((entry.timestamp ?? Date()).formattedTime(style: .medium))
-                    .font(AppTheme.greetingRounded())
+            VStack(alignment: .leading, spacing: 18) {
+                Label {
+                    Text((entry.timestamp ?? Date()).formattedTime(style: .medium))
+                        .font(AppTheme.headlineRounded())
+                } icon: {
+                    Image(systemName: "clock.fill")
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .ncStudioElevatedSurface(cornerRadius: 16)
+
                 typeSpecific
-                Toggle("Mark as submitted to room leader", isOn: Binding(
-                    get: { entry.isSubmittedToManager },
-                    set: { value in
-                        Task { await viewModel.updateSubmission(entry, submitted: value) }
-                    }
-                ))
-                // EYFS: Submission flag supports audit trails for handovers to room leadership.
-                .tint(Color.ncPrimary)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Room leader handover", systemImage: "checkmark.seal.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                    Toggle("Mark as submitted to room leader", isOn: Binding(
+                        get: { entry.isSubmittedToManager },
+                        set: { value in
+                            Task { await viewModel.updateSubmission(entry, submitted: value) }
+                        }
+                    ))
+                    // EYFS: Submission flag supports audit trails for handovers to room leadership.
+                    .tint(Color.ncPrimary)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .ncStudioElevatedSurface(cornerRadius: 16)
             }
             .padding()
         }
-        .background(Color.ncBackground.ignoresSafeArea())
+        .scrollIndicators(.hidden)
+        .ncStudioScreenBackdrop()
         .navigationTitle("Diary entry")
         .toolbar {
             ToolbarItem(placement: .bottomBar) {

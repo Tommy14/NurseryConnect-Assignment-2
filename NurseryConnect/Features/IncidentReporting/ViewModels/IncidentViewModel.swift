@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 060426     Tommy1914   Created the file with filters, warnings, and RIDDOR helpers.
+// 120426     Tommy1914   One parent-notification banner per child (avoid duplicate rows for same child).
 // -----------------------------------------------------------------
 
 import Combine
@@ -34,9 +35,10 @@ enum IncidentListFilter: String, CaseIterable, Identifiable {
     }
 }
 
-/// - Description: Banner payload when statutory parent follow-up may be overdue.
+/// - Description: Banner payload when statutory parent follow-up may be overdue (one per child).
 struct ParentNotificationBanner: Identifiable, Hashable {
-    let id: UUID
+    /// Stable per child so multiple qualifying incidents do not duplicate the banner.
+    let id: String
     let childFirstName: String
 }
 
@@ -183,23 +185,22 @@ final class IncidentViewModel: ObservableObject {
     ///   - incidents: All incidents for the practitioner (unfiltered).
     /// - Returns: Banner models for UI presentation.
     private func computeParentNotificationBanners(from incidents: [Incident]) -> [ParentNotificationBanner] {
-        incidents.compactMap { incident in
-            guard let timestamp = incident.timestamp else { return nil }
+        var seenChildObjectIDs = Set<NSManagedObjectID>()
+        var banners: [ParentNotificationBanner] = []
+        for incident in incidents {
+            guard let timestamp = incident.timestamp else { continue }
             let status = IncidentStatus.fromPersistence(incident.status ?? "")
-            if status == .draft {
-                return nil
-            }
-            if incident.isParentNotified {
-                return nil
-            }
+            if status == .draft { continue }
+            if incident.isParentNotified { continue }
             let age = Date().timeIntervalSince(timestamp)
-            if age <= AppConstants.parentNotificationWarningThresholdSeconds {
-                return nil
-            }
-            let childName = incident.child?.firstName ?? "Child"
-            guard let id = incident.id else { return nil }
-            // EYFS: Escalate when timely parent communication has not been recorded.
-            return ParentNotificationBanner(id: id, childFirstName: childName)
+            if age <= AppConstants.parentNotificationWarningThresholdSeconds { continue }
+            guard let child = incident.child else { continue }
+            if seenChildObjectIDs.contains(child.objectID) { continue }
+            seenChildObjectIDs.insert(child.objectID)
+            let childName = child.firstName ?? "Child"
+            let bannerId = child.objectID.uriRepresentation().absoluteString
+            banners.append(ParentNotificationBanner(id: bannerId, childFirstName: childName))
         }
+        return banners
     }
 }

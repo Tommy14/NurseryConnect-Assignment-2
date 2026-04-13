@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with consumption and fluid summary.
+// 120426     Tommy1914   Studio tint card; hide empty lines.
 // -----------------------------------------------------------------
 
 import Combine
@@ -21,31 +22,54 @@ import SwiftUI
 struct MealLogCard: View {
     @ObservedObject var entry: DiaryEntry
 
+    private var tint: Color { AppTheme.diaryColor(for: .meal) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: "fork.knife")
-                    .foregroundStyle(AppTheme.diaryColor(for: .meal))
-                Text("Meal")
-                    .font(.headline)
-                Spacer()
-                Text((entry.timestamp ?? Date()).formattedTime())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        let desc = (entry.mealDescription ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let noteText = (entry.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [tint.opacity(0.5), tint.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "fork.knife")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Meal")
+                        .font(.headline)
+                    Text((entry.timestamp ?? Date()).formattedTime())
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
             }
-            Text(entry.mealDescription ?? "")
-                .font(.subheadline.weight(.semibold))
-            Text("Consumed: \(entry.mealConsumed ?? "")")
-                .font(.footnote)
-            Text("Fluids: \(entry.fluidIntake) ml (\(entry.fluidType ?? ""))")
+            if !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline.weight(.semibold))
+            }
+            Text("Consumed: \(entry.mealConsumed ?? "—")")
+                .font(.footnote.weight(.medium))
+            Text("Fluids: \(entry.fluidIntake) ml (\(entry.fluidType ?? "—"))")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text(entry.notes ?? "")
-                .font(.footnote)
+            if !noteText.isEmpty {
+                Text(noteText)
+                    .font(.footnote)
+                    .foregroundStyle(.primary)
+            }
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppTheme.diaryColor(for: .meal).opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .ncStudioTintedCard(tint: tint, cornerRadius: 16)
     }
 }

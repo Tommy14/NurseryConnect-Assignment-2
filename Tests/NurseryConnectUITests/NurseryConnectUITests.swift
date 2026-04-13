@@ -21,10 +21,10 @@ final class NurseryConnectUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        let childrenTab = app.tabBars.buttons["My Children"]
+        let childrenTab = app.buttons["My Children"]
         XCTAssertTrue(childrenTab.waitForExistence(timeout: 5))
 
-        let incidentsTab = app.tabBars.buttons["Incidents"]
+        let incidentsTab = app.buttons["Incidents"]
         XCTAssertTrue(incidentsTab.exists)
     }
 }
