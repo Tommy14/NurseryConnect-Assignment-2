@@ -4,7 +4,7 @@
 //
 //  Feature: Core
 //  Role: Keyworker
-//  Created: 13 April 2026
+//  Created: 10 April 2026
 //  Description: Unit tests for local sync queue state transitions and retry behavior.
 //
 

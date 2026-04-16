@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 060426     Tommy1914   Created the file with icon and title layout.
-// 120426     Tommy1914   Studio capsule presentation.
+// 100426     Tommy1914   Studio capsule presentation.
 // -----------------------------------------------------------------
 
 import SwiftUI

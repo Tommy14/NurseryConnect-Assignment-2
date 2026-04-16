@@ -4,8 +4,8 @@
 //
 //  Feature: Shared
 //  Role: Keyworker
-//  Created: 13 April 2026
-//  Description: Compact badge that communicates local sync state for queued records.
+//  Created: 10 April 2026
+//  Description: Compact icon that communicates local sync state for queued records.
 //
 
 import SwiftUI
@@ -14,24 +14,14 @@ struct SyncStateBadgeView: View {
     let state: SyncState
 
     var body: some View {
-        Label {
-            Text(labelTitle)
-        } icon: {
-            Image(systemName: symbol)
-        }
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(foregroundColor)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule(style: .continuous)
-                .fill(backgroundColor)
-        )
-        .overlay {
-            Capsule(style: .continuous)
-                .stroke(foregroundColor.opacity(0.28), lineWidth: 1)
-        }
-        .accessibilityLabel("Sync state \(labelTitle)")
+        Image(systemName: symbol)
+            .font(.subheadline.weight(.semibold))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(foregroundColor)
+            .padding(6)
+            .background(Circle().fill(backgroundColor))
+            .overlay(Circle().stroke(foregroundColor.opacity(0.28), lineWidth: 1))
+            .accessibilityLabel("Sync state \(labelTitle)")
     }
 
     private var labelTitle: String {

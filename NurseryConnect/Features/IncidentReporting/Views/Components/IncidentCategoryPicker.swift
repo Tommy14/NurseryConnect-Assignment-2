@@ -21,29 +21,68 @@ struct IncidentCategoryPicker: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
 
+    private func accentColor(for category: IncidentCategory) -> Color {
+        switch category {
+        case .accidentMinor: return Color.ncAccentWarm
+        case .accidentFirstAid: return Color.ncPrimary
+        case .safeguardingConcern: return Color.ncDanger
+        case .nearMiss: return Color.orange
+        case .allergicReaction: return Color.purple
+        case .medicalIncident: return Color.teal
+        }
+    }
+
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
             ForEach(IncidentCategory.allCases, id: \.self) { category in
+                let isSelected = selection == category
+                let accent = accentColor(for: category)
                 Button {
                     selection = category
                 } label: {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 9) {
                         Image(systemName: category.symbolName)
                             .font(.title2)
-                            .foregroundStyle(selection == category ? Color.white : Color.ncPrimary)
+                            .foregroundStyle(isSelected ? Color.white : accent)
                         Text(category.title)
                             .font(.footnote.weight(.semibold))
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(selection == category ? Color.white : Color.primary)
+                            .foregroundStyle(isSelected ? Color.white : Color.primary)
+                            .lineLimit(2)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, minHeight: 96)
-                    .background(selection == category ? Color.ncPrimary : Color.ncCardSurface)
+                    .background(
+                        Group {
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [accent, accent.opacity(0.78)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            } else {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color.ncCardSurface)
+                            }
+                        }
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.ncPrimary.opacity(selection == category ? 0.0 : 0.15), lineWidth: 1)
+                            .stroke(isSelected ? accent.opacity(0.95) : accent.opacity(0.28), lineWidth: isSelected ? 1.4 : 1)
                     )
+                    .overlay(alignment: .topTrailing) {
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(8)
+                        }
+                    }
+                    .shadow(color: isSelected ? accent.opacity(0.26) : Color.clear, radius: 8, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(category.title)

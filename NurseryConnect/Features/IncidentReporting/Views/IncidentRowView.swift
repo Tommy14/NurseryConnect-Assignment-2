@@ -11,9 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 070426     Tommy1914   Created the file with compact metadata and accessibility IDs.
-// 120426     Tommy1914   Gradient icon well; trailing chevron for tappability (scroll layout has no list disclosure).
-// 130426     Tommy1914   Deeper icon well, rounded headline, monospaced time for readout feel.
-// 130426     Tommy1914   Category-driven icon palette for stronger visual separation in incident inbox rows.
+// 100426     Tommy1914   Gradient icon well; trailing chevron for tappability (scroll layout has no list disclosure).
+// 100426     Tommy1914   Deeper icon well, rounded headline, monospaced time for readout feel.
+// 100426     Tommy1914   Category-driven icon palette for stronger visual separation in incident inbox rows.
 // -----------------------------------------------------------------
 
 import Combine
@@ -53,15 +53,15 @@ struct IncidentRowView: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [accentColor.opacity(0.32), accentColor.opacity(0.14)],
+                            colors: [accentColor.opacity(0.34), accentColor.opacity(0.14)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 44, height: 44)
-                    .shadow(color: accentColor.opacity(0.22), radius: 6, x: 0, y: 3)
+                    .shadow(color: accentColor.opacity(0.2), radius: 6, x: 0, y: 3)
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.7)
                     .frame(width: 44, height: 44)
                 Image(systemName: category.symbolName)
                     .font(.title3.weight(.semibold))

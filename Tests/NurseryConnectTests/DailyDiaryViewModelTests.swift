@@ -4,13 +4,13 @@
 //
 //  Feature: Daily Diary
 //  Role: Keyworker
-//  Created: 11 April 2026
+//  Created: 10 April 2026
 //  Description: Unit tests for diary validation and persistence helpers.
 //
 // -----------------------------------------------------------------
 // Date       Name        What has done
 // -----------------------------------------------------------------
-// 110426     Tommy1914   Created the file with validation and in-memory Core Data checks.
+// 100426     Tommy1914   Created the file with validation and in-memory Core Data checks.
 // -----------------------------------------------------------------
 
 import CoreData

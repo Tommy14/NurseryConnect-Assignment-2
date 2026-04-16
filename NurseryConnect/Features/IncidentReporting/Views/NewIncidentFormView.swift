@@ -11,8 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 080426     Tommy1914   Created the file with stepped flow, validation, and submission animation.
-// 120426     Tommy1914   Step rail, grouped review card, footer bar; explicit steps (no TabView paging).
-// 130426     Tommy1914   Inline navigation title when presented full-screen over root chrome.
+// 100426     Tommy1914   Step rail, grouped review card, footer bar; explicit steps (no TabView paging).
+// 100426     Tommy1914   Inline navigation title when presented full-screen over root chrome.
 // -----------------------------------------------------------------
 
 import Combine
@@ -29,6 +29,8 @@ struct NewIncidentFormView: View {
 
     @State private var step: Int = 0
     @State private var selectedChildID: UUID?
+    @State private var childSearchText: String = ""
+    @FocusState private var isChildSearchFocused: Bool
     @State private var category: IncidentCategory = .accidentMinor
     @State private var severity: IncidentSeverity = .minor
     @State private var locationText: String = ""
@@ -65,6 +67,7 @@ struct NewIncidentFormView: View {
             .background(Color.ncBackground.ignoresSafeArea())
             .navigationTitle(existingIncident == nil ? "New incident" : "Edit draft")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if step == 0 {
@@ -106,13 +109,16 @@ struct NewIncidentFormView: View {
                 await viewModel.refresh()
                 if let existingIncident {
                     hydrate(from: existingIncident)
-                } else if selectedChildID == nil {
-                    selectedChildID = viewModel.assignableChildren.first?.id
                 }
             }
             .onChange(of: category) { _, newValue in
                 severity = newValue.defaultSeverity
                 riddorRequired = viewModel.suggestsRiddor(for: newValue)
+            }
+            .onChange(of: selectedChildID) { _, _ in
+                if let selectedChildName {
+                    childSearchText = selectedChildName
+                }
             }
         }
     }
@@ -133,33 +139,16 @@ struct NewIncidentFormView: View {
             }
             Text(Self.formSteps[step].title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .foregroundStyle(Color.ncPrimary)
         }
         .padding(14)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color.ncCardSurface)
-                .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.ncPrimary.opacity(0.28),
-                                    Color.cyan.opacity(0.15),
-                                    Color.ncPrimary.opacity(0.1)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
+                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
                 }
         }
         .accessibilityElement(children: .combine)
@@ -186,20 +175,39 @@ struct NewIncidentFormView: View {
                             .foregroundStyle(Color.ncPrimary)
                         requiredFieldTitle("Child")
                     }
-                    Picker("Child", selection: $selectedChildID) {
-                        Text("Select a child").tag(Optional<UUID>.none)
-                        ForEach(
-                            viewModel.assignableChildren.compactMap { child -> (UUID, String)? in
-                                guard let id = child.id else { return nil }
-                                let name = "\(child.firstName ?? "") \(child.lastName ?? "")"
-                                return (id, name)
-                            },
-                            id: \.0
-                        ) { item in
-                            Text(item.1).tag(Optional(item.0))
+                    TextField("Search children", text: $childSearchText)
+                        .textFieldStyle(.roundedBorder)
+                        .textInputAutocapitalization(.words)
+                        .focused($isChildSearchFocused)
+
+                    if shouldShowChildDropdown {
+                        if filteredAssignableChildren.isEmpty {
+                            Text("No children match your search.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 8)
+                        } else {
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(filteredAssignableChildren, id: \.objectID) { child in
+                                        childSelectionRow(for: child)
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 220)
                         }
                     }
-                    .pickerStyle(.menu)
+                    if selectedChildID == nil {
+                        Text("Select a child to continue.")
+                            .font(.caption)
+                            .foregroundStyle(Color.ncDanger)
+                    } else {
+                        if let name = selectedChildName {
+                            Text("Selected: \(name)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -452,7 +460,7 @@ struct NewIncidentFormView: View {
                 .font(AppTheme.headlineRounded())
         }
         .padding(32)
-        .background(.ultraThinMaterial)
+        .background(Color.ncCardSurface)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
@@ -462,6 +470,75 @@ struct NewIncidentFormView: View {
             return "Child not selected"
         }
         return "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
+    }
+
+    private var filteredAssignableChildren: [Child] {
+        let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query.isEmpty == false else { return [] }
+        return viewModel.assignableChildren.filter { child in
+            let firstName = child.firstName ?? ""
+            let lastName = child.lastName ?? ""
+            let roomName = child.roomName ?? ""
+            let fullName = "\(firstName) \(lastName)"
+            return firstName.localizedCaseInsensitiveContains(query)
+                || lastName.localizedCaseInsensitiveContains(query)
+                || fullName.localizedCaseInsensitiveContains(query)
+                || roomName.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private var selectedChildName: String? {
+        guard let id = selectedChildID,
+              let child = viewModel.assignableChildren.first(where: { $0.id == id }) else {
+            return nil
+        }
+        let fullName = "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
+        return fullName.isEmpty ? "Unnamed child" : fullName
+    }
+
+    private var shouldShowChildDropdown: Bool {
+        let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return isChildSearchFocused && query.isEmpty == false
+    }
+
+    private func childSelectionRow(for child: Child) -> some View {
+        let id = child.id
+        let isSelected = id != nil && id == selectedChildID
+        let fullName = "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
+        let displayName = fullName.isEmpty ? "Unnamed child" : fullName
+
+        return Button {
+            selectedChildID = id
+            isChildSearchFocused = false
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? Color.ncPrimary : Color.secondary.opacity(0.6))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    if let roomName = child.roomName, roomName.isEmpty == false {
+                        Text(roomName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? Color.ncPrimary.opacity(0.14) : Color.ncCardSurface)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(isSelected ? Color.ncPrimary.opacity(0.42) : Color.secondary.opacity(0.16), lineWidth: 1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// - Description: Prefills state from a draft incident for editing.
@@ -537,15 +614,9 @@ private struct IncidentFormStepBubble: View {
         ZStack {
             if isDone {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.ncPrimary, Color.cyan.opacity(0.75)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(Color.ncPrimary)
                     .frame(width: 30, height: 30)
-                    .shadow(color: Color.ncPrimary.opacity(0.25), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
                 Image(systemName: "checkmark")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
@@ -555,16 +626,9 @@ private struct IncidentFormStepBubble: View {
                     .frame(width: 30, height: 30)
                     .overlay {
                         Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.ncPrimary, Color.cyan.opacity(0.85)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
+                            .stroke(Color.ncPrimary, lineWidth: 2)
                     }
-                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 6, x: 0, y: 0)
+                    .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 0)
                 Image(systemName: symbol)
                     .font(.caption)
                     .foregroundStyle(Color.ncPrimary)
@@ -591,17 +655,7 @@ private struct IncidentFormStepConnector: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 2, style: .continuous)
             .fill(
-                filled
-                    ? LinearGradient(
-                        colors: [Color.ncPrimary.opacity(0.95), Color.cyan.opacity(0.55)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    : LinearGradient(
-                        colors: [Color.secondary.opacity(0.22), Color.secondary.opacity(0.22)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                filled ? Color.ncPrimary.opacity(0.65) : Color.secondary.opacity(0.22)
             )
             .frame(height: 4)
             .frame(maxWidth: .infinity)

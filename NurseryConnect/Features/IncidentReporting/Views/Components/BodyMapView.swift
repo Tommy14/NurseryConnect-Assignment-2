@@ -11,10 +11,10 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 070426     Tommy1914   Created the file with Path silhouettes and normalised taps.
-// 120426     Tommy1914   Keep Front/Back picker enabled when read-only; only taps/clear respect `isInteractive`.
-// 120426     Tommy1914   Asset catalog body illustrations (front/back) instead of vector shapes.
-// 120426     Tommy1914   Taller map area (400pt) for easier tapping and visibility.
-// 120426     Tommy1914   `scaledToFill` so wide assets fill the tile (no letterboxing).
+// 100426     Tommy1914   Keep Front/Back picker enabled when read-only; only taps/clear respect `isInteractive`.
+// 100426     Tommy1914   Asset catalog body illustrations (front/back) instead of vector shapes.
+// 100426     Tommy1914   Taller map area (400pt) for easier tapping and visibility.
+// 100426     Tommy1914   `scaledToFill` so wide assets fill the tile (no letterboxing).
 // -----------------------------------------------------------------
 
 import SwiftUI

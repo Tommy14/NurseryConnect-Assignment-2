@@ -4,13 +4,13 @@
 //
 //  Feature: Incident Reporting
 //  Role: Keyworker
-//  Created: 12 April 2026
+//  Created: 10 April 2026
 //  Description: Full-width vertical workflow timeline (no horizontal scrolling).
 //
 // -----------------------------------------------------------------
 // Date       Name        What has done
 // -----------------------------------------------------------------
-// 120426     Tommy1914   Gradient rail, step nodes, and progress capsule.
+// 100426     Tommy1914   Gradient rail, step nodes, and progress capsule.
 // -----------------------------------------------------------------
 
 import SwiftUI

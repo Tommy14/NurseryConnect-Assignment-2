@@ -11,8 +11,8 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 300326     Tommy1914   Created the file with deterministic colour hashing.
-// 120426     Tommy1914   Optional gradient ring for dashboard list rows.
-// 120426     Tommy1914   Configurable diameter for denser list layouts.
+// 100426     Tommy1914   Optional gradient ring for dashboard list rows.
+// 100426     Tommy1914   Configurable diameter for denser list layouts.
 // -----------------------------------------------------------------
 
 import SwiftUI
