@@ -11,12 +11,12 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 080426     Tommy1914   Created the file with segmented control, list rows, and FAB.
-// 120426     Tommy1914   Atmosphere backdrop, gradient FAB (list rows unchanged behaviour).
-// 120426     Tommy1914   One card per incident row; banner copy deduped per child in view model.
-// 130426     Tommy1914   Composer binding from dashboard; fullScreenCover avoids tab-bar overlap.
-// 130426     Tommy1914   Futuristic inbox: atmosphere, urgency rails, scope header, row accents, FAB polish.
-// 130426     Tommy1914   Category-tinted row surfaces and rails for clearer incident-type contrast.
-// 130426     Tommy1914   Manual in-content title for tighter top spacing alignment with dashboard.
+// 100426     Tommy1914   Atmosphere backdrop, gradient FAB (list rows unchanged behaviour).
+// 100426     Tommy1914   One card per incident row; banner copy deduped per child in view model.
+// 100426     Tommy1914   Composer binding from dashboard; fullScreenCover avoids tab-bar overlap.
+// 100426     Tommy1914   Futuristic inbox: atmosphere, urgency rails, scope header, row accents, FAB polish.
+// 100426     Tommy1914   Category-tinted row surfaces and rails for clearer incident-type contrast.
+// 100426     Tommy1914   Manual in-content title for tighter top spacing alignment with dashboard.
 // -----------------------------------------------------------------
 
 import Combine
@@ -56,7 +56,7 @@ struct IncidentListView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(
                                     LinearGradient(
-                                        colors: [Color.ncPrimary, Color.cyan.opacity(0.75)],
+                                        colors: [Color.ncPrimary, Color.ncGlowBlue.opacity(0.82)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
@@ -102,16 +102,15 @@ struct IncidentListView: View {
                                 .buttonStyle(.plain)
                                 .background(incidentCardBackground(for: category))
                                 .clipShape(RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous))
-                                .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 6)
-                                .shadow(color: incidentAccentColor(for: category).opacity(0.12), radius: 20, x: 0, y: 10)
+                                .shadow(color: Color.black.opacity(0.07), radius: 10, x: 0, y: 6)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
                                         .stroke(
                                             LinearGradient(
                                                 colors: [
                                                     Color.white.opacity(0.65),
-                                                    incidentAccentColor(for: category).opacity(0.22),
-                                                    incidentAccentColor(for: category).opacity(0.08)
+                                                    incidentAccentColor(for: category).opacity(0.24),
+                                                    Color.ncGlowBlue.opacity(0.1)
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
@@ -159,7 +158,7 @@ struct IncidentListView: View {
                     .frame(width: 56, height: 56)
                     .background(
                         LinearGradient(
-                            colors: [Color.ncPrimary, Color.cyan.opacity(0.82)],
+                            colors: [Color.ncPrimary, Color.ncGlowBlue.opacity(0.82)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -167,10 +166,10 @@ struct IncidentListView: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.35), lineWidth: 1)
+                            .strokeBorder(Color.white.opacity(0.32), lineWidth: 1)
                     }
-                    .shadow(color: Color.ncPrimary.opacity(0.28), radius: 16, x: 0, y: 8)
-                    .shadow(color: Color.black.opacity(0.16), radius: 12, x: 0, y: 6)
+                    .shadow(color: Color.ncPrimary.opacity(0.3), radius: 14, x: 0, y: 8)
+                    .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 5)
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -208,15 +207,15 @@ struct IncidentListView: View {
         ZStack {
             Color.ncBackground
             Circle()
-                .fill(Color.ncPrimary.opacity(0.065))
-                .frame(width: 300, height: 300)
+                .fill(Color.ncPrimary.opacity(0.09))
+                .frame(width: 320, height: 320)
                 .blur(radius: 65)
                 .offset(x: 140, y: -220)
             Circle()
-                .fill(Color.cyan.opacity(0.05))
-                .frame(width: 240, height: 240)
+                .fill(Color.ncGlowViolet.opacity(0.08))
+                .frame(width: 250, height: 250)
                 .blur(radius: 50)
-                .offset(x: -120, y: 40)
+                .offset(x: -110, y: 20)
         }
         .ignoresSafeArea()
     }
@@ -248,7 +247,7 @@ struct IncidentListView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: Color.ncDanger.opacity(0.4), radius: 14, x: 0, y: 8)
+                .shadow(color: Color.ncDanger.opacity(0.35), radius: 12, x: 0, y: 6)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)

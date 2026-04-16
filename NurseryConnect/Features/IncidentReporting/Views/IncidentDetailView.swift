@@ -11,10 +11,10 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 090426     Tommy1914   Created the file with tracker UI, share sheet, and draft editing.
-// 120426     Tommy1914   Vertical workflow timeline (no horizontal scroll).
-// 120426     Tommy1914   Studio cards for meta + narrative sections; screen atmosphere.
-// 130426     Tommy1914   Draft edit uses fullScreenCover to match list composer presentation.
-// 130426     Tommy1914   Inline nav + toolbar Export PDF; bottom inset for floating tab bar.
+// 100426     Tommy1914   Vertical workflow timeline (no horizontal scroll).
+// 100426     Tommy1914   Studio cards for meta + narrative sections; screen atmosphere.
+// 100426     Tommy1914   Draft edit uses fullScreenCover to match list composer presentation.
+// 100426     Tommy1914   Inline nav + toolbar Export PDF; bottom inset for floating tab bar.
 // -----------------------------------------------------------------
 
 import Combine
