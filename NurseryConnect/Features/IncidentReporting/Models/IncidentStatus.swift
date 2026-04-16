@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 010426     Tommy1914   Created the file with status/severity bridging and display metadata.
-// 120426     Tommy1914   SF Symbol names for the vertical workflow timeline.
+// 100426     Tommy1914   SF Symbol names for the vertical workflow timeline.
 // -----------------------------------------------------------------
 
 import Foundation
