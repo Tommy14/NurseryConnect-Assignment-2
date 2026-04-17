@@ -41,8 +41,15 @@ struct DiaryEntryDetailView: View {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .center, spacing: 10) {
                     Label {
-                        Text((entry.timestamp ?? Date()).formattedTime(style: .medium))
-                            .font(AppTheme.headlineRounded())
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text((entry.timestamp ?? Date()).formattedTime(style: .medium))
+                                .font(AppTheme.headlineRounded())
+                            if let submittedAt = entry.submittedAt {
+                                Text("Recorded at \(submittedAt.formatted(date: .abbreviated, time: .shortened))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     } icon: {
                         Image(systemName: "clock.fill")
                             .foregroundStyle(
@@ -67,6 +74,27 @@ struct DiaryEntryDetailView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .ncStudioElevatedSurface(cornerRadius: 16)
+
+                if entry.needsLateLogManagerReview {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Color.ncDanger)
+                            .accessibilityHidden(true)
+                        Text("Large gap between event time and save time. This entry is flagged for manager review.")
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.ncDanger.opacity(0.12))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.ncDanger.opacity(0.25), lineWidth: 1)
+                    }
+                }
 
                 typeSpecific
 
