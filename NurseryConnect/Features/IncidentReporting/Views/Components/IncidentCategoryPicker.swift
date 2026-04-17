@@ -29,6 +29,7 @@ struct IncidentCategoryPicker: View {
         case .nearMiss: return Color.orange
         case .allergicReaction: return Color.purple
         case .medicalIncident: return Color.teal
+        case .seriousIncident: return Color.ncDanger
         }
     }
 

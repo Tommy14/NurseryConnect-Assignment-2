@@ -28,6 +28,7 @@ struct IncidentSeverityIndicator: View {
         case .nearMiss: return "exclamationmark.triangle.fill"
         case .allergicReaction: return "allergens"
         case .medical: return "heart.text.square"
+        case .serious: return "exclamationmark.octagon.fill"
         }
     }
 
