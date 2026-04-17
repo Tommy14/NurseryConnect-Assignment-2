@@ -30,6 +30,10 @@ struct DiaryEntryDetailView: View {
         DiaryEntryType.fromPersistence(entry.entryType ?? "")
     }
 
+    private var syncState: SyncState {
+        viewModel.syncState(for: entry)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -53,6 +57,27 @@ struct DiaryEntryDetailView: View {
                 typeSpecific
 
                 VStack(alignment: .leading, spacing: 10) {
+                    Label("Sync status", systemImage: "icloud")
+                        .font(.subheadline.weight(.semibold))
+                    SyncStateBadgeView(state: syncState)
+                    if syncState == .failed {
+                        Button("Retry sync") {
+                            Task { await viewModel.retrySync(for: entry) }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.ncDanger)
+                        if let lastSyncError = entry.lastSyncError, !lastSyncError.isEmpty {
+                            Text(lastSyncError)
+                                .font(.caption)
+                                .foregroundStyle(Color.ncDanger)
+                        }
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .ncStudioElevatedSurface(cornerRadius: 16)
+
+                VStack(alignment: .leading, spacing: 10) {
                     Label("Room leader handover", systemImage: "checkmark.seal.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.primary)
@@ -72,14 +97,15 @@ struct DiaryEntryDetailView: View {
             .padding()
         }
         .scrollIndicators(.hidden)
-        .ncStudioScreenBackdrop()
+        .background(Color.ncBackground.ignoresSafeArea())
         .navigationTitle("Diary entry")
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .bottomBar) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .destructive) {
                     showDeleteConfirm = true
                 } label: {
-                    Label("Delete entry", systemImage: "trash")
+                    Image(systemName: "trash")
                 }
             }
         }

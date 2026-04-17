@@ -86,7 +86,10 @@ struct DiaryTimelineView: View {
                         NavigationLink {
                             DiaryEntryDetailView(entry: entry, viewModel: viewModel)
                         } label: {
-                            diaryCard(for: entry, type: type)
+                            VStack(alignment: .leading, spacing: 8) {
+                                SyncStateBadgeView(state: viewModel.syncState(for: entry))
+                                diaryCard(for: entry, type: type)
+                            }
                         }
                         .buttonStyle(.plain)
                         .transition(.move(edge: .trailing).combined(with: .opacity))

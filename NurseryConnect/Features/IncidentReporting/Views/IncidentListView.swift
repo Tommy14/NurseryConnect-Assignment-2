@@ -15,6 +15,8 @@
 // 120426     Tommy1914   One card per incident row; banner copy deduped per child in view model.
 // 130426     Tommy1914   Composer binding from dashboard; fullScreenCover avoids tab-bar overlap.
 // 130426     Tommy1914   Futuristic inbox: atmosphere, urgency rails, scope header, row accents, FAB polish.
+// 130426     Tommy1914   Category-tinted row surfaces and rails for clearer incident-type contrast.
+// 130426     Tommy1914   Manual in-content title for tighter top spacing alignment with dashboard.
 // -----------------------------------------------------------------
 
 import Combine
@@ -38,6 +40,10 @@ struct IncidentListView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    Text("Incidents")
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .padding(.top, 0)
                     if !viewModel.parentNotificationBanners.isEmpty {
                         ForEach(viewModel.parentNotificationBanners) { banner in
                             parentNotificationUrgencyBanner(childFirstName: banner.childFirstName)
@@ -83,6 +89,7 @@ struct IncidentListView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(viewModel.incidents, id: \.objectID) { incident in
+                                let category = IncidentCategory.fromPersistence(incident.category ?? "")
                                 NavigationLink {
                                     IncidentDetailView(incident: incident, viewModel: viewModel)
                                 } label: {
@@ -93,18 +100,18 @@ struct IncidentListView: View {
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .background(Color.ncCardSurface)
+                                .background(incidentCardBackground(for: category))
                                 .clipShape(RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous))
                                 .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 6)
-                                .shadow(color: Color.ncPrimary.opacity(0.08), radius: 20, x: 0, y: 10)
+                                .shadow(color: incidentAccentColor(for: category).opacity(0.12), radius: 20, x: 0, y: 10)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
                                         .stroke(
                                             LinearGradient(
                                                 colors: [
                                                     Color.white.opacity(0.65),
-                                                    Color.ncPrimary.opacity(0.18),
-                                                    Color.cyan.opacity(0.12)
+                                                    incidentAccentColor(for: category).opacity(0.22),
+                                                    incidentAccentColor(for: category).opacity(0.08)
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
@@ -117,7 +124,10 @@ struct IncidentListView: View {
                                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                                         .fill(
                                             LinearGradient(
-                                                colors: [Color.ncPrimary.opacity(0.95), Color.cyan.opacity(0.45)],
+                                                colors: [
+                                                    incidentAccentColor(for: category).opacity(0.95),
+                                                    incidentAccentColor(for: category).opacity(0.45)
+                                                ],
                                                 startPoint: .top,
                                                 endPoint: .bottom
                                             )
@@ -132,7 +142,9 @@ struct IncidentListView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
+                .padding(.top, 8)
                 .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
             }
             .scrollIndicators(.hidden)
@@ -167,8 +179,7 @@ struct IncidentListView: View {
             .accessibilityLabel("New incident")
         }
         .background { incidentAtmosphereBackground }
-        .navigationTitle("Incidents")
-        .toolbarBackground(Color.ncBackground, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $composerPresented) {
             NewIncidentFormView(viewModel: viewModel)
                 .environment(\.managedObjectContext, context)
@@ -246,6 +257,30 @@ struct IncidentListView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Action required: Parent not yet notified of \(childFirstName)’s incident.")
     }
+
+    private func incidentAccentColor(for category: IncidentCategory) -> Color {
+        switch category {
+        case .accidentMinor: return Color.ncAccentWarm
+        case .accidentFirstAid: return Color.ncPrimary
+        case .safeguardingConcern: return Color.ncDanger
+        case .nearMiss: return Color.orange
+        case .allergicReaction: return Color.purple
+        case .medicalIncident: return Color.teal
+        }
+    }
+
+    private func incidentCardBackground(for category: IncidentCategory) -> some View {
+        let accent = incidentAccentColor(for: category)
+        return RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color.ncCardSurface, accent.opacity(0.08)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+    }
+
 }
 
 #Preview {

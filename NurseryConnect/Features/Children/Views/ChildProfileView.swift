@@ -79,7 +79,8 @@ struct ChildProfileView: View {
         .scrollContentBackground(.hidden)
         .background(Color.ncBackground)
         .navigationTitle("Profile")
-        .toolbarBackground(Color.ncBackground, for: .navigationBar)
+        .toolbarBackground(.thinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .task {
             await viewModel.loadChild(id: childId)
         }

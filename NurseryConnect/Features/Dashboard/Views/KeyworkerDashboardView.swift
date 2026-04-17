@@ -20,6 +20,9 @@
 // 130426     Tommy1914   Floating tab bar uses `ncBackground` to match dashboard (not material blur).
 // 130426     Tommy1914   Dashboard scroll + nav bar flat `ncBackground`; hero card matches child tile surface.
 // 130426     Tommy1914   Futuristic dashboard polish: atmosphere orbs, hero snapshot rail, Today capsule.
+// 130426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
+// 130426     Tommy1914   Manual in-content title for tighter top spacing control.
+// 130426     Tommy1914   Greeting tile now updates by real time (message, icon, and date readout).
 // -----------------------------------------------------------------
 
 import Combine
@@ -34,6 +37,7 @@ struct KeyworkerDashboardView: View {
     @State private var childPath = NavigationPath()
     /// Owned here so tab switches can dismiss the composer; presentation covers the custom tab bar.
     @State private var incidentComposerPresented = false
+    @State private var currentDate = Date()
 
     init(context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
@@ -46,15 +50,12 @@ struct KeyworkerDashboardView: View {
 
     var body: some View {
         ZStack {
-            myChildrenRoot
-                .opacity(selectedTab == 0 ? 1 : 0)
-                .allowsHitTesting(selectedTab == 0)
-                .accessibilityHidden(selectedTab != 0)
-
-            incidentsRoot
-                .opacity(selectedTab == 1 ? 1 : 0)
-                .allowsHitTesting(selectedTab == 1)
-                .accessibilityHidden(selectedTab != 1)
+            Color.ncBackground.ignoresSafeArea()
+            if selectedTab == 0 {
+                myChildrenRoot
+            } else {
+                incidentsRoot
+            }
         }
         .animation(.easeInOut(duration: 0.22), value: selectedTab)
         .environment(\.usesFloatingTabBarShell, true)
@@ -63,6 +64,9 @@ struct KeyworkerDashboardView: View {
         }
         .task {
             await viewModel.refresh()
+        }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
+            currentDate = tick
         }
         .onChange(of: childPath.count) { _, newCount in
             if newCount == 0 {
@@ -91,6 +95,10 @@ struct KeyworkerDashboardView: View {
         NavigationStack(path: $childPath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    Text("Dashboard")
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .padding(.top, 0)
                     dashboardHeroHeader
                     if viewModel.isLoading {
                         ProgressView()
@@ -125,13 +133,14 @@ struct KeyworkerDashboardView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
+                .padding(.top, 8)
             }
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
             .background { dashboardAtmosphereBackground }
-            .toolbarBackground(Color.ncBackground, for: .navigationBar)
-            .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: KeyworkerChildSummary.self) { summary in
                 DailyDiaryListView(summary: summary, managedObjectContext: context)
             }
@@ -255,7 +264,7 @@ struct KeyworkerDashboardView: View {
 
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Good morning")
+                    Text(greetingText)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Text("\(AppConstants.keyworkerDisplayName) 👋")
@@ -269,16 +278,16 @@ struct KeyworkerDashboardView: View {
                         )
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "sun.max.fill")
+                Image(systemName: greetingSymbolName)
                     .font(.title2)
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color.orange, Color.yellow.opacity(0.75))
-                    .shadow(color: Color.orange.opacity(0.35), radius: 10, x: 0, y: 2)
+                    .foregroundStyle(greetingPrimaryColor, greetingSecondaryColor)
+                    .shadow(color: greetingPrimaryColor.opacity(0.35), radius: 10, x: 0, y: 2)
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Label {
-                    Text(Date().formattedMediumDate())
+                    Text(currentDate.formattedMediumDate())
                         .font(.footnote.weight(.medium).monospacedDigit())
                 } icon: {
                     Image(systemName: "calendar")
@@ -334,8 +343,45 @@ struct KeyworkerDashboardView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            "Good morning \(AppConstants.keyworkerDisplayName). \(Date().formattedMediumDate()). \(AppConstants.nurseryDisplayName)."
+            "\(greetingText) \(AppConstants.keyworkerDisplayName). \(currentDate.formattedMediumDate()). \(AppConstants.nurseryDisplayName)."
         )
+    }
+
+    private var greetingText: String {
+        let hour = Calendar.current.component(.hour, from: currentDate)
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<22: return "Good evening"
+        default: return "Good night"
+        }
+    }
+
+    private var greetingSymbolName: String {
+        let hour = Calendar.current.component(.hour, from: currentDate)
+        switch hour {
+        case 6..<17: return "sun.max.fill"
+        case 17..<20: return "sunset.fill"
+        default: return "moon.stars.fill"
+        }
+    }
+
+    private var greetingPrimaryColor: Color {
+        let hour = Calendar.current.component(.hour, from: currentDate)
+        switch hour {
+        case 6..<17: return Color.orange
+        case 17..<20: return Color.purple
+        default: return Color.indigo
+        }
+    }
+
+    private var greetingSecondaryColor: Color {
+        let hour = Calendar.current.component(.hour, from: currentDate)
+        switch hour {
+        case 6..<17: return Color.yellow.opacity(0.75)
+        case 17..<20: return Color.pink.opacity(0.7)
+        default: return Color.cyan.opacity(0.7)
+        }
     }
 
     private func todaySectionLabel(count: Int) -> some View {
