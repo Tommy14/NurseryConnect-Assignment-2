@@ -13,6 +13,9 @@
 // 080426     Tommy1914   Created the file with stepped flow, validation, and submission animation.
 // 100426     Tommy1914   Step rail, grouped review card, footer bar; explicit steps (no TabView paging).
 // 100426     Tommy1914   Inline navigation title when presented full-screen over root chrome.
+// 180426     Tommy1914   Step rail, review, RIDDOR, success overlay use shared glass card modifiers on iOS 26.
+// 180426     Tommy1914   Child picker: full list on focus, filter while typing; list rows without radio circles.
+// 180426     Tommy1914   Review step unified card styling for RIDDOR and floating submit button.
 // -----------------------------------------------------------------
 
 import Combine
@@ -105,6 +108,21 @@ struct NewIncidentFormView: View {
             } message: {
                 Text(validationAlertMessage)
             }
+            .safeAreaInset(edge: .bottom) {
+                if step == 3 {
+                    HStack {
+                        PrimaryButton(title: "Submit to room leader") {
+                            Task { await submit() }
+                        }
+                        .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
+                        .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 6)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, 8)
+                    .background(Color.clear)
+                }
+            }
             .task {
                 await viewModel.refresh()
                 if let existingIncident {
@@ -118,6 +136,18 @@ struct NewIncidentFormView: View {
             .onChange(of: selectedChildID) { _, _ in
                 if let selectedChildName {
                     childSearchText = selectedChildName
+                }
+            }
+            .onChange(of: isChildSearchFocused) { _, focused in
+                if focused {
+                    if let name = selectedChildName {
+                        let trimmed = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.caseInsensitiveCompare(name) == .orderedSame {
+                            childSearchText = ""
+                        }
+                    }
+                } else if let name = selectedChildName {
+                    childSearchText = name
                 }
             }
         }
@@ -142,15 +172,7 @@ struct NewIncidentFormView: View {
                 .foregroundStyle(Color.ncPrimary)
         }
         .padding(14)
-        .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.ncCardSurface)
-                .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-                }
-        }
+        .ncStudioElevatedSurface(cornerRadius: 18)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Step \(step + 1) of 4, \(Self.formSteps[step].title)")
     }
@@ -175,10 +197,11 @@ struct NewIncidentFormView: View {
                             .foregroundStyle(Color.ncPrimary)
                         requiredFieldTitle("Child")
                     }
-                    TextField("Search children", text: $childSearchText)
+                    TextField("Search My Children", text: $childSearchText)
                         .textFieldStyle(.roundedBorder)
                         .textInputAutocapitalization(.words)
                         .focused($isChildSearchFocused)
+                        .submitLabel(.search)
 
                     if shouldShowChildDropdown {
                         if filteredAssignableChildren.isEmpty {
@@ -188,13 +211,13 @@ struct NewIncidentFormView: View {
                                 .padding(.vertical, 8)
                         } else {
                             ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
+                                LazyVStack(alignment: .leading, spacing: 0) {
                                     ForEach(filteredAssignableChildren, id: \.objectID) { child in
                                         childSelectionRow(for: child)
                                     }
                                 }
                             }
-                            .frame(maxHeight: 220)
+                            .frame(maxHeight: 320)
                         }
                     }
                     if selectedChildID == nil {
@@ -344,25 +367,13 @@ struct NewIncidentFormView: View {
                         title: "Body map",
                         value: bodyMapReviewSummary
                     )
+                    IncidentReviewDivider()
+                    riddorReviewCard
                 }
                 .padding(.vertical, 4)
-                .background(Color.ncCardSurface)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-                        .allowsHitTesting(false)
-                }
-
-                riddorReviewCard
-
-                PrimaryButton(title: "Submit to room leader") {
-                    Task { await submit() }
-                }
-                .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
+                .ncCardStyle(radius: 16)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, 110)
         }
     }
 
@@ -381,7 +392,9 @@ struct NewIncidentFormView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("RIDDOR required")
                     .font(.subheadline.weight(.semibold))
-                Text("Toggle if this must be reported to the regulator (HSE).")
+                Text(isSeriousCategory
+                     ? "Serious incidents must be reported via the statutory RIDDOR and Ofsted workflow."
+                     : "Only serious incidents trigger statutory RIDDOR and Ofsted reporting.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -390,17 +403,18 @@ struct NewIncidentFormView: View {
             Toggle("RIDDOR required", isOn: $riddorRequired)
                 .labelsHidden()
                 .tint(Color.ncPrimary)
+                .disabled(isSeriousCategory)
+                .accessibilityHint(isSeriousCategory
+                    ? "Required for serious incidents"
+                    : "Turn on if statutory RIDDOR reporting applies")
         }
-        .padding(16)
-        .background(Color.ncCardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
+    }
+
+    private var isSeriousCategory: Bool {
+        category == .seriousIncident
     }
 
     private var bodyMapReviewSummary: String {
@@ -460,8 +474,7 @@ struct NewIncidentFormView: View {
                 .font(AppTheme.headlineRounded())
         }
         .padding(32)
-        .background(Color.ncCardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .ncCardStyle(radius: 20)
     }
 
     private var childNameLabel: String {
@@ -474,8 +487,9 @@ struct NewIncidentFormView: View {
 
     private var filteredAssignableChildren: [Child] {
         let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard query.isEmpty == false else { return [] }
-        return viewModel.assignableChildren.filter { child in
+        let children = viewModel.assignableChildren
+        guard query.isEmpty == false else { return children }
+        return children.filter { child in
             let firstName = child.firstName ?? ""
             let lastName = child.lastName ?? ""
             let roomName = child.roomName ?? ""
@@ -497,8 +511,7 @@ struct NewIncidentFormView: View {
     }
 
     private var shouldShowChildDropdown: Bool {
-        let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return isChildSearchFocused && query.isEmpty == false
+        isChildSearchFocused
     }
 
     private func childSelectionRow(for child: Child) -> some View {
@@ -511,31 +524,29 @@ struct NewIncidentFormView: View {
             selectedChildID = id
             isChildSearchFocused = false
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.ncPrimary : Color.secondary.opacity(0.6))
+            HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(displayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
                     if let roomName = child.roomName, roomName.isEmpty == false {
                         Text(roomName)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.ncPrimary)
+                }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.ncPrimary.opacity(0.14) : Color.ncCardSurface)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(isSelected ? Color.ncPrimary.opacity(0.42) : Color.secondary.opacity(0.16), lineWidth: 1)
-            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? Color.ncPrimary.opacity(0.1) : Color.clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -553,7 +564,7 @@ struct NewIncidentFormView: View {
         actionText = incident.immediateActionTaken ?? ""
         witnessesText = incident.witnesses ?? ""
         annotations = BodyMapCodec.decode(incident.bodyMapAnnotations)
-        riddorRequired = incident.riddorRequired
+        riddorRequired = viewModel.suggestsRiddor(for: category) ? true : incident.riddorRequired
     }
 
     /// - Description: Validates and either updates a draft or creates a submitted incident.

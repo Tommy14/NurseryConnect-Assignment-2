@@ -44,6 +44,7 @@ struct IncidentRowView: View {
         case .nearMiss: return Color.orange
         case .allergicReaction: return Color.purple
         case .medicalIncident: return Color.teal
+        case .seriousIncident: return Color.ncDanger
         }
     }
 
@@ -61,7 +62,7 @@ struct IncidentRowView: View {
                     .frame(width: 44, height: 44)
                     .shadow(color: accentColor.opacity(0.2), radius: 6, x: 0, y: 3)
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.7)
+                    .strokeBorder(Color.ncGlassHighlight(lightOpacity: 0.35), lineWidth: 0.7)
                     .frame(width: 44, height: 44)
                 Image(systemName: category.symbolName)
                     .font(.title3.weight(.semibold))

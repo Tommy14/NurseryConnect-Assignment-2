@@ -55,7 +55,7 @@ struct BodyMapView: View {
                         Circle()
                             .fill(Color.ncDanger)
                             .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.white.opacity(0.45), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.ncGlassHighlight(lightOpacity: 0.45), lineWidth: 1))
                             .position(x: marker.normalizedX * w, y: marker.normalizedY * h)
                     }
                 }
