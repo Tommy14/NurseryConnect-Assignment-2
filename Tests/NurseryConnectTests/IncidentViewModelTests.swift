@@ -23,7 +23,8 @@ final class IncidentViewModelTests: XCTestCase {
     func testRiddorSuggestionForSeriousCategories() {
         let stack = PersistenceController(inMemory: true)
         let vm = IncidentViewModel(context: stack.container.viewContext)
-        XCTAssertTrue(vm.suggestsRiddor(for: .safeguardingConcern))
+        XCTAssertTrue(vm.suggestsRiddor(for: .seriousIncident))
+        XCTAssertFalse(vm.suggestsRiddor(for: .safeguardingConcern))
         XCTAssertFalse(vm.suggestsRiddor(for: .nearMiss))
     }
 
@@ -44,5 +45,6 @@ final class IncidentViewModelTests: XCTestCase {
     func testCategoryMapsDefaultSeverity() {
         XCTAssertEqual(IncidentCategory.accidentMinor.defaultSeverity, .minor)
         XCTAssertEqual(IncidentCategory.allergicReaction.defaultSeverity, .allergicReaction)
+        XCTAssertEqual(IncidentCategory.seriousIncident.defaultSeverity, .serious)
     }
 }
