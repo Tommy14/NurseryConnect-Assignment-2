@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with rounded headings and semantic colours.
+// 180426     Tommy1914   `ncRootScrollEdgeEffectForTopNavigation` for iOS 26 root lists.
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -57,5 +58,13 @@ enum AppTheme {
     /// - Returns: Contrasting text colour.
     static func diaryForeground(for type: DiaryEntryType) -> Color {
         Color.primary.opacity(0.9)
+    }
+}
+
+extension View {
+    /// - Description: Reserved for future tuning; an explicit soft scroll-edge on root lists was causing a full-view white wash on some iOS 26 builds, so we rely on system + nav appearance instead.
+    @ViewBuilder
+    func ncRootScrollEdgeEffectForTopNavigation() -> some View {
+        self
     }
 }
