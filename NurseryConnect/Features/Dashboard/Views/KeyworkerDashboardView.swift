@@ -23,6 +23,24 @@
 // 100426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
 // 100426     Tommy1914   Manual in-content title for tighter top spacing control.
 // 100426     Tommy1914   Greeting tile now updates by real time (message, icon, and date readout).
+// 180426     Tommy1914   Native large nav title → compact centered “Dashboard” when scrolling.
+// 180426     Tommy1914   No solid toolbar override; rely on global scroll-edge vs standard translucency.
+// 180426     Tommy1914   Inline nav title + hidden toolbar: removes large-title gap; bar stays see-through.
+// 180426     Tommy1914   Scroll offset: big in-content “Dashboard” at top; compact nav title when scrolled.
+// 180426     Tommy1914   Top scroll sentinel + hysteresis so compact+frosted bar tracks scroll reliably.
+// 180426     Tommy1914   Top safe-area padding when large title visible (empty nav bar would draw under notch).
+// 180426     Tommy1914   System large nav title only (no duplicate in-scroll title / manual top inset).
+// 180426     Tommy1914   Nav title “Children” (leading large title; matches tab naming).
+// 180426     Tommy1914   Inline nav title to remove extra space above “Children” (no large-title band).
+// 180426     Tommy1914   Large title “Children” at top; transparent bar + centered title when scrolled.
+// 180426     Tommy1914   iOS 26: Liquid Glass tab bar + nav chrome; legacy ultra-thin material on older OS.
+// 180426     Tommy1914   Iconic liquid glass dock (`KeyworkerSectionTabBar`): sliding lens + specular rim.
+// 180426     Tommy1914   Section tab bar extracted to `KeyworkerSectionTabBar` (dock + sliding glass lens).
+// 180426     Tommy1914   Hero header uses `ncStudioElevatedSurface` (liquid glass plate on iOS 26).
+// 180426     Tommy1914   Selecting Children tab clears `childPath` (root list from any depth / other tab).
+// 190426     Tommy1914   Trailing profile toolbar opens keyworker profile sheet.
+// 200426     Tommy1914   Leading toolbar brand mark (`NurseryConnectNavLogo`).
+// 200426     Tommy1914   Nav logo shown as plain image (no rounded clip / crop).
 // -----------------------------------------------------------------
 
 import Combine
@@ -39,6 +57,8 @@ struct KeyworkerDashboardView: View {
     @State private var incidentComposerPresented = false
     @State private var currentDate = Date()
     @State private var childSearchText = ""
+    @State private var isKeyworkerProfilePresented = false
+    @State private var quickCheckInSummary: KeyworkerChildSummary?
 
     init(context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
@@ -61,10 +81,15 @@ struct KeyworkerDashboardView: View {
         .animation(.easeInOut(duration: 0.22), value: selectedTab)
         .environment(\.usesFloatingTabBarShell, true)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            glassTabBar
+            KeyworkerSectionTabBar(selectedIndex: $selectedTab) { index in
+                if index == 0 {
+                    childPath = NavigationPath()
+                }
+            }
         }
         .task {
             await viewModel.refresh()
+            await KeyworkerMoodReminderScheduler.registerHourlyMoodRemindersDuringSession()
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
             currentDate = tick
@@ -79,6 +104,7 @@ struct KeyworkerDashboardView: View {
                 incidentComposerPresented = false
             }
             if newTab == 0 {
+                childPath = NavigationPath()
                 Task { await viewModel.reloadChildSummariesFromStore(showLoading: false) }
             }
         }
@@ -96,10 +122,6 @@ struct KeyworkerDashboardView: View {
         NavigationStack(path: $childPath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Dashboard")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                        .padding(.top, 0)
                     dashboardHeroHeader
                     if viewModel.isLoading {
                         ProgressView()
@@ -118,18 +140,38 @@ struct KeyworkerDashboardView: View {
                     } else {
                         todaySectionLabel(count: filteredChildSummaries.count)
                         dashboardSearchField
-                        LazyVStack(spacing: 10) {
-                            ForEach(filteredChildSummaries) { summary in
-                                Button {
-                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                                        childPath.append(summary)
-                                    }
-                                } label: {
-                                    ChildCardView(summary: summary)
+                        LazyVStack(spacing: 12) {
+                            ForEach(KeyworkerAttendanceBucket.dashboardSectionOrder, id: \.self) { bucket in
+                                let rows = filteredChildSummaries
+                                    .filter { $0.attendanceBucket == bucket }
+                                    .sorted { $0.firstName < $1.firstName }
+                                if rows.isEmpty == false {
+                                    Text(bucket.sectionTitle)
+                                        .font(.caption.weight(.heavy))
+                                        .foregroundStyle(.secondary)
+                                        .textCase(.uppercase)
+                                        .tracking(0.85)
                                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                                    ForEach(rows) { summary in
+                                        Button {
+                                            switch summary.attendanceBucket {
+                                            case .awaiting:
+                                                quickCheckInSummary = summary
+                                            case .onSite, .absent, .departed:
+                                                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                                    childPath.append(summary)
+                                                }
+                                            }
+                                        } label: {
+                                            ChildCardView(summary: summary, currentDate: currentDate)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        .id(summary.dashboardRowIdentity)
+                                        .buttonStyle(.plain)
+                                        .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
+                                    }
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,12 +179,59 @@ struct KeyworkerDashboardView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, AppConstants.floatingTabBarClearance + 12)
-                .padding(.top, 8)
             }
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
+            .ncRootScrollEdgeEffectForTopNavigation()
             .background { dashboardAtmosphereBackground }
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(AppConstants.navTitleKeyworkerChildrenList)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Image("NurseryConnectNavLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+                        .accessibilityLabel("NurseryConnect")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isKeyworkerProfilePresented = true
+                    } label: {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.ncPrimary)
+                    }
+                    .accessibilityLabel("My profile")
+                    .accessibilityIdentifier(AppConstants.AccessibilityID.keyworkerProfileButton)
+                }
+            }
+            .sheet(isPresented: $isKeyworkerProfilePresented) {
+                NavigationStack {
+                    KeyworkerProfileView(assignedRoomName: assignedRoomName)
+                }
+            }
+            .sheet(item: $quickCheckInSummary) { summary in
+                DashboardQuickCheckInSheet(
+                    summary: summary,
+                    context: context,
+                    onSuccess: {
+                        let childID = summary.id
+                        quickCheckInSummary = nil
+                        Task {
+                            await Task.yield()
+                            await viewModel.reloadChildSummariesFromStore(showLoading: false)
+                            let updated = viewModel.childSummaries.first { $0.id == childID }
+                            if let updated {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                    childPath.append(updated)
+                                }
+                            }
+                        }
+                    },
+                    onCancel: { quickCheckInSummary = nil }
+                )
+            }
             .navigationDestination(for: KeyworkerChildSummary.self) { summary in
                 DailyDiaryListView(summary: summary, managedObjectContext: context)
             }
@@ -153,7 +242,7 @@ struct KeyworkerDashboardView: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search children", text: $childSearchText)
+            TextField("Search My Children", text: $childSearchText)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
         }
@@ -194,35 +283,6 @@ struct KeyworkerDashboardView: View {
         }
     }
 
-    private var glassTabBar: some View {
-        let corner: CGFloat = 24
-        return HStack(spacing: 0) {
-            glassTabButton(
-                title: "Children",
-                systemImage: "figure.child",
-                index: 0,
-                accessibilityID: AppConstants.AccessibilityID.myChildrenTab
-            )
-            glassTabButton(
-                title: "Incidents",
-                systemImage: "exclamationmark.triangle.fill",
-                index: 1,
-                accessibilityID: AppConstants.AccessibilityID.incidentsTab
-            )
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
-        }
-        .compositingGroup()
-        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-        .padding(.horizontal, 18)
-        .padding(.bottom, 8)
-    }
-
     /// Soft radial “haze” behind the dashboard so it feels less flat than a single flat fill.
     private var dashboardAtmosphereBackground: some View {
         ZStack {
@@ -244,48 +304,6 @@ struct KeyworkerDashboardView: View {
                 .offset(x: 40, y: 150)
         }
         .ignoresSafeArea()
-    }
-
-    private func glassTabButton(title: String, systemImage: String, index: Int, accessibilityID: String) -> some View {
-        let selected = selectedTab == index
-        let selectedTint = selectedTabTint(for: index)
-        return Button {
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
-                selectedTab = index
-            }
-        } label: {
-            VStack(spacing: 5) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 20, weight: selected ? .semibold : .regular))
-                    .symbolRenderingMode(.hierarchical)
-                Text(title)
-                    .font(.caption2.weight(selected ? .semibold : .regular))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
-            .foregroundStyle(selected ? selectedTint : Color.secondary)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(selected ? selectedTint.opacity(0.14) : Color.clear)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(selected ? selectedTint.opacity(0.42) : Color.clear, lineWidth: 0.8)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
-        .accessibilityIdentifier(accessibilityID)
-    }
-
-    private func selectedTabTint(for index: Int) -> Color {
-        switch index {
-        case 0: return Color.blue
-        case 1: return Color.orange
-        default: return Color.ncPrimary
-        }
     }
 
     private var dashboardHeroHeader: some View {
@@ -326,11 +344,11 @@ struct KeyworkerDashboardView: View {
             }
 
             HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(greetingText)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                    Text(AppConstants.keyworkerDisplayName)
+                    Text(assignedRoomName)
                         .font(AppTheme.greetingRounded())
                         .foregroundStyle(
                             LinearGradient(
@@ -339,6 +357,11 @@ struct KeyworkerDashboardView: View {
                                 endPoint: .trailing
                             )
                         )
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                    Text(AppConstants.keyworkerDisplayName)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: greetingSymbolName)
@@ -354,24 +377,10 @@ struct KeyworkerDashboardView: View {
                     .offset(x: -10)
                     .accessibilityHidden(true)
             }
-
-            HStack(spacing: 8) {
-                Image(systemName: "door.left.hand.open")
-                    .foregroundStyle(Color.ncPrimary.opacity(0.85))
-                Text(assignedRoomName)
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color.ncCardSurface)
-                .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 8)
-                .shadow(color: Color.ncPrimary.opacity(0.14), radius: 20, x: 0, y: 10)
-        }
+        .ncStudioElevatedSurface(cornerRadius: 22)
         .overlay(alignment: .bottomTrailing) {
             ZStack {
                 Circle()
@@ -387,21 +396,9 @@ struct KeyworkerDashboardView: View {
             .offset(x: 24, y: 26)
             .allowsHitTesting(false)
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.65), Color.ncPrimary.opacity(0.22), Color.ncGlowBlue.opacity(0.18)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-                .allowsHitTesting(false)
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            "\(greetingText) \(AppConstants.keyworkerDisplayName). \(currentDate.formattedMediumDate()). Room: \(assignedRoomName)."
+            "\(greetingText). \(assignedRoomName). \(AppConstants.keyworkerDisplayName). \(currentDate.formattedMediumDate())."
         )
     }
 
@@ -473,6 +470,73 @@ struct KeyworkerDashboardView: View {
         .padding(.top, 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Today, \(count) assigned")
+    }
+}
+
+// MARK: - Dashboard quick check-in
+
+/// - Description: Sheet shown when a child card is tapped before check-in: captures drop-off name only; arrival time is `Date()` at save.
+private struct DashboardQuickCheckInSheet: View {
+    let summary: KeyworkerChildSummary
+    let context: NSManagedObjectContext
+    let onSuccess: () -> Void
+    let onCancel: () -> Void
+
+    @StateObject private var attendanceViewModel: AttendanceViewModel
+    @State private var droppedOffBy = ""
+
+    init(summary: KeyworkerChildSummary, context: NSManagedObjectContext, onSuccess: @escaping () -> Void, onCancel: @escaping () -> Void) {
+        self.summary = summary
+        self.context = context
+        self.onSuccess = onSuccess
+        self.onCancel = onCancel
+        _attendanceViewModel = StateObject(wrappedValue: AttendanceViewModel(childID: summary.id, context: context))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Full name", text: $droppedOffBy)
+                        .textInputAutocapitalization(.words)
+                } header: {
+                    Text("Who dropped \(summary.firstName) off?")
+                } footer: {
+                    Text("Arrival time is saved automatically as the current time.")
+                }
+            }
+            .navigationTitle("Check in")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        Task {
+                            await attendanceViewModel.checkIn(at: Date(), droppedOffBy: droppedOffBy)
+                            if attendanceViewModel.errorMessage == nil {
+                                onSuccess()
+                            }
+                        }
+                    }
+                    .fontWeight(.semibold)
+                    .accessibilityIdentifier(AppConstants.AccessibilityID.dashboardQuickCheckInSave)
+                }
+            }
+        }
+        .presentationDragIndicator(.visible)
+        .task {
+            await attendanceViewModel.load()
+        }
+        .alert("Check-in", isPresented: Binding(
+            get: { attendanceViewModel.errorMessage != nil },
+            set: { if !$0 { attendanceViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { attendanceViewModel.errorMessage = nil }
+        } message: {
+            Text(attendanceViewModel.errorMessage ?? "")
+        }
     }
 }
 
