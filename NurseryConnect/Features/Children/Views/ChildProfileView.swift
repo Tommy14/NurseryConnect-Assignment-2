@@ -38,9 +38,29 @@ struct ChildProfileView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     profileHero(for: child)
                     profileInfoRow(
+                        title: "Preferred name",
+                        text: child.preferredName ?? "",
+                        symbol: "quote.bubble"
+                    )
+                    profileInfoRow(
                         title: "Room",
                         text: child.roomName ?? "",
                         symbol: "door.left.hand.open"
+                    )
+                    profileInfoRow(
+                        title: "Date of birth",
+                        text: (child.dateOfBirth ?? Date()).formatted(date: .abbreviated, time: .omitted),
+                        symbol: "birthday.cake.fill"
+                    )
+                    profileInfoRow(
+                        title: "Nationality",
+                        text: child.nationality ?? "",
+                        symbol: "globe.europe.africa.fill"
+                    )
+                    profileInfoRow(
+                        title: "Home address",
+                        text: child.homeAddress ?? "",
+                        symbol: "house.fill"
                     )
                     profileInfoRow(
                         title: "Allergies",
@@ -61,6 +81,29 @@ struct ChildProfileView: View {
                         title: "Key person",
                         text: child.keyworkerName ?? "",
                         symbol: "person.fill"
+                    )
+                    profileInfoRow(
+                        title: "Authorised collectors",
+                        text: child.authorisedCollectors ?? "",
+                        symbol: "person.2.fill"
+                    )
+                    profileInfoRow(
+                        title: "Family details",
+                        text: child.familyDetails ?? "",
+                        symbol: "person.3.sequence.fill",
+                        prefersSentenceBullets: true
+                    )
+                    profileInfoRow(
+                        title: "Consent records notes",
+                        text: child.consentRecordsNotes ?? "",
+                        symbol: "checklist",
+                        prefersSentenceBullets: true
+                    )
+                    profileInfoRow(
+                        title: "EYFS development notes",
+                        text: child.eyfsDevelopmentNotes ?? "",
+                        symbol: "book.pages.fill",
+                        prefersSentenceBullets: true
                     )
                     photoConsentRow(for: child)
                 }
@@ -120,7 +163,12 @@ struct ChildProfileView: View {
         .ncStudioElevatedSurface(cornerRadius: 20)
     }
 
-    private func profileInfoRow(title: String, text: String, symbol: String) -> some View {
+    private func profileInfoRow(
+        title: String,
+        text: String,
+        symbol: String,
+        prefersSentenceBullets: Bool = false
+    ) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol)
                 .font(.title3)
@@ -138,10 +186,7 @@ struct ChildProfileView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
                     .tracking(0.6)
-                Text(text.isEmpty ? "—" : text)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+                detailTextView(text, prefersSentenceBullets: prefersSentenceBullets)
             }
             Spacer(minLength: 0)
         }
@@ -154,7 +199,11 @@ struct ChildProfileView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.6), Color.ncPrimary.opacity(0.14), Color.ncGlowBlue.opacity(0.1)],
+                        colors: [
+                            Color.ncGlassHighlight(lightOpacity: 0.6),
+                            Color.ncPrimary.opacity(0.14),
+                            Color.ncGlowBlue.opacity(0.1)
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -163,6 +212,60 @@ struct ChildProfileView: View {
                 .allowsHitTesting(false)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func detailTextView(_ text: String, prefersSentenceBullets: Bool) -> some View {
+        let lines = text
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let items = resolvedDetailItems(lines: lines, prefersSentenceBullets: prefersSentenceBullets)
+
+        return Group {
+            if items.isEmpty {
+                Text("—")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if items.count == 1 {
+                Text(items[0])
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { _, line in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("•")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(line)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func resolvedDetailItems(lines: [String], prefersSentenceBullets: Bool) -> [String] {
+        if lines.count > 1 { return lines }
+        if prefersSentenceBullets { return sentenceItems(from: lines.first ?? "") }
+        return lines
+    }
+
+    private func sentenceItems(from text: String) -> [String] {
+        let normalised = text.replacingOccurrences(of: "\n", with: " ")
+        let rawItems = normalised.components(separatedBy: ". ")
+        return rawItems
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map { item in
+                if item.hasSuffix(".") { return item }
+                return "\(item)."
+            }
     }
 
     private func photoConsentRow(for child: Child) -> some View {
