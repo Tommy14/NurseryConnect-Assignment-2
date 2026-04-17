@@ -11,9 +11,11 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with semantic palette accessors.
+// 200426     Tommy1914   Background/card/glow from assets; dynamic glass + hairline helpers for dark mode.
 // -----------------------------------------------------------------
 
 import SwiftUI
+import UIKit
 
 extension Color {
     /// - Description: Primary calm blue from assets (`BrandPrimary`).
@@ -28,15 +30,38 @@ extension Color {
     /// - Description: Incident and alert red from assets (`Danger`).
     static let ncDanger = Color("Danger")
 
-    /// - Description: Futuristic screen base used app-wide.
-    static let ncBackground = Color(red: 0.93, green: 0.95, blue: 0.99)
+    /// - Description: Screen base (`Background` asset; light + dark appearances).
+    static let ncBackground = Color("Background")
 
-    /// - Description: Elevated card base used app-wide.
-    static let ncCardSurface = Color(red: 0.97, green: 0.98, blue: 1.0)
+    /// - Description: Elevated card base (`CardSurface` asset; light + dark appearances).
+    static let ncCardSurface = Color("CardSurface")
 
-    /// - Description: Futuristic accent helper tones for subtle atmospheric gradients.
-    static let ncGlowBlue = Color(red: 0.24, green: 0.73, blue: 0.96)
-    static let ncGlowViolet = Color(red: 0.52, green: 0.56, blue: 0.98)
+    /// - Description: Atmospheric gradient accents (`GlowBlue` / `GlowViolet` assets).
+    static let ncGlowBlue = Color("GlowBlue")
+    static let ncGlowViolet = Color("GlowViolet")
+
+    /// - Description: Specular rim for glass-style strokes — full strength in light mode, subdued in dark mode.
+    static func ncGlassHighlight(lightOpacity: CGFloat) -> Color {
+        Color(UIColor { traits in
+            let dark = traits.userInterfaceStyle == .dark
+            let alpha: CGFloat
+            if dark {
+                alpha = min(0.30, max(0.04, lightOpacity * 0.36))
+            } else {
+                alpha = lightOpacity
+            }
+            return UIColor.white.withAlphaComponent(alpha)
+        })
+    }
+
+    /// - Description: Hairline on filled pills/capsules: dark outline in light UI, light outline in dark UI.
+    static var ncAdaptiveHairlineStroke: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor.white.withAlphaComponent(0.20)
+                : UIColor.black.withAlphaComponent(0.30)
+        })
+    }
 
     /// - Description: Diary entry accent colours (pastel-friendly).
     static let ncDiaryActivity = Color("DiaryActivity")

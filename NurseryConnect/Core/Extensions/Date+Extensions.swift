@@ -62,14 +62,24 @@ extension Date {
     /// - Parameters:
     ///   - dateOfBirth: Child’s date of birth.
     ///   - reference: Date used as “today” for the calculation (defaults to now).
-    /// - Returns: Short age string such as “3 years” or “8 months”.
+    /// - Returns: Short age string such as “3 years, 2 months”, “8 months”, or “3 years”.
     static func earlyYearsAgeDescription(dateOfBirth: Date, reference: Date = Date()) -> String {
+        guard reference >= dateOfBirth else { return "0 months" }
         let comps = Calendar.current.dateComponents([.year, .month], from: dateOfBirth, to: reference)
-        if let years = comps.year, years > 0 {
-            return "\(years) years"
+        let years = max(0, comps.year ?? 0)
+        let months = max(0, comps.month ?? 0)
+
+        if years > 0 {
+            let yLabel = years == 1 ? "year" : "years"
+            if months > 0 {
+                let mLabel = months == 1 ? "month" : "months"
+                return "\(years) \(yLabel), \(months) \(mLabel)"
+            }
+            return "\(years) \(yLabel)"
         }
-        if let months = comps.month {
-            return "\(months) months"
+        if months > 0 {
+            let mLabel = months == 1 ? "month" : "months"
+            return "\(months) \(mLabel)"
         }
         return "0 months"
     }

@@ -13,6 +13,9 @@
 // 290326     Tommy1914   Created the file with card chrome and haptic helpers.
 // 100426     Tommy1914   `ncStudioElevatedSurface` for glassy gradient-bordered panels (decorative overlays non-interactive).
 // 180426     Tommy1914   `ncDiaryTimelineCard` — toned down to light tint + single shadow (diary list).
+// 180426     Tommy1914   Card/timeline modifiers use `NCLiquidGlassChrome` on iOS 26 (background plates only).
+// 200426     Tommy1914   Card rim gradients use `ncGlassHighlight` for dark mode.
+// 200426     Tommy1914   Bolder 2pt gradient rims on `ncCardStyle`, `ncStudioElevatedSurface`, tinted/diary tiles.
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -25,17 +28,23 @@ extension View {
     /// - Returns: A view with background, shadow, and rounded corners.
     func ncCardStyle(radius: CGFloat = AppConstants.cardCornerRadius) -> some View {
         self
-            .background(Color.ncCardSurface)
+            .background {
+                NCLiquidGlassChrome.cardBackground(cornerRadius: radius)
+            }
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.88), Color.ncGlowBlue.opacity(0.34), Color.ncGlowViolet.opacity(0.28)],
+                            colors: [
+                                Color.ncGlassHighlight(lightOpacity: 0.95),
+                                Color.ncGlowBlue.opacity(0.48),
+                                Color.ncGlowViolet.opacity(0.4)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1.2
+                        lineWidth: 2
                     )
                     .allowsHitTesting(false)
             }
@@ -52,8 +61,7 @@ extension View {
     /// - Description: Frosted, elevated panel with gradient wash and border — use after padding on content. Decorative layers do not absorb touches.
     func ncStudioElevatedSurface(cornerRadius: CGFloat = 18) -> some View {
         background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.ncCardSurface)
+            NCLiquidGlassChrome.cardBackground(cornerRadius: cornerRadius)
                 .shadow(color: Color.black.opacity(0.09), radius: 14, x: 0, y: 8)
         }
         .overlay {
@@ -71,11 +79,15 @@ extension View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.8), Color.ncGlowBlue.opacity(0.35), Color.ncGlowViolet.opacity(0.26)],
+                        colors: [
+                            Color.ncGlassHighlight(lightOpacity: 0.95),
+                            Color.ncGlowBlue.opacity(0.52),
+                            Color.ncGlowViolet.opacity(0.42)
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1.2
+                    lineWidth: 2
                 )
                 .allowsHitTesting(false)
         }
@@ -84,19 +96,26 @@ extension View {
     /// - Description: Pastel-tinted card with gradient rim (diary log tiles, chips).
     func ncStudioTintedCard(tint: Color, cornerRadius: CGFloat = 14) -> some View {
         background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(tint.opacity(0.2))
-                .shadow(color: tint.opacity(0.18), radius: 10, x: 0, y: 5)
+            ZStack {
+                NCLiquidGlassChrome.cardBackground(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(tint.opacity(0.2))
+            }
+            .shadow(color: tint.opacity(0.18), radius: 10, x: 0, y: 5)
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.75), tint.opacity(0.6), Color.ncGlowBlue.opacity(0.24)],
+                        colors: [
+                            Color.ncGlassHighlight(lightOpacity: 0.9),
+                            tint.opacity(0.72),
+                            Color.ncGlowBlue.opacity(0.38)
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1.2
+                    lineWidth: 2
                 )
                 .allowsHitTesting(false)
         }
@@ -105,8 +124,11 @@ extension View {
     /// - Description: Diary timeline tile: soft type tint, **type-coloured outline** (readable on light bg), light shadow.
     func ncDiaryTimelineCard(tint: Color, cornerRadius: CGFloat = 14) -> some View {
         background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(tint.opacity(0.11))
+            ZStack {
+                NCLiquidGlassChrome.cardBackground(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(tint.opacity(0.11))
+            }
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -120,7 +142,7 @@ extension View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1.5
+                    lineWidth: 2
                 )
                 .allowsHitTesting(false)
         }
