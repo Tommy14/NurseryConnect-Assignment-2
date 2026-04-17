@@ -24,6 +24,7 @@ enum IncidentCategory: String, CaseIterable, Identifiable {
     case nearMiss
     case allergicReaction
     case medicalIncident
+    case seriousIncident
 
     var id: String { rawValue }
 
@@ -39,6 +40,7 @@ enum IncidentCategory: String, CaseIterable, Identifiable {
         case .nearMiss: return "Near Miss"
         case .allergicReaction: return "Allergic Reaction"
         case .medicalIncident: return "Medical Incident"
+        case .seriousIncident: return "Serious Incident"
         }
     }
 
@@ -51,6 +53,7 @@ enum IncidentCategory: String, CaseIterable, Identifiable {
         case .nearMiss: return "exclamationmark.triangle.fill"
         case .allergicReaction: return "allergens.fill"
         case .medicalIncident: return "heart.text.square.fill"
+        case .seriousIncident: return "exclamationmark.octagon.fill"
         }
     }
 
@@ -63,13 +66,14 @@ enum IncidentCategory: String, CaseIterable, Identifiable {
         case .nearMiss: return .nearMiss
         case .allergicReaction: return .allergicReaction
         case .medicalIncident: return .medical
+        case .seriousIncident: return .serious
         }
     }
 
     /// - Description: Whether RIDDOR should be suggested by default for this category.
     var suggestsRiddor: Bool {
         switch self {
-        case .accidentFirstAid, .safeguardingConcern, .medicalIncident: return true
+        case .seriousIncident: return true
         default: return false
         }
     }
