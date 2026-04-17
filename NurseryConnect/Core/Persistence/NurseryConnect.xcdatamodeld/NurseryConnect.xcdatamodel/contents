@@ -2,18 +2,35 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Child" representedClassName="Child" syncable="YES" codeGenerationType="class">
         <attribute name="allergies" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="authorisedCollectors" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="consentRecordsNotes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="dateOfBirth" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="dietaryRequirements" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="eyfsDevelopmentNotes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="familyDetails" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="firstName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
-        <attribute name="gender" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="homeAddress" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="keyworkerName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="lastName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="preferredName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="medicalNotes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="nationality" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="photoConsent" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="roomName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <relationship name="attendanceRecords" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AttendanceRecord" inverseName="child" inverseEntity="AttendanceRecord"/>
         <relationship name="diaryEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DiaryEntry" inverseName="child" inverseEntity="DiaryEntry"/>
         <relationship name="incidents" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Incident" inverseName="child" inverseEntity="Incident"/>
+    </entity>
+    <entity name="AttendanceRecord" representedClassName="AttendanceRecord" syncable="YES" codeGenerationType="class">
+        <attribute name="checkInAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="checkOutAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="collectedBy" optional="YES" attributeType="String" usesScalarValueType="NO"/>
+        <attribute name="dayStart" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="droppedOffBy" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="markedAbsent" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="attendanceRecords" inverseEntity="Child"/>
     </entity>
     <entity name="DiaryEntry" representedClassName="DiaryEntry" syncable="YES" codeGenerationType="class">
         <attribute name="activityType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
@@ -31,6 +48,7 @@
         <attribute name="notes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="lastSyncError" optional="YES" attributeType="String" usesScalarValueType="NO"/>
         <attribute name="sleepPosition" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="submittedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="syncAttemptCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="syncEnqueuedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="syncState" attributeType="String" defaultValueString="synced" usesScalarValueType="NO"/>

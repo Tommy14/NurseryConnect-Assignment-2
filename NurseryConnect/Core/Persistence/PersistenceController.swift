@@ -42,8 +42,10 @@ final class PersistenceController {
     ///   - inMemory: When `true`, stores data only in RAM (no disk file).
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "NurseryConnect")
-        if inMemory {
-            if let description = container.persistentStoreDescriptions.first {
+        for description in container.persistentStoreDescriptions {
+            description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+            description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+            if inMemory {
                 description.url = URL(fileURLWithPath: "/dev/null")
             }
         }
