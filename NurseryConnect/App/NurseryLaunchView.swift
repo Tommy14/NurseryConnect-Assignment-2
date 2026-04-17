@@ -30,7 +30,7 @@ struct NurseryLaunchView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.ncBackground, Color.ncPrimary.opacity(0.08), Color.white],
+                colors: [Color.ncBackground, Color.ncPrimary.opacity(0.08), Color.ncCardSurface],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

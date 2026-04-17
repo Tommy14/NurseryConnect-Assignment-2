@@ -11,6 +11,9 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 280326     Tommy1914   Created the file with keyworker, nursery, and diary completeness rules.
+// 180426     Tommy1914   Keyworker root list navigation title (`Children`).
+// 180426     Tommy1914   Keyworker incidents inbox navigation title (`Incidents`).
+// 190426     Tommy1914   Keyworker profile toolbar button accessibility ID.
 // -----------------------------------------------------------------
 
 import CoreGraphics
@@ -26,17 +29,20 @@ enum AppConstants {
     /// - Description: Official setting name for assignment copy and seed data.
     static let nurseryDisplayName = "Little Stars Nursery & Daycare"
 
+    /// - Description: Navigation title for the keyworker children list (large title; compact when scrolled).
+    static let navTitleKeyworkerChildrenList = "Children"
+
+    /// - Description: Navigation title for the keyworker incidents inbox (large title; compact when scrolled).
+    static let navTitleKeyworkerIncidentsList = "Incidents"
+
     /// - Description: `UserDefaults` key indicating sample children have been inserted.
     static let hasSeededSampleDataKey = "com.nurseryconnect.hasSeededSampleData"
 
     // MARK: Diary completeness
 
-    /// - Description: Entry types required for a “complete” day (green dot) — documented for EYFS traceability.
-    static let requiredDiaryTypesForCompleteDay: [String] = [
-        DiaryEntryType.meal.persistenceValue,
-        DiaryEntryType.sleep.persistenceValue,
-        DiaryEntryType.nappy.persistenceValue
-    ]
+    /// - Description: Dashboard “complete” (green dot) requires every planned session segment for today to have at least one non-sleep log — see `DayTimelineMerger.allPlannedSessionsHaveAtLeastOneLog`.
+    /// - Description: Gap threshold (seconds) beyond which a diary log is flagged for manager review when event time and submission time are far apart.
+    static let diaryLateLogReviewThresholdSeconds: TimeInterval = 2 * 60 * 60
 
     // MARK: Incident compliance
 
@@ -59,7 +65,7 @@ enum AppConstants {
     static let fabCornerRadius: CGFloat = 24
 
     /// - Description: Extra bottom inset for FABs when `KeyworkerDashboardView`’s floating glass tab bar sits above the home indicator (system safe area does not always reserve enough for custom `safeAreaInset` chrome).
-    static let floatingTabBarClearance: CGFloat = 80
+    static let floatingTabBarClearance: CGFloat = 100
 
     /// - Description: Maximum characters for incident free-text fields where a cap improves form usability.
     static let incidentDescriptionMaxLength = 2_000
@@ -68,11 +74,16 @@ enum AppConstants {
     enum AccessibilityID {
         static let myChildrenTab = "tab_my_children"
         static let incidentsTab = "tab_incidents"
+        static let keyworkerProfileButton = "keyworker_profile_button"
         static let childCardPrefix = "child_card_"
+        static let childCardCurrentActivity = "child_card_current_activity"
+        static let childCardAllergies = "child_card_allergies"
         static let addDiaryFAB = "fab_add_diary"
         static let saveDiaryEntry = "save_diary_entry"
         static let addIncidentFAB = "fab_add_incident"
         static let submitIncident = "submit_incident"
         static let incidentRowPrefix = "incident_row_"
+        static let reportUnauthorisedCollection = "report_unauthorised_collection"
+        static let dashboardQuickCheckInSave = "dashboard_quick_check_in_save"
     }
 }

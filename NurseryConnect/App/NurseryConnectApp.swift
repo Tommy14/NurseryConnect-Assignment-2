@@ -14,6 +14,12 @@
 // 100426     Tommy1914   Seeding moved into dashboard refresh to avoid racing tasks.
 // 100426     Tommy1914   Added UK nursery-themed launch loading animation before dashboard handoff.
 // 100426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
+// 180426     Tommy1914   Split nav bar: clear scroll-edge (large title) vs translucent standard (scrolled).
+// 180426     Tommy1914   Lighter standard bar tint so collapsed chrome reads more transparent.
+// 180426     Tommy1914   Scroll-edge large title: bold rounded “Children” matches app typography.
+// 180426     Tommy1914   Removed large-title font attrs (children list uses inline title only).
+// 180426     Tommy1914   Large title + transparent collapsed bar; compact title centered when scrolled.
+// 180426     Tommy1914   iOS 26: default bar materials for Liquid Glass; legacy path keeps transparent strip.
 // -----------------------------------------------------------------
 
 import Combine
@@ -39,21 +45,99 @@ struct NurseryConnectApp: App {
     }()
 
     init() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
-        appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.32)
-        appearance.shadowColor = UIColor.systemTeal.withAlphaComponent(0.16)
+        Self.configureNavigationBarAppearances()
+    }
 
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().isTranslucent = true
+    /// - Description: iOS 26 uses system default bar materials so Liquid Glass can show; older OS keeps the prior flat transparent strip.
+    private static func configureNavigationBarAppearances() {
+        if #available(iOS 26.0, *) {
+            applyLiquidGlassFriendlyNavigationChrome()
+        } else {
+            applyLegacyTransparentNavigationChrome()
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private static func applyLiquidGlassFriendlyNavigationChrome() {
+        // Large-title / scroll-edge: stay transparent so list content shows through (default material here reads as a solid white sheet in SwiftUI).
+        let scrollEdgeAppearance = UINavigationBarAppearance()
+        scrollEdgeAppearance.configureWithTransparentBackground()
+        scrollEdgeAppearance.backgroundColor = .clear
+        scrollEdgeAppearance.backgroundEffect = nil
+        scrollEdgeAppearance.shadowColor = .clear
+        let largeTitleDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .largeTitle)
+        if let roundedLarge = largeTitleDescriptor.withDesign(.rounded)?.withSymbolicTraits(.traitBold) {
+            let largeParagraph = NSMutableParagraphStyle()
+            largeParagraph.alignment = .natural
+            scrollEdgeAppearance.largeTitleTextAttributes = [
+                .foregroundColor: UIColor.label,
+                .font: UIFont(descriptor: roundedLarge, size: 34),
+                .paragraphStyle: largeParagraph
+            ]
+        }
+
+        // Collapsed inline title: system default bar material (Liquid Glass when running on iOS 26).
+        let standardAppearance = UINavigationBarAppearance()
+        standardAppearance.configureWithDefaultBackground()
+        standardAppearance.shadowColor = .clear
+        let titleParagraph = NSMutableParagraphStyle()
+        titleParagraph.alignment = .center
+        standardAppearance.titleTextAttributes = [
+            .foregroundColor: UIColor.label,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold),
+            .paragraphStyle: titleParagraph
+        ]
+
+        let nav = UINavigationBar.appearance()
+        nav.scrollEdgeAppearance = scrollEdgeAppearance
+        nav.compactScrollEdgeAppearance = scrollEdgeAppearance
+        nav.standardAppearance = standardAppearance
+        nav.compactAppearance = standardAppearance
+        nav.isTranslucent = true
+    }
+
+    private static func applyLegacyTransparentNavigationChrome() {
+        let scrollEdgeAppearance = UINavigationBarAppearance()
+        scrollEdgeAppearance.configureWithTransparentBackground()
+        scrollEdgeAppearance.backgroundColor = .clear
+        scrollEdgeAppearance.backgroundEffect = nil
+        scrollEdgeAppearance.shadowColor = .clear
+        let largeTitleDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .largeTitle)
+        if let roundedLarge = largeTitleDescriptor.withDesign(.rounded)?.withSymbolicTraits(.traitBold) {
+            let largeParagraph = NSMutableParagraphStyle()
+            largeParagraph.alignment = .natural
+            scrollEdgeAppearance.largeTitleTextAttributes = [
+                .foregroundColor: UIColor.label,
+                .font: UIFont(descriptor: roundedLarge, size: 34),
+                .paragraphStyle: largeParagraph
+            ]
+        }
+
+        let standardAppearance = UINavigationBarAppearance()
+        standardAppearance.configureWithTransparentBackground()
+        standardAppearance.backgroundColor = .clear
+        standardAppearance.backgroundEffect = nil
+        standardAppearance.shadowColor = .clear
+        let titleParagraph = NSMutableParagraphStyle()
+        titleParagraph.alignment = .center
+        standardAppearance.titleTextAttributes = [
+            .foregroundColor: UIColor.label,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold),
+            .paragraphStyle: titleParagraph
+        ]
+
+        let nav = UINavigationBar.appearance()
+        nav.scrollEdgeAppearance = scrollEdgeAppearance
+        nav.compactScrollEdgeAppearance = scrollEdgeAppearance
+        nav.standardAppearance = standardAppearance
+        nav.compactAppearance = standardAppearance
+        nav.isTranslucent = true
     }
 
     var body: some Scene {
         WindowGroup {
             ZStack {
+                Color.ncBackground.ignoresSafeArea()
                 if isShowingLaunchAnimation {
                     NurseryLaunchView()
                         .transition(.opacity)
@@ -65,7 +149,7 @@ struct NurseryConnectApp: App {
             }
             .task {
                 networkMonitor.startIfNeeded()
-                await syncQueue.processQueueIfPossible()
+                Task { await syncQueue.processQueueIfPossible() }
                 guard isShowingLaunchAnimation else { return }
                 try? await Task.sleep(nanoseconds: launchDurationNanoseconds)
                 withAnimation(.easeOut(duration: 0.35)) {
