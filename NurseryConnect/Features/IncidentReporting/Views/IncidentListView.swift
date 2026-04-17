@@ -17,6 +17,9 @@
 // 100426     Tommy1914   Futuristic inbox: atmosphere, urgency rails, scope header, row accents, FAB polish.
 // 100426     Tommy1914   Category-tinted row surfaces and rails for clearer incident-type contrast.
 // 100426     Tommy1914   Manual in-content title for tighter top spacing alignment with dashboard.
+// 180426     Tommy1914   System large nav title “Incidents” (matches children list behaviour).
+// 180426     Tommy1914   iOS 26: soft top scroll edge for nav legibility with Liquid Glass.
+// 180426     Tommy1914   Row backgrounds via `NCLiquidGlassChrome.incidentRowBackground`.
 // -----------------------------------------------------------------
 
 import Combine
@@ -40,10 +43,6 @@ struct IncidentListView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Incidents")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                        .padding(.top, 0)
                     if !viewModel.parentNotificationBanners.isEmpty {
                         ForEach(viewModel.parentNotificationBanners) { banner in
                             parentNotificationUrgencyBanner(childFirstName: banner.childFirstName)
@@ -108,7 +107,7 @@ struct IncidentListView: View {
                                         .stroke(
                                             LinearGradient(
                                                 colors: [
-                                                    Color.white.opacity(0.65),
+                                                    Color.ncGlassHighlight(lightOpacity: 0.65),
                                                     incidentAccentColor(for: category).opacity(0.24),
                                                     Color.ncGlowBlue.opacity(0.1)
                                                 ],
@@ -148,6 +147,7 @@ struct IncidentListView: View {
             }
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
+            .ncRootScrollEdgeEffectForTopNavigation()
 
             Button {
                 composerPresented = true
@@ -166,7 +166,7 @@ struct IncidentListView: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: AppConstants.fabCornerRadius, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.32), lineWidth: 1)
+                            .strokeBorder(Color.ncGlassHighlight(lightOpacity: 0.32), lineWidth: 1)
                     }
                     .shadow(color: Color.ncPrimary.opacity(0.3), radius: 14, x: 0, y: 8)
                     .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 5)
@@ -178,7 +178,8 @@ struct IncidentListView: View {
             .accessibilityLabel("New incident")
         }
         .background { incidentAtmosphereBackground }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(AppConstants.navTitleKeyworkerIncidentsList)
+        .navigationBarTitleDisplayMode(.large)
         .fullScreenCover(isPresented: $composerPresented) {
             NewIncidentFormView(viewModel: viewModel)
                 .environment(\.managedObjectContext, context)
@@ -251,7 +252,7 @@ struct IncidentListView: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                .stroke(Color.ncGlassHighlight(lightOpacity: 0.22), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Action required: Parent not yet notified of \(childFirstName)’s incident.")
@@ -265,19 +266,15 @@ struct IncidentListView: View {
         case .nearMiss: return Color.orange
         case .allergicReaction: return Color.purple
         case .medicalIncident: return Color.teal
+        case .seriousIncident: return Color.ncDanger
         }
     }
 
     private func incidentCardBackground(for category: IncidentCategory) -> some View {
-        let accent = incidentAccentColor(for: category)
-        return RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [Color.ncCardSurface, accent.opacity(0.08)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+        NCLiquidGlassChrome.incidentRowBackground(
+            accent: incidentAccentColor(for: category),
+            cornerRadius: AppConstants.cardCornerRadius
+        )
     }
 
 }

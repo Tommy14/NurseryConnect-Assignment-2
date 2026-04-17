@@ -79,6 +79,7 @@ enum IncidentSeverity: String, CaseIterable, Identifiable {
     case nearMiss
     case allergicReaction
     case medical
+    case serious
 
     var id: String { rawValue }
 
@@ -92,6 +93,7 @@ enum IncidentSeverity: String, CaseIterable, Identifiable {
         case .nearMiss: return "Near miss"
         case .allergicReaction: return "Allergic reaction"
         case .medical: return "Medical"
+        case .serious: return "Serious"
         }
     }
 

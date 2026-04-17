@@ -90,10 +90,10 @@ final class IncidentViewModel: ObservableObject {
         assignableChildren = try context.fetch(request)
     }
 
-    /// - Description: Suggests whether RIDDOR reporting should be toggled from category alone.
+    /// - Description: Gates statutory RIDDOR/Ofsted workflow and only returns `true` for serious incidents.
     /// - Parameters:
     ///   - category: Selected incident category.
-    /// - Returns: `true` when the category typically triggers statutory reporting review.
+    /// - Returns: `true` when the selected category is a serious incident.
     func suggestsRiddor(for category: IncidentCategory) -> Bool {
         category.suggestsRiddor
     }
