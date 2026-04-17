@@ -13,6 +13,7 @@
 // 050426     Tommy1914   Created the file with type chips, validation, and save flow.
 // 100426     Tommy1914   Card chrome, symbol chips, atmosphere background (iOS-native polish).
 // 100426     Tommy1914   Decorative overlays use allowsHitTesting(false) so fields remain tappable.
+// 180426     Tommy1914   Details and notes panels use `ncCardStyle` (glass plate on iOS 26).
 // -----------------------------------------------------------------
 
 import Combine
@@ -23,11 +24,16 @@ import SwiftUI
 struct AddDiaryEntryView: View {
     let childID: UUID
     @ObservedObject var viewModel: DailyDiaryViewModel
+    /// - Description: When set, pre-fills type, meal slot, and default log time from a planned session row.
+    var plannedSessionContext: PlannedSessionLogContext?
+    /// - Description: When false, save is blocked (e.g. before check-in or after check-out). Re-evaluated on each save attempt.
+    private let isDiaryLoggingPermitted: () -> Bool
 
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedType: DiaryEntryType = .activity
+    @State private var logTimestamp: Date = Date()
     @State private var notes: String = ""
     @State private var activityKind: DiaryActivityKind = .indoorPlay
     @State private var eyfsArea: EyfsArea = .communication
@@ -50,6 +56,19 @@ struct AddDiaryEntryView: View {
     @State private var milestoneNextSteps: String = ""
     @State private var milestoneEvidence: String = ""
     @State private var showValidation: Bool = false
+    @State private var didApplyPlannedPrefill = false
+
+    init(
+        childID: UUID,
+        viewModel: DailyDiaryViewModel,
+        plannedSessionContext: PlannedSessionLogContext? = nil,
+        isDiaryLoggingPermitted: @escaping () -> Bool = { true }
+    ) {
+        self.childID = childID
+        self.viewModel = viewModel
+        self.plannedSessionContext = plannedSessionContext
+        self.isDiaryLoggingPermitted = isDiaryLoggingPermitted
+    }
 
     var body: some View {
         NavigationStack {
@@ -58,6 +77,12 @@ struct AddDiaryEntryView: View {
                     Text("Fields marked * are required.")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                    if let ctx = plannedSessionContext {
+                        Text(ctx.sessionSubtitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.ncPrimary)
+                            .padding(.horizontal, 4)
+                    }
                     diaryTypeChipStrip
                     detailsCard
                     notesCard
@@ -89,6 +114,25 @@ struct AddDiaryEntryView: View {
         }
         .background(Color.ncBackground.ignoresSafeArea())
         .tint(Color.ncPrimary)
+        .onAppear {
+            applyPlannedSessionPrefillIfNeeded()
+        }
+    }
+
+    /// - Description: Sets suggested type, meal slot, and log time when opened from a planned session.
+    private func applyPlannedSessionPrefillIfNeeded() {
+        guard !didApplyPlannedPrefill, let ctx = plannedSessionContext else { return }
+        didApplyPlannedPrefill = true
+        let t = ctx.defaultLogTimestamp()
+        logTimestamp = t
+        selectedType = ctx.suggestedEntryType
+        if let slot = ctx.suggestedMealSlot {
+            mealSlot = slot
+        }
+        if selectedType == .sleep {
+            sleepStart = t
+            sleepEnd = t.addingTimeInterval(30 * 60)
+        }
     }
 
     private var diaryFormAtmosphereBackground: some View {
@@ -144,22 +188,19 @@ struct AddDiaryEntryView: View {
         VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: "Details", subtitle: "Required fields are highlighted if missing.")
             VStack(alignment: .leading, spacing: 14) {
+                if selectedType != .sleep {
+                    DatePicker("Event time", selection: $logTimestamp, displayedComponents: [.date, .hourAndMinute])
+                    Text("Submission time is recorded automatically when you save.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 typeSpecificFields
             }
             .tint(Color.ncPrimary)
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.ncCardSurface)
-                .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 10)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .ncCardStyle(radius: 20)
     }
 
     private var notesCard: some View {
@@ -198,16 +239,7 @@ struct AddDiaryEntryView: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.ncCardSurface)
-                .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: 6)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .ncCardStyle(radius: 20)
     }
 
     private var notesLabelText: String {
@@ -430,7 +462,7 @@ struct AddDiaryEntryView: View {
                             .scaleEffect(on ? 1.12 : 1.0)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Mood level \(value) out of five")
+                    .accessibilityLabel(moodAccessibilityLabel(for: value))
                 }
             }
             .padding(6)
@@ -468,14 +500,23 @@ struct AddDiaryEntryView: View {
         }
     }
 
+    /// - Description: 1 = lowest wellbeing (most distressed), 5 = highest wellbeing — left-to-right in the picker.
     private func moodSymbol(for value: Int) -> String {
         switch value {
-        case 1: return "face.smiling.fill"
-        case 2: return "face.smiling"
+        case 1: return "exclamationmark.triangle.fill"
+        case 2: return "cloud.rain"
         case 3: return "face.dashed"
-        case 4: return "cloud.rain"
-        case 5: return "exclamationmark.triangle.fill"
-        default: return "face.smiling"
+        case 4: return "face.smiling"
+        case 5: return "face.smiling.fill"
+        default: return "face.dashed"
+        }
+    }
+
+    private func moodAccessibilityLabel(for value: Int) -> String {
+        switch value {
+        case 1: return "Mood 1 of 5, lowest wellbeing"
+        case 5: return "Mood 5 of 5, highest wellbeing"
+        default: return "Mood \(value) of 5"
         }
     }
 
@@ -520,13 +561,21 @@ struct AddDiaryEntryView: View {
     private func save() async {
         showValidation = true
         guard validation.isValid else { return }
+        guard isDiaryLoggingPermitted() else {
+            viewModel.errorMessage = """
+            Logging isn’t available. The child must be checked in on site, and the current time must be within nursery diary hours (from session start until two hours after closing).
+            """
+            return
+        }
         guard let child = fetchChild() else {
             viewModel.errorMessage = "Missing child record."
             return
         }
         let entry = DiaryEntry(context: context)
+        let eventTime = selectedType == .sleep ? sleepStart : logTimestamp
         entry.id = UUID()
-        entry.timestamp = Date()
+        entry.timestamp = eventTime
+        entry.submittedAt = Date()
         entry.entryType = selectedType.persistenceValue
         entry.notes = notesForType()
         entry.child = child
@@ -578,6 +627,6 @@ struct AddDiaryEntryView: View {
 #Preview {
     let ctx = PersistenceController.preview.container.viewContext
     let vm = DailyDiaryViewModel(childID: UUID(), context: ctx)
-    return AddDiaryEntryView(childID: UUID(), viewModel: vm)
+    return AddDiaryEntryView(childID: UUID(), viewModel: vm, plannedSessionContext: nil)
         .environment(\.managedObjectContext, ctx)
 }

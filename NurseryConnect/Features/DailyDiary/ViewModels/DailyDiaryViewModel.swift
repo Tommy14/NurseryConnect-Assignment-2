@@ -31,6 +31,11 @@ final class DailyDiaryViewModel: ObservableObject {
     @Published private(set) var entries: [DiaryEntry] = []
     @Published var errorMessage: String?
 
+    /// - Description: Shared nursery schedule merged with today’s rows (sleep masks activity placeholders).
+    var mergedTimelineRows: [MergedDiaryTimelineRow] {
+        DayTimelineMerger.mergedRows(entries: entries, referenceDay: Date())
+    }
+
     // MARK: - Properties
 
     private let childID: UUID
