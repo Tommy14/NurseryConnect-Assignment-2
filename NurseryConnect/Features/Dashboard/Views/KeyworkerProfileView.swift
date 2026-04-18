@@ -79,8 +79,8 @@ struct KeyworkerProfileView: View {
                         )
                 }
             VStack(alignment: .leading, spacing: 6) {
-                Text(assignedRoomName)
-                    .font(AppTheme.greetingRounded())
+                Text(AppConstants.keyworkerDisplayName)
+                    .font(.title3.weight(.bold))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color.ncPrimary, Color.ncGlowBlue],
@@ -88,9 +88,9 @@ struct KeyworkerProfileView: View {
                             endPoint: .trailing
                         )
                     )
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                Text(AppConstants.keyworkerDisplayName)
+                Text(assignedRoomName)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Label {

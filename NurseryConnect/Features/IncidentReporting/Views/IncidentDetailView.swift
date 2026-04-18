@@ -17,7 +17,6 @@
 // 100426     Tommy1914   Inline nav + toolbar Export PDF; bottom inset for floating tab bar.
 // -----------------------------------------------------------------
 
-import Combine
 import CoreData
 import SwiftUI
 
@@ -29,8 +28,6 @@ struct IncidentDetailView: View {
 
     @State private var annotations: [BodyMapAnnotation] = []
     @State private var side: BodyMapSide = .front
-    @State private var showShare = false
-    @State private var shareItems: [Any] = []
     @State private var showEdit = false
 
     private var status: IncidentStatus {
@@ -69,19 +66,10 @@ struct IncidentDetailView: View {
                         showEdit = true
                     }
                 }
-                Button {
-                    exportPDF()
-                } label: {
-                    Label("Export PDF", systemImage: "arrow.up.doc.fill")
-                }
-                .accessibilityIdentifier("export_incident_pdf")
             }
         }
         .onAppear {
             annotations = BodyMapCodec.decode(incident.bodyMapAnnotations)
-        }
-        .sheet(isPresented: $showShare) {
-            ActivityShareView(activityItems: shareItems)
         }
         .fullScreenCover(isPresented: $showEdit) {
             NewIncidentFormView(viewModel: viewModel, existingIncident: incident)
@@ -102,6 +90,15 @@ struct IncidentDetailView: View {
                 } icon: {
                     Image(systemName: "clock.fill")
                         .foregroundStyle(Color.ncPrimary)
+                }
+            }
+            if let timing = viewModel.escalationPresentation(for: incident) {
+                Label {
+                    Text(timing.statusLine)
+                        .font(.subheadline.weight(.semibold))
+                } icon: {
+                    Image(systemName: timing.isEscalationDue ? "exclamationmark.triangle.fill" : "hourglass")
+                        .foregroundStyle(timing.isEscalationDue ? Color.ncDanger : Color.ncPrimary)
                 }
             }
             Label {
@@ -149,20 +146,4 @@ struct IncidentDetailView: View {
         .ncStudioElevatedSurface(cornerRadius: 16)
     }
 
-    /// - Description: Builds a temporary PDF on disk and opens the share sheet.
-    private func exportPDF() {
-        let childName = "\(incident.child?.firstName ?? "") \(incident.child?.lastName ?? "")"
-        guard let data = IncidentPDFExporter.pdfData(for: incident, childName: childName) else {
-            viewModel.errorMessage = "Unable to build PDF."
-            return
-        }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Incident-\(incident.id?.uuidString ?? "export").pdf")
-        do {
-            try data.write(to: url)
-            shareItems = [url]
-            showShare = true
-        } catch {
-            viewModel.errorMessage = "Unable to write PDF file."
-        }
-    }
 }

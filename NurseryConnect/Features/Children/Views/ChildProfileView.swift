@@ -48,19 +48,9 @@ struct ChildProfileView: View {
                         symbol: "door.left.hand.open"
                     )
                     profileInfoRow(
-                        title: "Date of birth",
-                        text: (child.dateOfBirth ?? Date()).formatted(date: .abbreviated, time: .omitted),
+                        title: "Age",
+                        text: Date.earlyYearsAgeDescription(dateOfBirth: child.dateOfBirth ?? Date()),
                         symbol: "birthday.cake.fill"
-                    )
-                    profileInfoRow(
-                        title: "Nationality",
-                        text: child.nationality ?? "",
-                        symbol: "globe.europe.africa.fill"
-                    )
-                    profileInfoRow(
-                        title: "Home address",
-                        text: child.homeAddress ?? "",
-                        symbol: "house.fill"
                     )
                     profileInfoRow(
                         title: "Allergies",
@@ -71,6 +61,11 @@ struct ChildProfileView: View {
                         title: "Dietary requirements",
                         text: child.dietaryRequirements ?? "",
                         symbol: "fork.knife"
+                    )
+                    profileInfoRow(
+                        title: "Cultural and nationality context",
+                        text: child.nationality ?? "",
+                        symbol: "globe.europe.africa.fill"
                     )
                     profileInfoRow(
                         title: "Medical notes",

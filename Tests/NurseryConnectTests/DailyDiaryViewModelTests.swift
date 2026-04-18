@@ -49,4 +49,137 @@ final class DailyDiaryViewModelTests: XCTestCase {
         )
         XCTAssertTrue(result.isValid)
     }
+
+    func testCorrectionRequiresReason() async {
+        let stack = PersistenceController(inMemory: true)
+        let context = stack.container.viewContext
+        let child = makeChild(context: context)
+        let entry = makeDiaryEntry(context: context, child: child)
+        try? context.save()
+
+        let vm = DailyDiaryViewModel(childID: child.id ?? UUID(), context: context)
+        let draft = DiaryEntryDraftValues(
+            timestamp: entry.timestamp ?? Date(),
+            entryType: .activity,
+            notes: "Updated notes",
+            activityType: "Indoor Play",
+            eyfsArea: EyfsArea.communication.rawValue,
+            duration: 15,
+            mealDescription: "",
+            mealConsumed: nil,
+            fluidIntake: 0,
+            fluidType: "",
+            nappyType: "",
+            moodRating: 0,
+            sleepPosition: ""
+        )
+
+        let ok = await vm.correctEntry(entry, with: draft, reason: " ")
+        XCTAssertFalse(ok)
+        XCTAssertEqual(vm.errorMessage, "A correction reason is required.")
+    }
+
+    func testFirstCorrectionStoresOriginalSnapshotAndHistory() async {
+        let stack = PersistenceController(inMemory: true)
+        let context = stack.container.viewContext
+        let child = makeChild(context: context)
+        let entry = makeDiaryEntry(context: context, child: child)
+        try? context.save()
+
+        let vm = DailyDiaryViewModel(childID: child.id ?? UUID(), context: context)
+        let draft = DiaryEntryDraftValues(
+            timestamp: entry.timestamp ?? Date(),
+            entryType: .activity,
+            notes: "Corrected note",
+            activityType: "Outdoor Play",
+            eyfsArea: EyfsArea.physical.rawValue,
+            duration: 20,
+            mealDescription: "",
+            mealConsumed: nil,
+            fluidIntake: 0,
+            fluidType: "",
+            nappyType: "",
+            moodRating: 0,
+            sleepPosition: ""
+        )
+
+        let ok = await vm.correctEntry(entry, with: draft, reason: "Typo fixed")
+        XCTAssertTrue(ok)
+        XCTAssertTrue(entry.hasCorrections)
+        XCTAssertNotNil(entry.originalSnapshotJSON)
+        XCTAssertEqual(entry.notes, "Corrected note")
+        XCTAssertGreaterThan(entry.sortedCorrections.count, 0)
+    }
+
+    func testSubsequentCorrectionKeepsOriginalSnapshot() async {
+        let stack = PersistenceController(inMemory: true)
+        let context = stack.container.viewContext
+        let child = makeChild(context: context)
+        let entry = makeDiaryEntry(context: context, child: child)
+        try? context.save()
+
+        let vm = DailyDiaryViewModel(childID: child.id ?? UUID(), context: context)
+        let firstDraft = DiaryEntryDraftValues(
+            timestamp: entry.timestamp ?? Date(),
+            entryType: .activity,
+            notes: "First correction",
+            activityType: "Outdoor Play",
+            eyfsArea: EyfsArea.physical.rawValue,
+            duration: 20,
+            mealDescription: "",
+            mealConsumed: nil,
+            fluidIntake: 0,
+            fluidType: "",
+            nappyType: "",
+            moodRating: 0,
+            sleepPosition: ""
+        )
+        _ = await vm.correctEntry(entry, with: firstDraft, reason: "Initial correction")
+        let originalSnapshot = entry.originalSnapshotJSON
+
+        let secondDraft = DiaryEntryDraftValues(
+            timestamp: entry.timestamp ?? Date(),
+            entryType: .activity,
+            notes: "Second correction",
+            activityType: "Reading",
+            eyfsArea: EyfsArea.literacy.rawValue,
+            duration: 25,
+            mealDescription: "",
+            mealConsumed: nil,
+            fluidIntake: 0,
+            fluidType: "",
+            nappyType: "",
+            moodRating: 0,
+            sleepPosition: ""
+        )
+        _ = await vm.correctEntry(entry, with: secondDraft, reason: "More precise wording")
+
+        XCTAssertEqual(entry.originalSnapshotJSON, originalSnapshot)
+        XCTAssertEqual(entry.notes, "Second correction")
+        XCTAssertGreaterThan(entry.sortedCorrections.count, 1)
+    }
+
+    private func makeChild(context: NSManagedObjectContext) -> Child {
+        let child = Child(context: context)
+        child.id = UUID()
+        child.firstName = "Test"
+        child.lastName = "Child"
+        child.dateOfBirth = Date()
+        return child
+    }
+
+    private func makeDiaryEntry(context: NSManagedObjectContext, child: Child) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.child = child
+        entry.timestamp = Date()
+        entry.submittedAt = Date()
+        entry.entryType = DiaryEntryType.activity.persistenceValue
+        entry.notes = "Original note"
+        entry.activityType = "Indoor Play"
+        entry.eyfsArea = EyfsArea.communication.rawValue
+        entry.duration = 15
+        entry.isSubmittedToManager = false
+        return entry
+    }
 }

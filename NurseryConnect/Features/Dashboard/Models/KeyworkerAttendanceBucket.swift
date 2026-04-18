@@ -36,8 +36,8 @@ enum KeyworkerAttendanceBucket: Int, CaseIterable, Hashable, Sendable {
     var sectionTitle: String {
         switch self {
         case .onSite: return "On site"
-        case .awaiting: return "Awaiting check-in"
-        case .absent: return "Absent today"
+        case .awaiting: return "Expecting children"
+        case .absent: return "Absent children"
         case .departed: return "Left for the day"
         }
     }

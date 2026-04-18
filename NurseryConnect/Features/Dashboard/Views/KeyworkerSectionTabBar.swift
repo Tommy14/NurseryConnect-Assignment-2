@@ -11,6 +11,7 @@
 // 160426     Tommy1914   Dock track + rim: neutral glass only (no blue wash from glow/primary).
 // 160426     Tommy1914   iOS 26+: Liquid Glass `glassEffect` on dock + selection pill (icons/labels above).
 // 160426     Tommy1914   Selected segment: white icon + label on tinted pill for contrast.
+// 210426     Tommy1914   Drag-scrub between tabs (touch-hold + drag) updates section selection and glass lens transition.
 //
 
 import SwiftUI
@@ -18,6 +19,7 @@ import SwiftUI
 /// - Description: Bottom shell control switching between keyworker root sections; preserves accessibility IDs for UI tests.
 struct KeyworkerSectionTabBar: View {
     @Binding var selectedIndex: Int
+    @State private var dragPillX: CGFloat?
     /// - Description: Invoked when the user taps a segment that is already selected (e.g. Children again to pop `NavigationStack` to root).
     var onReselectTab: ((Int) -> Void)? = nil
 
@@ -55,7 +57,11 @@ struct KeyworkerSectionTabBar: View {
         let pillHeight = dockBarHeight - trackMargin * 2
         let pillWidth = segmentW
         let pillCorner = pillHeight / 2
-        let pillX = trackMargin + CGFloat(selectedIndex) * segmentStride
+        let restingPillX = trackMargin + CGFloat(selectedIndex) * segmentStride
+        let minPillX = trackMargin
+        let maxPillX = trackMargin + segmentStride
+        let displayedPillX = clampedPillX(dragPillX ?? restingPillX, minX: minPillX, maxX: maxPillX)
+        let visualIndex = indexForPillX(displayedPillX, firstSlotX: trackMargin, segmentStride: segmentStride)
 
         return ZStack(alignment: .topLeading) {
             dockTrackFill(outerRadius: outerRadius)
@@ -63,10 +69,11 @@ struct KeyworkerSectionTabBar: View {
             selectionPill(
                 width: pillWidth,
                 height: pillHeight,
-                corner: pillCorner
+                corner: pillCorner,
+                visualIndex: visualIndex
             )
-            .offset(x: pillX, y: trackMargin)
-            .animation(.spring(response: 0.4, dampingFraction: 0.84), value: selectedIndex)
+            .offset(x: displayedPillX, y: trackMargin)
+            .animation(dragPillX == nil ? .spring(response: 0.4, dampingFraction: 0.84) : .linear(duration: 0.06), value: displayedPillX)
 
             HStack {
                 Spacer(minLength: 0)
@@ -77,7 +84,8 @@ struct KeyworkerSectionTabBar: View {
                         index: 0,
                         accessibilityID: AppConstants.AccessibilityID.myChildrenTab,
                         segmentWidth: segmentW,
-                        height: dockBarHeight
+                        height: dockBarHeight,
+                        visualIndex: visualIndex
                     )
                     segmentButton(
                         title: "Incidents",
@@ -85,7 +93,8 @@ struct KeyworkerSectionTabBar: View {
                         index: 1,
                         accessibilityID: AppConstants.AccessibilityID.incidentsTab,
                         segmentWidth: segmentW,
-                        height: dockBarHeight
+                        height: dockBarHeight,
+                        visualIndex: visualIndex
                     )
                 }
                 .frame(width: innerW)
@@ -111,6 +120,35 @@ struct KeyworkerSectionTabBar: View {
         .frame(width: width, height: dockBarHeight)
         .shadow(color: Color.black.opacity(0.1), radius: 14, x: 0, y: 8)
         .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+        .contentShape(RoundedRectangle(cornerRadius: outerRadius, style: .continuous))
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    let targetPillX = clampedPillX(
+                        value.location.x - (pillWidth / 2),
+                        minX: minPillX,
+                        maxX: maxPillX
+                    )
+                    dragPillX = targetPillX
+
+                    let targetIndex = indexForPillX(targetPillX, firstSlotX: trackMargin, segmentStride: segmentStride)
+                    if targetIndex != selectedIndex {
+                        selectedIndex = targetIndex
+                    }
+                }
+                .onEnded { value in
+                    let finalPillX = clampedPillX(
+                        value.location.x - (pillWidth / 2),
+                        minX: minPillX,
+                        maxX: maxPillX
+                    )
+                    let finalIndex = indexForPillX(finalPillX, firstSlotX: trackMargin, segmentStride: segmentStride)
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+                        selectedIndex = finalIndex
+                        dragPillX = nil
+                    }
+                }
+        )
     }
 
     /// - Description: Outer dock — Liquid Glass on iOS 26+; `Material` + tint wash on older OS (labels sit above this layer).
@@ -159,9 +197,9 @@ struct KeyworkerSectionTabBar: View {
     }
 
     @ViewBuilder
-    private func selectionPill(width: CGFloat, height: CGFloat, corner: CGFloat) -> some View {
+    private func selectionPill(width: CGFloat, height: CGFloat, corner: CGFloat, visualIndex: Int) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        let accent = selectedIndex == 0 ? childrenAccent : incidentsAccent
+        let accent = visualIndex == 0 ? childrenAccent : incidentsAccent
         if #available(iOS 26.0, *) {
             ZStack {
                 shape
@@ -243,9 +281,10 @@ struct KeyworkerSectionTabBar: View {
         index: Int,
         accessibilityID: String,
         segmentWidth: CGFloat,
-        height: CGFloat
+        height: CGFloat,
+        visualIndex: Int
     ) -> some View {
-        let selected = selectedIndex == index
+        let selected = visualIndex == index
         return Button {
             if selectedIndex == index {
                 onReselectTab?(index)
@@ -278,6 +317,17 @@ struct KeyworkerSectionTabBar: View {
             return AnyShapeStyle(Color.white)
         }
         return AnyShapeStyle(Color.primary.opacity(0.78))
+    }
+
+    /// - Description: Maps pill offset to nearest section index.
+    private func indexForPillX(_ pillX: CGFloat, firstSlotX: CGFloat, segmentStride: CGFloat) -> Int {
+        let threshold = firstSlotX + (segmentStride / 2)
+        return pillX >= threshold ? 1 : 0
+    }
+
+    /// - Description: Keeps the moving lens inside the two-segment track.
+    private func clampedPillX(_ x: CGFloat, minX: CGFloat, maxX: CGFloat) -> CGFloat {
+        min(max(x, minX), maxX)
     }
 }
 

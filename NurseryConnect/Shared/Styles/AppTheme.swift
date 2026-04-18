@@ -12,6 +12,7 @@
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with rounded headings and semantic colours.
 // 140426     Tommy1914   `ncRootScrollEdgeEffectForTopNavigation` for iOS 26 root lists.
+// 210426     Tommy1914   Stronger top scroll-edge style so nav-bar drag shows the same magnified glass response as the tab dock.
 // -----------------------------------------------------------------
 
 import SwiftUI
@@ -62,9 +63,13 @@ enum AppTheme {
 }
 
 extension View {
-    /// - Description: Reserved for future tuning; an explicit soft scroll-edge on root lists was causing a full-view white wash on some iOS 26 builds, so we rely on system + nav appearance instead.
+    /// - Description: Enables the top scroll-edge/nav-bar drag response on root scroll views where this modifier is applied.
     @ViewBuilder
     func ncRootScrollEdgeEffectForTopNavigation() -> some View {
-        self
+        if #available(iOS 26.0, *) {
+            self.scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            self
+        }
     }
 }

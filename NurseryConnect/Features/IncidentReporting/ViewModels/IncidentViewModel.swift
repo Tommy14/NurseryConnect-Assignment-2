@@ -40,6 +40,15 @@ struct ParentNotificationBanner: Identifiable, Hashable {
     /// Stable per child so multiple qualifying incidents do not duplicate the banner.
     let id: String
     let childFirstName: String
+    let message: String
+}
+
+/// - Description: Presentation copy for elapsed incident timing and escalation threshold.
+struct IncidentEscalationPresentation: Equatable {
+    let submittedAtText: String
+    let elapsedText: String
+    let statusLine: String
+    let isEscalationDue: Bool
 }
 
 /// - Description: Coordinates incident fetching, filtering, and safeguarding checks.
@@ -152,6 +161,34 @@ final class IncidentViewModel: ObservableObject {
         await refresh()
     }
 
+    /// - Description: Builds manager-review/escalation wording for an incident.
+    /// - Parameters:
+    ///   - incident: Incident to evaluate.
+    ///   - referenceDate: Date used as "now" for elapsed calculations.
+    /// - Returns: Presentation payload when timing can be computed.
+    func escalationPresentation(for incident: Incident, referenceDate: Date = Date()) -> IncidentEscalationPresentation? {
+        guard let submittedAt = incident.timestamp else { return nil }
+        let elapsedSeconds = max(0, Int(referenceDate.timeIntervalSince(submittedAt)))
+        let thresholdSeconds = Int(AppConstants.parentNotificationWarningThresholdSeconds)
+        let isDue = elapsedSeconds >= thresholdSeconds
+
+        let submittedAtText = submittedAt.formatted(date: .omitted, time: .shortened)
+        let elapsedText = Self.elapsedDurationText(from: elapsedSeconds)
+        let thresholdText = Self.elapsedDurationText(from: thresholdSeconds)
+        let remainingSeconds = max(0, thresholdSeconds - elapsedSeconds)
+        let remainingText = Self.elapsedDurationText(from: remainingSeconds)
+        let statusLine = isDue
+            ? "Submitted \(elapsedText) ago - escalation due (\(thresholdText) threshold)"
+            : "Submitted \(elapsedText) ago - escalation in \(remainingText)"
+
+        return IncidentEscalationPresentation(
+            submittedAtText: submittedAtText,
+            elapsedText: elapsedText,
+            statusLine: statusLine,
+            isEscalationDue: isDue
+        )
+    }
+
     // MARK: - Private Methods
 
     /// - Description: Fetches incidents for assigned children only.
@@ -201,6 +238,7 @@ final class IncidentViewModel: ObservableObject {
     ///   - incidents: All incidents for the practitioner (unfiltered).
     /// - Returns: Banner models for UI presentation.
     private func computeParentNotificationBanners(from incidents: [Incident]) -> [ParentNotificationBanner] {
+        let referenceDate = Date()
         var seenChildObjectIDs = Set<NSManagedObjectID>()
         var banners: [ParentNotificationBanner] = []
         for incident in incidents {
@@ -208,15 +246,29 @@ final class IncidentViewModel: ObservableObject {
             let status = IncidentStatus.fromPersistence(incident.status ?? "")
             if status == .draft { continue }
             if incident.isParentNotified { continue }
-            let age = Date().timeIntervalSince(timestamp)
+            let age = referenceDate.timeIntervalSince(timestamp)
             if age <= AppConstants.parentNotificationWarningThresholdSeconds { continue }
             guard let child = incident.child else { continue }
             if seenChildObjectIDs.contains(child.objectID) { continue }
             seenChildObjectIDs.insert(child.objectID)
             let childName = child.firstName ?? "Child"
             let bannerId = child.objectID.uriRepresentation().absoluteString
-            banners.append(ParentNotificationBanner(id: bannerId, childFirstName: childName))
+            guard let timing = escalationPresentation(for: incident, referenceDate: referenceDate) else { continue }
+            let message = incident.managerCountersigned
+                ? "Awaiting parent notification - submitted at \(timing.submittedAtText). \(timing.statusLine)"
+                : "Awaiting manager review - submitted at \(timing.submittedAtText). \(timing.statusLine)"
+            banners.append(ParentNotificationBanner(id: bannerId, childFirstName: childName, message: message))
         }
         return banners
+    }
+
+    private static func elapsedDurationText(from seconds: Int) -> String {
+        let totalMinutes = seconds / 60
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
     }
 }

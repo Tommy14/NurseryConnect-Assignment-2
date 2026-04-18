@@ -22,14 +22,31 @@ import SwiftUI
 
 /// - Description: Sheet form that creates a `DiaryEntry` for the selected child.
 struct AddDiaryEntryView: View {
+    enum EntryMode {
+        case create
+        case correction(existingEntry: DiaryEntry)
+    }
+
+    enum CorrectionReasonOption: String, CaseIterable, Identifiable {
+        case typo = "Typographical error"
+        case missingDetail = "Missing detail added"
+        case wrongChildContext = "Wrong child context corrected"
+        case timeAdjustment = "Event time adjusted"
+        case complianceClarification = "Compliance clarification"
+        case other = "Other"
+
+        var id: String { rawValue }
+    }
+
     let childID: UUID
     @ObservedObject var viewModel: DailyDiaryViewModel
+    let childAllergies: String
     /// - Description: When set, pre-fills type, meal slot, and default log time from a planned session row.
     var plannedSessionContext: PlannedSessionLogContext?
     /// - Description: When false, save is blocked (e.g. before check-in or after check-out). Re-evaluated on each save attempt.
     private let isDiaryLoggingPermitted: () -> Bool
+    private let mode: EntryMode
 
-    @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedType: DiaryEntryType = .activity
@@ -43,6 +60,7 @@ struct AddDiaryEntryView: View {
     @State private var sleepPosition: SleepPosition = .back
     @State private var sleepDisturbances: Bool = false
     @State private var mealSlot: MealSlot = .lunch
+    @State private var mealIsFluidOnly: Bool = false
     @State private var mealDescription: String = ""
     @State private var mealConsumption: MealConsumptionLevel = .most
     @State private var fluidIntake: Int = 100
@@ -55,17 +73,30 @@ struct AddDiaryEntryView: View {
     @State private var milestoneText: String = ""
     @State private var milestoneNextSteps: String = ""
     @State private var milestoneEvidence: String = ""
-    @State private var showValidation: Bool = false
+    @State private var showValidationAlert = false
+    @State private var validationMessage = ""
     @State private var didApplyPlannedPrefill = false
+    @State private var didApplyCorrectionPrefill = false
+    @State private var selectedCorrectionReason: CorrectionReasonOption = .typo
+    @State private var correctionReasonOtherText: String = ""
+
+    private var isCorrectionMode: Bool {
+        if case .correction = mode { return true }
+        return false
+    }
 
     init(
         childID: UUID,
         viewModel: DailyDiaryViewModel,
+        childAllergies: String = "",
+        mode: EntryMode = .create,
         plannedSessionContext: PlannedSessionLogContext? = nil,
         isDiaryLoggingPermitted: @escaping () -> Bool = { true }
     ) {
         self.childID = childID
         self.viewModel = viewModel
+        self.childAllergies = childAllergies
+        self.mode = mode
         self.plannedSessionContext = plannedSessionContext
         self.isDiaryLoggingPermitted = isDiaryLoggingPermitted
     }
@@ -86,15 +117,12 @@ struct AddDiaryEntryView: View {
                     diaryTypeChipStrip
                     detailsCard
                     notesCard
-                    if showValidation && !validation.isValid {
-                        validationCallout
-                    }
                 }
                 .padding()
             }
             .scrollIndicators(.hidden)
             .background { diaryFormAtmosphereBackground }
-            .navigationTitle("New entry")
+            .navigationTitle(isCorrectionMode ? "Correct entry" : "New entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -103,7 +131,7 @@ struct AddDiaryEntryView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { Task { await save() } }
+                    Button(isCorrectionMode ? "Apply correction" : "Save") { Task { await save() } }
                         .fontWeight(.semibold)
                         .tint(Color.ncPrimary)
                         .accessibilityIdentifier(AppConstants.AccessibilityID.saveDiaryEntry)
@@ -116,6 +144,12 @@ struct AddDiaryEntryView: View {
         .tint(Color.ncPrimary)
         .onAppear {
             applyPlannedSessionPrefillIfNeeded()
+            applyCorrectionPrefillIfNeeded()
+        }
+        .alert("Required fields missing", isPresented: $showValidationAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(validationMessage)
         }
     }
 
@@ -133,6 +167,36 @@ struct AddDiaryEntryView: View {
             sleepStart = t
             sleepEnd = t.addingTimeInterval(30 * 60)
         }
+    }
+
+    private func applyCorrectionPrefillIfNeeded() {
+        guard !didApplyCorrectionPrefill else { return }
+        didApplyCorrectionPrefill = true
+        guard case .correction(let entry) = mode else { return }
+
+        selectedType = DiaryEntryType.fromPersistence(entry.entryType ?? "")
+        logTimestamp = entry.timestamp ?? Date()
+        notes = entry.notes ?? ""
+        activityKind = DiaryActivityKind(rawValue: entry.activityType ?? "") ?? .indoorPlay
+        eyfsArea = EyfsArea(rawValue: entry.eyfsArea ?? "") ?? .communication
+        durationMinutes = max(5, Int(entry.duration))
+        sleepStart = entry.timestamp ?? Date()
+        sleepEnd = (entry.timestamp ?? Date()).addingTimeInterval(TimeInterval(max(1, entry.duration)) * 60)
+        sleepPosition = SleepPosition(rawValue: entry.sleepPosition ?? "") ?? .back
+        if let slot = MealSlot(rawValue: entry.activityType ?? "") {
+            mealSlot = slot
+            mealIsFluidOnly = false
+        } else {
+            mealIsFluidOnly = (entry.activityType == "Fluid Intake")
+        }
+        mealDescription = entry.mealDescription ?? ""
+        mealConsumption = MealConsumptionLevel.fromPersistence(entry.mealConsumed)
+        fluidIntake = max(0, Int(entry.fluidIntake))
+        fluidKind = FluidKind(rawValue: entry.fluidType ?? "") ?? .water
+        nappyKind = NappyObservationKind(rawValue: entry.nappyType ?? "") ?? .wet
+        moodRating = entry.moodRating == 0 ? 3 : entry.moodRating
+        milestoneEyfs = EyfsArea(rawValue: entry.eyfsArea ?? "") ?? .communication
+        milestoneText = selectedType == .milestone ? (entry.activityType ?? "") : ""
     }
 
     private var diaryFormAtmosphereBackground: some View {
@@ -204,11 +268,52 @@ struct AddDiaryEntryView: View {
     }
 
     private var notesCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            textEditorCard(
+                label: notesLabelText,
+                icon: "note.text",
+                text: $notes,
+                placeholder: "Add observations, context, or follow-up…"
+            )
+            if isCorrectionMode {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Reason for correction *", systemImage: "pencil.and.list.clipboard")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                    Picker("Reason for correction", selection: $selectedCorrectionReason) {
+                        ForEach(CorrectionReasonOption.allCases) { reason in
+                            Text(reason.rawValue).tag(reason)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    if selectedCorrectionReason == .other {
+                        textEditorCard(
+                            label: "Other reason details *",
+                            icon: "text.bubble",
+                            text: $correctionReasonOtherText,
+                            placeholder: "Enter the correction reason."
+                        )
+                    }
+                }
+                .accessibilityIdentifier("diary_correction_reason")
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ncCardStyle(radius: 20)
+    }
+
+    private func textEditorCard(
+        label: String,
+        icon: String,
+        text: Binding<String>,
+        placeholder: String
+    ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(notesLabelText, systemImage: "note.text")
+            Label(label, systemImage: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.primary)
-            TextEditor(text: $notes)
+            TextEditor(text: text)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
                 .padding(12)
@@ -227,8 +332,8 @@ struct AddDiaryEntryView: View {
                         .allowsHitTesting(false)
                 }
                 .overlay(alignment: .topLeading) {
-                    if notes.isEmpty {
-                        Text("Add observations, context, or follow-up…")
+                    if text.wrappedValue.isEmpty {
+                        Text(placeholder)
                             .font(.body)
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 16)
@@ -237,9 +342,6 @@ struct AddDiaryEntryView: View {
                     }
                 }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .ncCardStyle(radius: 20)
     }
 
     private var notesLabelText: String {
@@ -293,7 +395,8 @@ struct AddDiaryEntryView: View {
             activityType: activityKind.rawValue,
             eyfsArea: eyfsArea.rawValue,
             mealDescription: mealDescription,
-            milestoneDescription: milestoneText
+            milestoneDescription: milestoneText,
+            isMealFluidOnly: mealIsFluidOnly
         )
     }
 
@@ -301,12 +404,18 @@ struct AddDiaryEntryView: View {
     private var typeSpecificFields: some View {
         switch selectedType {
         case .activity:
+            Text("Activity type *")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Picker("Activity type *", selection: $activityKind) {
                 ForEach(DiaryActivityKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
                 }
             }
             .pickerStyle(.menu)
+            Text("EYFS area *")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Picker("EYFS area *", selection: $eyfsArea) {
                 ForEach(EyfsArea.allCases) { area in
                     Text(area.rawValue).tag(area)
@@ -317,6 +426,9 @@ struct AddDiaryEntryView: View {
         case .sleep:
             DatePicker("Start", selection: $sleepStart, displayedComponents: [.hourAndMinute])
             DatePicker("End", selection: $sleepEnd, displayedComponents: [.hourAndMinute])
+            Text("Sleep position")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Picker("Sleep position", selection: $sleepPosition) {
                 ForEach(SleepPosition.allCases) { pos in
                     Text(pos.rawValue).tag(pos)
@@ -325,22 +437,34 @@ struct AddDiaryEntryView: View {
             .pickerStyle(.menu)
             Toggle("Disturbances noted", isOn: $sleepDisturbances)
         case .meal:
-            Picker("Meal", selection: $mealSlot) {
-                ForEach(MealSlot.allCases) { slot in
-                    Text(slot.rawValue).tag(slot)
-                }
+            Toggle("Only Fluid intake", isOn: $mealIsFluidOnly)
+            if !allergiesTrimmed.isEmpty {
+                mealAllergyWarning
             }
-            .pickerStyle(.menu)
-            TextField("Food description *", text: $mealDescription)
-                .padding(12)
-                .background(Color.ncCardSurface)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+            if !mealIsFluidOnly {
+                Text("Meal Time")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Picker("Meal Time", selection: $mealSlot) {
+                    ForEach(MealSlot.allCases) { slot in
+                        Text(slot.rawValue).tag(slot)
+                    }
                 }
-            mealConsumptionPicker
+                .pickerStyle(.menu)
+                TextField("Food description *", text: $mealDescription)
+                    .padding(12)
+                    .background(Color.ncCardSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
+                    }
+                mealConsumptionPicker
+            }
             Stepper("Fluid intake: \(fluidIntake) ml", value: $fluidIntake, in: 0...1000, step: 25)
+            Text("Fluid type")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Picker("Fluid type", selection: $fluidKind) {
                 ForEach(FluidKind.allCases) { fluid in
                     Text(fluid.rawValue).tag(fluid)
@@ -348,6 +472,9 @@ struct AddDiaryEntryView: View {
             }
             .pickerStyle(.menu)
         case .nappy:
+            Text("Nappy type")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
             Picker("Nappy type", selection: $nappyKind) {
                 ForEach(NappyObservationKind.allCases) { kind in
                     Text(kind.rawValue).tag(kind)
@@ -359,6 +486,9 @@ struct AddDiaryEntryView: View {
         case .wellbeing:
             moodPicker
         case .milestone:
+            Text("EYFS area")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Picker("EYFS area", selection: $milestoneEyfs) {
                 ForEach(EyfsArea.allCases) { area in
                     Text(area.rawValue).tag(area)
@@ -432,6 +562,27 @@ struct AddDiaryEntryView: View {
                 }
             }
         }
+    }
+
+    private var allergiesTrimmed: String {
+        childAllergies.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var mealAllergyWarning: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.shield.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.ncDanger)
+                .accessibilityHidden(true)
+            Text("Allergies on file — \(allergiesTrimmed)")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.ncDanger.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var moodPicker: some View {
@@ -559,69 +710,85 @@ struct AddDiaryEntryView: View {
 
     /// - Description: Builds and persists a diary entry for the current form state.
     private func save() async {
-        showValidation = true
-        guard validation.isValid else { return }
-        guard isDiaryLoggingPermitted() else {
-            viewModel.errorMessage = """
-            Logging isn’t available. The child must be checked in on site, and the current time must be within nursery diary hours (from session start until two hours after closing).
-            """
+        guard validation.isValid else {
+            validationMessage = "Please complete: \(validation.missingFields.joined(separator: ", "))"
+            showValidationAlert = true
             return
         }
-        guard let child = fetchChild() else {
-            viewModel.errorMessage = "Missing child record."
+        if isCorrectionMode, selectedCorrectionReason == .other, correctionReasonOtherText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            validationMessage = "Please add a reason for this correction."
+            showValidationAlert = true
             return
         }
-        let entry = DiaryEntry(context: context)
-        let eventTime = selectedType == .sleep ? sleepStart : logTimestamp
-        entry.id = UUID()
-        entry.timestamp = eventTime
-        entry.submittedAt = Date()
-        entry.entryType = selectedType.persistenceValue
-        entry.notes = notesForType()
-        entry.child = child
-        entry.isSubmittedToManager = false
-        switch selectedType {
-        case .activity:
-            entry.activityType = activityKind.rawValue
-            entry.eyfsArea = eyfsArea.rawValue
-            entry.duration = Int32(durationMinutes)
-        case .sleep:
-            entry.timestamp = sleepStart
-            let minutes = max(1, Int(sleepEnd.timeIntervalSince(sleepStart) / 60))
-            entry.duration = Int32(minutes)
-            entry.sleepPosition = sleepPosition.rawValue
-        case .meal:
-            entry.activityType = mealSlot.rawValue
-            entry.mealDescription = mealDescription
-            entry.mealConsumed = mealConsumption.persistenceValue
-            entry.fluidIntake = Int32(fluidIntake)
-            entry.fluidType = fluidKind.rawValue
-        case .nappy:
-            entry.nappyType = nappyKind.rawValue
-        case .wellbeing:
-            entry.moodRating = moodRating
-            if notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                entry.notes = "Mood level \(moodRating)/5 recorded."
-            }
-        case .milestone:
-            entry.activityType = milestoneText
-            entry.eyfsArea = milestoneEyfs.rawValue
+        let draft = buildDraftValues()
+        switch mode {
+        case .create:
+            let ok = await viewModel.createEntry(from: draft)
+            guard ok else { return }
+            NCHaptics.impactLight()
+        case .correction(let existingEntry):
+            let ok = await viewModel.correctEntry(existingEntry, with: draft, reason: resolvedCorrectionReason())
+            guard ok else { return }
+            NCHaptics.impactLight()
         }
-        NCHaptics.impactLight()
-        await viewModel.saveNewEntry(entry)
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             dismiss()
         }
     }
 
-    /// - Description: Fetches the `Child` entity backing this form.
-    /// - Returns: Matching child or `nil` when not found.
-    private func fetchChild() -> Child? {
-        let request: NSFetchRequest<Child> = Child.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", childID as CVarArg)
-        request.fetchLimit = 1
-        return try? context.fetch(request).first
+    private func buildDraftValues() -> DiaryEntryDraftValues {
+        let duration: Int32 = selectedType == .sleep
+            ? Int32(max(1, Int(sleepEnd.timeIntervalSince(sleepStart) / 60)))
+            : Int32(durationMinutes)
+        let mealActivityType = mealIsFluidOnly ? "Fluid Intake" : mealSlot.rawValue
+        let mealConsumed = mealIsFluidOnly ? nil : mealConsumption.persistenceValue
+
+        let resolvedActivityType: String = {
+            switch selectedType {
+            case .activity: return activityKind.rawValue
+            case .meal: return mealActivityType
+            case .milestone: return milestoneText
+            default: return ""
+            }
+        }()
+        let resolvedEyfsArea: String = {
+            switch selectedType {
+            case .activity: return eyfsArea.rawValue
+            case .milestone: return milestoneEyfs.rawValue
+            default: return ""
+            }
+        }()
+        let resolvedNotes: String = {
+            if selectedType == .wellbeing, notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return "Mood level \(moodRating)/5 recorded."
+            }
+            return notesForType()
+        }()
+
+        return DiaryEntryDraftValues(
+            timestamp: selectedType == .sleep ? sleepStart : logTimestamp,
+            entryType: selectedType,
+            notes: resolvedNotes,
+            activityType: resolvedActivityType,
+            eyfsArea: resolvedEyfsArea,
+            duration: duration,
+            mealDescription: selectedType == .meal && !mealIsFluidOnly ? mealDescription : "",
+            mealConsumed: selectedType == .meal ? mealConsumed : nil,
+            fluidIntake: selectedType == .meal ? Int32(fluidIntake) : 0,
+            fluidType: selectedType == .meal ? fluidKind.rawValue : "",
+            nappyType: selectedType == .nappy ? nappyKind.rawValue : "",
+            moodRating: selectedType == .wellbeing ? moodRating : 0,
+            sleepPosition: selectedType == .sleep ? sleepPosition.rawValue : ""
+        )
     }
+
+    private func resolvedCorrectionReason() -> String {
+        if selectedCorrectionReason == .other {
+            return correctionReasonOtherText.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return selectedCorrectionReason.rawValue
+    }
+
 }
 
 #Preview {

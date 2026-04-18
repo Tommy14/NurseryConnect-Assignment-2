@@ -64,6 +64,7 @@ final class DailyDiaryViewModel: ObservableObject {
     func loadEntries() async {
         do {
             entries = try fetchTodayEntries()
+            errorMessage = nil
         } catch {
             errorMessage = "Could not load diary entries."
         }
@@ -73,14 +74,42 @@ final class DailyDiaryViewModel: ObservableObject {
     /// - Parameters:
     ///   - entry: Populated managed object (already inserted into the context).
     func saveNewEntry(_ entry: DiaryEntry) async {
+        errorMessage = nil
         do {
             guard context.hasChanges else { return }
             try context.save()
             await syncQueue.enqueueDiary(entry)
+            errorMessage = nil
             await loadEntries()
         } catch {
             context.delete(entry)
             errorMessage = "Unable to save this diary entry."
+        }
+    }
+
+    /// - Description: Creates and saves a new diary entry using the view-model context.
+    /// - Parameters:
+    ///   - draft: Canonical values collected from the add-entry form.
+    /// - Returns: `true` when the entry is saved successfully.
+    @discardableResult
+    func createEntry(from draft: DiaryEntryDraftValues) async -> Bool {
+        errorMessage = nil
+        do {
+            guard let child = try fetchChild() else {
+                errorMessage = "Missing child record."
+                return false
+            }
+            let entry = DiaryEntry(context: context)
+            entry.id = UUID()
+            entry.submittedAt = Date()
+            entry.child = child
+            entry.isSubmittedToManager = false
+            entry.applyDraft(draft)
+            await saveNewEntry(entry)
+            return errorMessage == nil
+        } catch {
+            errorMessage = "Unable to save this diary entry."
+            return false
         }
     }
 
@@ -93,12 +122,49 @@ final class DailyDiaryViewModel: ObservableObject {
         await persist(entry: entry)
     }
 
-    /// - Description: Deletes a diary entry after confirmation in the UI.
+    /// - Description: Applies an auditable correction while preserving original values.
     /// - Parameters:
-    ///   - entry: Row to remove.
-    func delete(entry: DiaryEntry) async {
-        context.delete(entry)
-        await persistDelete()
+    ///   - entry: Existing diary row to update.
+    ///   - draft: Replacement values that become the current timeline display.
+    ///   - reason: Mandatory reason captured in correction history.
+    /// - Returns: `true` when a correction was applied and persisted.
+    @discardableResult
+    func correctEntry(_ entry: DiaryEntry, with draft: DiaryEntryDraftValues, reason: String) async -> Bool {
+        errorMessage = nil
+        let trimmedReason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedReason.isEmpty else {
+            errorMessage = "A correction reason is required."
+            return false
+        }
+
+        let changes = entry.correctionChanges(comparedTo: draft)
+        guard !changes.isEmpty else {
+            errorMessage = "No changes detected to save."
+            return false
+        }
+
+        entry.storeOriginalSnapshotIfNeeded()
+        let correctedAt = Date()
+        for change in changes {
+            let correction = DiaryEntryCorrection(context: context)
+            correction.id = UUID()
+            correction.correctedAt = correctedAt
+            correction.reason = trimmedReason
+            correction.fieldName = change.fieldName
+            correction.oldValue = change.oldValue
+            correction.newValue = change.newValue
+            correction.entry = entry
+        }
+
+        entry.applyDraft(draft)
+        entry.hasCorrections = true
+        entry.lastCorrectedAt = correctedAt
+        await persist(entry: entry, enqueueSync: true)
+        let succeeded = (errorMessage == nil)
+        if succeeded {
+            errorMessage = nil
+        }
+        return succeeded
     }
 
     /// - Description: Returns effective queue state for sync status badges.
@@ -127,7 +193,8 @@ final class DailyDiaryViewModel: ObservableObject {
         activityType: String,
         eyfsArea: String,
         mealDescription: String,
-        milestoneDescription: String
+        milestoneDescription: String,
+        isMealFluidOnly: Bool = false
     ) -> DiaryDraftValidation {
         var missing: [String] = []
         switch type {
@@ -135,7 +202,9 @@ final class DailyDiaryViewModel: ObservableObject {
             if activityType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Activity type") }
             if eyfsArea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("EYFS area") }
         case .meal:
-            if mealDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Food description") }
+            if !isMealFluidOnly && mealDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                missing.append("Food description")
+            }
         case .milestone:
             if milestoneDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Milestone description") }
         case .wellbeing:
@@ -179,25 +248,18 @@ final class DailyDiaryViewModel: ObservableObject {
     /// - Description: Saves the context after a mutation, surfacing failures.
     /// - Parameters:
     ///   - entry: Optional entry for rollback on failure.
-    private func persist(entry: DiaryEntry? = nil) async {
+    private func persist(entry: DiaryEntry? = nil, enqueueSync: Bool = false) async {
         do {
             try context.save()
+            if enqueueSync, let entry {
+                await syncQueue.enqueueDiary(entry)
+            }
             await loadEntries()
         } catch {
             if let entry {
                 context.refresh(entry, mergeChanges: false)
             }
             errorMessage = "Could not update this entry."
-        }
-    }
-
-    /// - Description: Persists after a deletion operation.
-    private func persistDelete() async {
-        do {
-            try context.save()
-            await loadEntries()
-        } catch {
-            errorMessage = "Could not delete this entry."
         }
     }
 }

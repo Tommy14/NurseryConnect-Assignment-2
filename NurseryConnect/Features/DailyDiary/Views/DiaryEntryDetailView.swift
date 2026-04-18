@@ -24,9 +24,8 @@ struct DiaryEntryDetailView: View {
     @ObservedObject var entry: DiaryEntry
     @ObservedObject var viewModel: DailyDiaryViewModel
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var showDeleteConfirm = false
     @State private var showSubmitConfirm = false
+    @State private var showCorrectionSheet = false
 
     private var type: DiaryEntryType {
         DiaryEntryType.fromPersistence(entry.entryType ?? "")
@@ -98,6 +97,12 @@ struct DiaryEntryDetailView: View {
 
                 typeSpecific
 
+                if entry.hasCorrections {
+                    correctionSummaryCard
+                    originalSnapshotCard
+                    correctionHistoryCard
+                }
+
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Room leader handover", systemImage: "checkmark.seal.fill")
                         .font(.subheadline.weight(.semibold))
@@ -133,6 +138,7 @@ struct DiaryEntryDetailView: View {
                 }
             }
             .padding()
+            .padding(.bottom, 96)
         }
         .scrollIndicators(.hidden)
         .background(Color.ncBackground.ignoresSafeArea())
@@ -140,15 +146,11 @@ struct DiaryEntryDetailView: View {
         .toolbarBackground(Color.ncBackground, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
-            if !entry.isSubmittedToManager {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                    .accessibilityLabel("Delete diary entry")
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Correct log") {
+                    showCorrectionSheet = true
                 }
+                .font(.subheadline.weight(.semibold))
             }
         }
         .alert("Submit to room leader?", isPresented: $showSubmitConfirm) {
@@ -157,18 +159,15 @@ struct DiaryEntryDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("After confirming, this entry is locked and can no longer be deleted.")
+            Text("After confirming, this entry is locked for handover but corrections remain available with an audit reason.")
         }
-        .alert("Delete this diary entry?", isPresented: $showDeleteConfirm) {
-            Button("Delete", role: .destructive) {
-                Task {
-                    await viewModel.delete(entry: entry)
-                    dismiss()
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This cannot be undone.")
+        .sheet(isPresented: $showCorrectionSheet) {
+            AddDiaryEntryView(
+                childID: entry.child?.id ?? UUID(),
+                viewModel: viewModel,
+                childAllergies: entry.child?.allergies ?? "",
+                mode: .correction(existingEntry: entry)
+            )
         }
     }
 
@@ -187,4 +186,113 @@ struct DiaryEntryDetailView: View {
             WellbeingCard(entry: entry)
         }
     }
+
+    private var correctionSummaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Corrected log", systemImage: "checkmark.seal.fill")
+                .font(.subheadline.weight(.semibold))
+            Text("Timeline shows this corrected version.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            if let lastCorrectedAt = entry.lastCorrectedAt {
+                Text("Last corrected at \(lastCorrectedAt.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ncStudioElevatedSurface(cornerRadius: 16)
+    }
+
+    private var originalSnapshotCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Original log", systemImage: "doc.text.magnifyingglass")
+                .font(.subheadline.weight(.semibold))
+            if let snapshot = entry.decodedOriginalSnapshot {
+                keyValue("Type", DiaryEntryType.fromPersistence(snapshot.entryType).title)
+                keyValue("Time", (snapshot.timestamp ?? Date()).formattedTime(style: .medium))
+                keyValue("Notes", snapshot.notes)
+                if !snapshot.activityType.isEmpty { keyValue("Activity", snapshot.activityType) }
+                if !snapshot.eyfsArea.isEmpty { keyValue("EYFS area", snapshot.eyfsArea) }
+                if !snapshot.mealDescription.isEmpty { keyValue("Meal", snapshot.mealDescription) }
+                if !snapshot.nappyType.isEmpty { keyValue("Nappy", snapshot.nappyType) }
+                if snapshot.moodRating != 0 { keyValue("Mood", "\(snapshot.moodRating)/5") }
+            } else {
+                Text("Original details are unavailable for this record.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ncStudioElevatedSurface(cornerRadius: 16)
+    }
+
+    private var correctionHistoryCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Correction history", systemImage: "list.bullet.rectangle.portrait")
+                .font(.subheadline.weight(.semibold))
+            ForEach(groupedCorrections.indices, id: \.self) { idx in
+                let group = groupedCorrections[idx]
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(group.correctedAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Reason: \(group.reason)")
+                        .font(.footnote.weight(.semibold))
+                    ForEach(group.changes, id: \.objectID) { change in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(change.fieldName ?? "field")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text("\(change.oldValue ?? "") -> \(change.newValue ?? "")")
+                                .font(.footnote)
+                        }
+                    }
+                }
+                if idx < groupedCorrections.count - 1 {
+                    Divider()
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .ncStudioElevatedSurface(cornerRadius: 16)
+    }
+
+    private var groupedCorrections: [CorrectionGroup] {
+        let ordered = entry.sortedCorrections
+        var groups: [CorrectionGroup] = []
+        for correction in ordered {
+            if let last = groups.last, last.correctedAt == correction.correctedAt, last.reason == correction.reason {
+                groups[groups.count - 1].changes.append(correction)
+            } else {
+                groups.append(
+                    CorrectionGroup(
+                        correctedAt: correction.correctedAt ?? .distantPast,
+                        reason: correction.reason ?? "",
+                        changes: [correction]
+                    )
+                )
+            }
+        }
+        return groups.reversed()
+    }
+
+    private func keyValue(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value.isEmpty ? "—" : value)
+                .font(.footnote)
+        }
+    }
+}
+
+private struct CorrectionGroup {
+    let correctedAt: Date
+    let reason: String
+    var changes: [DiaryEntryCorrection]
 }

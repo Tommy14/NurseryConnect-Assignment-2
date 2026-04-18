@@ -58,7 +58,7 @@ enum DataSeeder {
 
     // MARK: - Private Methods
 
-    /// - Description: Builds five diverse sample children assigned to the demo keyworker.
+    /// - Description: Builds diverse sample children assigned to the demo keyworker.
     /// - Parameters:
     ///   - context: Insertion context.
     /// - Description: Ensures legacy or partially migrated `Child` rows match the demo keyworker so the dashboard predicate returns them.
@@ -163,6 +163,91 @@ enum DataSeeder {
                 eyfsDevelopmentNotes: "L: enjoys mark-making and songs. UTW: explores textures in messy play. EAD: dance and instruments — high engagement.",
                 consentRecordsNotes: "Library visit: signed. Dental outreach: consent given. Marketing use of images: no.",
                 authorisedCollectors: "Elena Tiana\nMarco Tiana\nRosa Tiana (grandmother — password: “sunflower”)"
+            ),
+            SampleChildSeed(
+                firstName: "Nila",
+                lastName: "Fernando",
+                preferredName: "Nila",
+                dateOfBirth: Calendar.current.date(byAdding: .month, value: -36, to: Date()) ?? Date(),
+                roomName: "Sunshine Room",
+                allergies: "Sesame",
+                dietaryRequirements: "No sesame seeds or tahini products",
+                medicalNotes: "Carries antihistamine prescribed by GP; care plan reviewed Feb 2026.",
+                photoConsent: true,
+                homeAddress: "27 Cedar Way, Demo Town DT2 6QH",
+                nationality: "British / Sri Lankan",
+                familyDetails: "Mother: Ishani Fernando (07900 000006). Father: Malik Fernando. Child attends Tuesday and Thursday dance class after nursery.",
+                eyfsDevelopmentNotes: "EAD: imaginative role-play. C&L: asks clear questions in group time. Next step: confidence in early writing strokes.",
+                consentRecordsNotes: "Forest school sessions: signed. Face painting: approved with hypoallergenic paints only. App notifications: enabled.",
+                authorisedCollectors: "Ishani Fernando\nMalik Fernando\nKumari Perera (grandmother, photo ID on file)"
+            ),
+            SampleChildSeed(
+                firstName: "Luca",
+                lastName: "Martins",
+                preferredName: "Luca",
+                dateOfBirth: Calendar.current.date(byAdding: .month, value: -33, to: Date()) ?? Date(),
+                roomName: "Sunshine Room",
+                allergies: "",
+                dietaryRequirements: "Pescatarian meals",
+                medicalNotes: "No diagnosed conditions; hearing check completed Nov 2025.",
+                photoConsent: true,
+                homeAddress: "9 Brookside Mews, Demo Town DT5 4RL",
+                nationality: "Portuguese / British",
+                familyDetails: "Mother: Sofia Martins (07900 000007). Father: Daniel Martins. Home language mix: Portuguese and English.",
+                eyfsDevelopmentNotes: "Maths: enjoys counting objects during tidy-up. UTW: curious about weather and seasons. PD: improving balance beam confidence.",
+                consentRecordsNotes: "Community garden outing: signed. Toothbrushing programme: signed. Public-facing social media use: no.",
+                authorisedCollectors: "Sofia Martins\nDaniel Martins\nHelena Costa (aunt, password on file)"
+            ),
+            SampleChildSeed(
+                firstName: "Amara",
+                lastName: "Kulathunga",
+                preferredName: "Amy",
+                dateOfBirth: Calendar.current.date(byAdding: .year, value: -4, to: Date()) ?? Date(),
+                roomName: "Sunshine Room",
+                allergies: "Strawberry",
+                dietaryRequirements: "Halal meals",
+                medicalNotes: "Mild speech delay follow-up with SALT every two weeks.",
+                photoConsent: false,
+                homeAddress: "41 Rosebank Terrace, Demo Town DT1 3YU",
+                nationality: "British",
+                familyDetails: "Mother: Farah Khan (07900 000008). Father: Ahmed Khan. Older brother in Reception class nearby.",
+                eyfsDevelopmentNotes: "C&L: strong listening in small groups. PSED: kind peer support during transitions. Next step: sentence expansion in storytelling.",
+                consentRecordsNotes: "External specialist visits: signed. Group photos for display boards: no. Emergency medicine consent: signed.",
+                authorisedCollectors: "Farah Kulathunga\nAhmed Kulathunga\nSamira Kulathunga (aunt, verified)"
+            ),
+            SampleChildSeed(
+                firstName: "Theo",
+                lastName: "Bennett",
+                preferredName: "Theo",
+                dateOfBirth: Calendar.current.date(byAdding: .month, value: -29, to: Date()) ?? Date(),
+                roomName: "Sunshine Room",
+                allergies: "",
+                dietaryRequirements: "",
+                medicalNotes: "Occasional wheeze in cold weather; inhaler not required currently.",
+                photoConsent: true,
+                homeAddress: "6 Lantern Court, Demo Town DT6 2BC",
+                nationality: "British",
+                familyDetails: "Mother: Chloe Bennett (07900 000009). Father: Jack Bennett. Shared custody with alternating weekly pickups.",
+                eyfsDevelopmentNotes: "PD: loves outdoor obstacle courses. EAD: enjoys drumming and rhythm games. Next step: cooperative play turn-taking.",
+                consentRecordsNotes: "Off-site library walk: signed. Water play photography: yes for learning journal only. Allergy sharing with kitchen: not applicable.",
+                authorisedCollectors: "Chloe Bennett\nJack Bennett\nMegan Price (childminder, Thu/Fri)"
+            ),
+            SampleChildSeed(
+                firstName: "Mina",
+                lastName: "Perera",
+                preferredName: "Mina",
+                dateOfBirth: Calendar.current.date(byAdding: .month, value: -40, to: Date()) ?? Date(),
+                roomName: "Sunshine Room",
+                allergies: "Tree nuts",
+                dietaryRequirements: "Vegetarian meals",
+                medicalNotes: "EpiPen stored in medical cabinet; annual review due July 2026.",
+                photoConsent: true,
+                homeAddress: "112 Hillcrest Avenue, Demo Town DT7 8NE",
+                nationality: "British / Indian",
+                familyDetails: "Mother: Priya Patel (07900 000010). Father: Arun Patel. Grandfather frequently attends stay-and-play sessions.",
+                eyfsDevelopmentNotes: "Literacy: recognises name card independently. Maths: sorts by size and colour. Next step: phonological awareness games.",
+                consentRecordsNotes: "Cooking activities: adapted plan signed. Face paints: no. Celebration photos in closed parent app: yes.",
+                authorisedCollectors: "Priya Perera\nArun Perera\nRakesh Perera (grandfather, ID held)"
             )
         ]
 

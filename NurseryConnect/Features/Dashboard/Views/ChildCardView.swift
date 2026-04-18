@@ -52,7 +52,7 @@ struct ChildCardView: View {
                     usesAttendanceForActivityLine: true
                 )
             }
-            return "Awaiting check-in"
+            return "Not checked in"
         case .onSite:
             return NurseryDaySchedule.currentActivitySummary(
                 referenceNow: currentDate,
@@ -79,7 +79,19 @@ struct ChildCardView: View {
     }
 
     private var shouldShowAllergies: Bool {
-        !allergiesTrimmed.isEmpty && NurseryDaySchedule.isWithinMealVisibilityWindow(reference: currentDate, minutesBeforeStart: 5)
+        shouldShowAttendanceWarnings
+            && !allergiesTrimmed.isEmpty
+            && NurseryDaySchedule.isWithinMealVisibilityWindow(reference: currentDate, minutesBeforeStart: 5)
+    }
+
+    /// - Description: Hides warning badges unless the child is currently on site.
+    private var shouldShowAttendanceWarnings: Bool {
+        switch summary.attendanceBucket {
+        case .awaiting, .absent, .departed:
+            return false
+        case .onSite:
+            return true
+        }
     }
 
     private var dotColor: Color {
@@ -106,6 +118,11 @@ struct ChildCardView: View {
         return min(5, max(0, Int(r)))
     }
 
+    /// - Description: Hides the "No logs" warning capsule when the child is absent, awaiting check-in, or already departed.
+    private var shouldShowDiaryStatusCapsule: Bool {
+        !(summary.dot == .none && summary.attendanceBucket != .onSite)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
@@ -124,7 +141,7 @@ struct ChildCardView: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                        if summary.hasOpenIncident {
+                        if shouldShowAttendanceWarnings && summary.hasOpenIncident {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Color.ncDanger)
@@ -180,23 +197,25 @@ struct ChildCardView: View {
                         allergyIndicator
                     }
 
-                    HStack(spacing: 4) {
-                        if summary.dot == .partial {
-                            Image(systemName: "list.clipboard.fill")
-                                .font(.caption2.weight(.semibold))
-                                .accessibilityHidden(true)
+                    if shouldShowDiaryStatusCapsule {
+                        HStack(spacing: 4) {
+                            if summary.dot == .partial {
+                                Image(systemName: "list.clipboard.fill")
+                                    .font(.caption2.weight(.semibold))
+                                    .accessibilityHidden(true)
+                            }
+                            Text(diaryStatusTitle)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
                         }
-                        Text(diaryStatusTitle)
-                            .font(.caption.weight(.semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
+                        .foregroundStyle(dotColor)
+                        .padding(.horizontal, summary.dot == .partial ? 8 : 9)
+                        .padding(.vertical, 5)
+                        .background(Capsule(style: .continuous).fill(dotColor.opacity(0.14)))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(diaryDotAccessibilityLabel)
                     }
-                    .foregroundStyle(dotColor)
-                    .padding(.horizontal, summary.dot == .partial ? 8 : 9)
-                    .padding(.vertical, 5)
-                    .background(Capsule(style: .continuous).fill(dotColor.opacity(0.14)))
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(diaryDotAccessibilityLabel)
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
@@ -204,7 +223,7 @@ struct ChildCardView: View {
                 }
             }
 
-            if !summary.photoConsent {
+            if shouldShowAttendanceWarnings && !summary.photoConsent {
                 photoConsentWarningBanner
             }
         }
@@ -217,7 +236,9 @@ struct ChildCardView: View {
                 switch summary.attendanceBucket {
                 case .awaiting:
                     return "Opens check-in. Enter who dropped the child off; arrival time is recorded automatically."
-                case .absent, .onSite, .departed:
+                case .absent:
+                    return "Asks whether the child is attending before opening check-in."
+                case .onSite, .departed:
                     return "Opens today’s diary for this child."
                 }
             }()
@@ -233,18 +254,29 @@ struct ChildCardView: View {
                 let t = context.date.timeIntervalSince1970
                 return 0.5 + 0.5 * (0.5 + 0.5 * sin(t * 5))
             }()
-            Text("⚠️ Allergy")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.red.opacity(urgent ? (animating ? 0.7 + 0.3 * pulse : 1) : 1))
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2.weight(.bold))
+                Text("Allergy")
+                    .font(.caption2.weight(.bold))
+                    .lineLimit(1)
+            }
+                .foregroundStyle(Color.red.opacity(urgent ? (animating ? 0.7 + 0.3 * pulse : 1) : 0.96))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.red.opacity(urgent ? 0.16 : 0.10))
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.red.opacity(urgent ? 0.18 : 0.14), Color.red.opacity(0.08)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
                 .overlay(
                     Capsule(style: .continuous)
-                        .stroke(Color.red.opacity(urgent ? 0.45 : 0.3), lineWidth: 1)
+                        .stroke(Color.red.opacity(urgent ? 0.5 : 0.36), lineWidth: 1)
                 )
                 .accessibilityIdentifier(AppConstants.AccessibilityID.childCardAllergies)
         }
@@ -259,27 +291,35 @@ struct ChildCardView: View {
     }
 
     private var photoConsentWarningBanner: some View {
-        HStack(alignment: .center, spacing: 6) {
+        HStack(spacing: 5) {
             Image(systemName: "camera.fill")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.red)
-            Text("NO PHOTOGRAPHY CONSENT")
+                .foregroundStyle(Color.red.opacity(0.95))
+            Image(systemName: "slash.circle.fill")
                 .font(.caption2.weight(.black))
                 .foregroundStyle(Color.red)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
+            Text("NO PHOTOGRAPHY")
+                .font(.caption2.weight(.heavy))
+                .foregroundStyle(Color.red.opacity(0.96))
+                .lineLimit(1)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.red.opacity(0.12))
+            Capsule(style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.red.opacity(0.14), Color.red.opacity(0.08)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.red.opacity(0.45), lineWidth: 1.2)
+            Capsule(style: .continuous)
+                .stroke(Color.red.opacity(0.5), lineWidth: 1.1)
         )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

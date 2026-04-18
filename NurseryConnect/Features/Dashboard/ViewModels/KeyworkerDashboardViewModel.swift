@@ -77,6 +77,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
     @Published private(set) var childSummaries: [KeyworkerChildSummary] = []
     @Published private(set) var isLoading = true
     @Published var errorMessage: String?
+    @Published private(set) var hasCheckedInChild = false
 
     // MARK: - Properties
 
@@ -123,6 +124,8 @@ final class KeyworkerDashboardViewModel: ObservableObject {
         do {
             let children = try fetchAssignedChildren()
             var rows: [KeyworkerChildSummary] = []
+            let now = Date()
+            var didAutoMarkAbsent = false
             for child in children {
                 guard let id = child.id else { continue }
                 let entries = try todaysDiaryEntries(for: child)
@@ -130,7 +133,21 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                 let sleepIntervals = DayTimelineMerger.sleepIntervals(from: entries).map {
                     ChildSleepInterval(start: $0.start, end: $0.end)
                 }
-                let attendance = try todaysAttendanceRecord(for: child)
+                var attendance = try todaysAttendanceRecord(for: child)
+                if shouldAutoMarkAbsent(attendance: attendance, at: now) {
+                    let record: AttendanceRecord
+                    if let attendance {
+                        record = attendance
+                    } else {
+                        record = try createAttendanceRecord(for: child, dayStart: now.startOfDay)
+                    }
+                    record.markedAbsent = true
+                    record.checkInAt = nil
+                    record.checkOutAt = nil
+                    record.collectedBy = nil
+                    didAutoMarkAbsent = true
+                    attendance = record
+                }
                 let hasOpen = try childHasNonAcknowledgedIncident(child)
                 let mood = Self.latestWellbeingMood(from: entries)
                 let markedAbsent = attendance?.markedAbsent == true
@@ -159,9 +176,14 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                 )
                 rows.append(summary)
             }
+            if didAutoMarkAbsent, context.hasChanges {
+                try context.save()
+            }
             childSummaries = rows.sorted { $0.firstName < $1.firstName }
+            hasCheckedInChild = childSummaries.contains(where: { $0.attendanceBucket == .onSite })
         } catch {
             errorMessage = "Could not load children. Please try again."
+            hasCheckedInChild = false
         }
     }
 
@@ -237,6 +259,27 @@ final class KeyworkerDashboardViewModel: ObservableObject {
         ])
         request.fetchLimit = 1
         return try context.fetch(request).first
+    }
+
+    /// - Description: Creates a new attendance record for `dayStart` when one does not yet exist.
+    private func createAttendanceRecord(for child: Child, dayStart: Date) throws -> AttendanceRecord {
+        let record = AttendanceRecord(context: context)
+        record.id = UUID()
+        record.dayStart = dayStart
+        record.child = child
+        record.droppedOffBy = ""
+        record.markedAbsent = false
+        return record
+    }
+
+    /// - Description: True once one hour has passed from session start and the child still has no check-in/check-out and is not already absent.
+    private func shouldAutoMarkAbsent(attendance: AttendanceRecord?, at now: Date, calendar: Calendar = .current) -> Bool {
+        let cutoffMinutes = NurseryDaySchedule.sessionStartMinutesFromMidnight + 60
+        let currentMinutes = NurseryDaySchedule.minutesFromMidnight(now, calendar: calendar)
+        guard currentMinutes >= cutoffMinutes else { return false }
+        guard let attendance else { return true }
+        if attendance.checkInAt != nil || attendance.checkOutAt != nil { return false }
+        return attendance.markedAbsent == false
     }
 
     /// - Description: True if any incident exists that is not yet acknowledged.

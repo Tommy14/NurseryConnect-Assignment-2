@@ -36,4 +36,16 @@ final class KeyworkerAttendanceBucketTests: XCTestCase {
             .awaiting
         )
     }
+
+    func testDashboardSectionOrderKeepsOperationalPriority() {
+        XCTAssertEqual(
+            KeyworkerAttendanceBucket.dashboardSectionOrder,
+            [.onSite, .awaiting, .absent, .departed]
+        )
+    }
+
+    func testSectionTitlesMatchMorningChildrenFlowLanguage() {
+        XCTAssertEqual(KeyworkerAttendanceBucket.awaiting.sectionTitle, "Expecting children")
+        XCTAssertEqual(KeyworkerAttendanceBucket.absent.sectionTitle, "Absent children")
+    }
 }

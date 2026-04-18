@@ -45,7 +45,7 @@ struct IncidentListView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if !viewModel.parentNotificationBanners.isEmpty {
                         ForEach(viewModel.parentNotificationBanners) { banner in
-                            parentNotificationUrgencyBanner(childFirstName: banner.childFirstName)
+                            parentNotificationUrgencyBanner(childFirstName: banner.childFirstName, message: banner.message)
                         }
                     }
 
@@ -221,7 +221,7 @@ struct IncidentListView: View {
         .ignoresSafeArea()
     }
 
-    private func parentNotificationUrgencyBanner(childFirstName: String) -> some View {
+    private func parentNotificationUrgencyBanner(childFirstName: String, message: String) -> some View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
                 Circle()
@@ -232,7 +232,7 @@ struct IncidentListView: View {
                     .foregroundStyle(.white)
                     .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
             }
-            Text("Action required: Parent not yet notified of \(childFirstName)’s incident.")
+            Text(message)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.white)
                 .fixedSize(horizontal: false, vertical: true)
@@ -255,7 +255,7 @@ struct IncidentListView: View {
                 .stroke(Color.ncGlassHighlight(lightOpacity: 0.22), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Action required: Parent not yet notified of \(childFirstName)’s incident.")
+        .accessibilityLabel("\(childFirstName) incident alert. \(message)")
     }
 
     private func incidentAccentColor(for category: IncidentCategory) -> Color {

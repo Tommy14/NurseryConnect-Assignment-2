@@ -59,6 +59,7 @@ struct KeyworkerDashboardView: View {
     @State private var childSearchText = ""
     @State private var isKeyworkerProfilePresented = false
     @State private var quickCheckInSummary: KeyworkerChildSummary?
+    @State private var absentConfirmationSummary: KeyworkerChildSummary?
 
     init(context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
@@ -89,7 +90,16 @@ struct KeyworkerDashboardView: View {
         }
         .task {
             await viewModel.refresh()
-            await KeyworkerMoodReminderScheduler.registerHourlyMoodRemindersDuringSession()
+            await KeyworkerMoodReminderScheduler.registerDailyReminders(
+                hasCheckedInChildren: viewModel.hasCheckedInChild
+            )
+        }
+        .onChange(of: viewModel.hasCheckedInChild) { _, hasCheckedIn in
+            Task {
+                await KeyworkerMoodReminderScheduler.registerDailyReminders(
+                    hasCheckedInChildren: hasCheckedIn
+                )
+            }
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
             currentDate = tick
@@ -158,7 +168,9 @@ struct KeyworkerDashboardView: View {
                                             switch summary.attendanceBucket {
                                             case .awaiting:
                                                 quickCheckInSummary = summary
-                                            case .onSite, .absent, .departed:
+                                            case .absent:
+                                                absentConfirmationSummary = summary
+                                            case .onSite, .departed:
                                                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
                                                     childPath.append(summary)
                                                 }
@@ -232,9 +244,44 @@ struct KeyworkerDashboardView: View {
                     onCancel: { quickCheckInSummary = nil }
                 )
             }
+            .alert("Is \(absentConfirmationSummary?.firstName ?? "this child") attending today?", isPresented: Binding(
+                get: { absentConfirmationSummary != nil },
+                set: { if !$0 { absentConfirmationSummary = nil } }
+            )) {
+                Button("No, keep absent", role: .cancel) {
+                    absentConfirmationSummary = nil
+                }
+                Button("Yes, mark as attending") {
+                    guard let summary = absentConfirmationSummary else { return }
+                    absentConfirmationSummary = nil
+                    Task {
+                        await clearAbsentAndOpenCheckIn(for: summary)
+                    }
+                }
+            } message: {
+                Text("If attending, we’ll clear the absent status and open check-in.")
+            }
             .navigationDestination(for: KeyworkerChildSummary.self) { summary in
                 DailyDiaryListView(summary: summary, managedObjectContext: context)
             }
+        }
+    }
+
+    /// - Description: Clears today’s absent flag, refreshes dashboard rows, then opens quick check-in for the same child.
+    @MainActor
+    private func clearAbsentAndOpenCheckIn(for summary: KeyworkerChildSummary) async {
+        let attendance = AttendanceViewModel(childID: summary.id, context: context)
+        await attendance.clearMarkedAbsent()
+        if let error = attendance.errorMessage {
+            viewModel.errorMessage = error
+            return
+        }
+
+        await viewModel.reloadChildSummariesFromStore(showLoading: false)
+        if let updated = viewModel.childSummaries.first(where: { $0.id == summary.id }) {
+            quickCheckInSummary = updated
+        } else {
+            quickCheckInSummary = summary
         }
     }
 

@@ -255,8 +255,13 @@ struct DiaryTimelineView: View {
                                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                                             .padding(.top, 40)
                                     }
-                                    SyncStateBadgeView(state: viewModel.syncState(for: entry))
-                                        .padding(8)
+                                    VStack(alignment: .trailing, spacing: 6) {
+                                        SyncStateBadgeView(state: viewModel.syncState(for: entry))
+                                        if entry.hasCorrections {
+                                            correctedBadge
+                                        }
+                                    }
+                                    .padding(8)
                                 }
                                 .padding(.leading, 10)
                                 .overlay(alignment: .leading) {
@@ -314,8 +319,13 @@ struct DiaryTimelineView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                                 .padding(.top, 40)
                         }
-                        SyncStateBadgeView(state: viewModel.syncState(for: entry))
-                            .padding(8)
+                        VStack(alignment: .trailing, spacing: 6) {
+                            SyncStateBadgeView(state: viewModel.syncState(for: entry))
+                            if entry.hasCorrections {
+                                correctedBadge
+                            }
+                        }
+                        .padding(8)
                     }
                     if past {
                         HStack {
@@ -435,6 +445,18 @@ struct DiaryTimelineView: View {
             .background(
                 Capsule(style: .continuous)
                     .fill(Color.ncDanger.opacity(0.14))
+            )
+    }
+
+    private var correctedBadge: some View {
+        Label("Corrected", systemImage: "pencil")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Color.ncPrimary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.ncPrimary.opacity(0.16))
             )
     }
 }

@@ -29,6 +29,17 @@ enum DiaryEntryType: String, CaseIterable, Identifiable {
     /// - Description: Value written to Core Data `entryType` attribute.
     var persistenceValue: String { rawValue }
 
+    var title: String {
+        switch self {
+        case .activity: return "Activity"
+        case .sleep: return "Sleep"
+        case .meal: return "Meal"
+        case .nappy: return "Nappy"
+        case .wellbeing: return "Wellbeing"
+        case .milestone: return "Milestone"
+        }
+    }
+
     /// - Description: Builds an enum case from persisted storage, defaulting to activity if unknown.
     /// - Parameters:
     ///   - raw: String from Core Data.

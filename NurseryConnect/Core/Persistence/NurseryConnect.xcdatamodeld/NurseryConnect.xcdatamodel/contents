@@ -39,14 +39,17 @@
         <attribute name="eyfsArea" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="fluidIntake" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="fluidType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="hasCorrections" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="isSubmittedToManager" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lastCorrectedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="mealConsumed" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="mealDescription" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="moodRating" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="nappyType" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="notes" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="lastSyncError" optional="YES" attributeType="String" usesScalarValueType="NO"/>
+        <attribute name="originalSnapshotJSON" optional="YES" attributeType="String" usesScalarValueType="NO"/>
         <attribute name="sleepPosition" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="submittedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="syncAttemptCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
@@ -54,6 +57,16 @@
         <attribute name="syncState" attributeType="String" defaultValueString="synced" usesScalarValueType="NO"/>
         <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="diaryEntries" inverseEntity="Child"/>
+        <relationship name="corrections" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DiaryEntryCorrection" inverseName="entry" inverseEntity="DiaryEntryCorrection"/>
+    </entity>
+    <entity name="DiaryEntryCorrection" representedClassName="DiaryEntryCorrection" syncable="YES" codeGenerationType="class">
+        <attribute name="correctedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fieldName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="newValue" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="oldValue" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="reason" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <relationship name="entry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="corrections" inverseEntity="DiaryEntry"/>
     </entity>
     <entity name="Incident" representedClassName="Incident" syncable="YES" codeGenerationType="class">
         <attribute name="bodyMapAnnotations" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>

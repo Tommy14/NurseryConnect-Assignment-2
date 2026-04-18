@@ -65,6 +65,16 @@ struct DailyDiaryListView: View {
             && NurseryDaySchedule.isDiaryLoggingPermitted(at: timelineClock, calendar: .current)
     }
 
+    /// - Description: Hides warning surfaces unless the child is currently on site.
+    private var shouldShowWarnings: Bool {
+        switch attendanceViewModel.phase {
+        case .expected, .absent, .departed:
+            return false
+        case .onPremises:
+            return true
+        }
+    }
+
     /// - Description: Explains why the empty timeline cannot be filled yet.
     private var emptyStateDescription: String {
         if attendanceViewModel.phase == .absent {
@@ -185,6 +195,7 @@ struct DailyDiaryListView: View {
                     AddDiaryEntryView(
                         childID: summary.id,
                         viewModel: viewModel,
+                        childAllergies: summary.allergies,
                         plannedSessionContext: nil,
                         isDiaryLoggingPermitted: {
                             attendanceViewModel.phase == .onPremises
@@ -195,6 +206,7 @@ struct DailyDiaryListView: View {
                     AddDiaryEntryView(
                         childID: summary.id,
                         viewModel: viewModel,
+                        childAllergies: summary.allergies,
                         plannedSessionContext: ctx,
                         isDiaryLoggingPermitted: {
                             attendanceViewModel.phase == .onPremises
@@ -249,10 +261,12 @@ struct DailyDiaryListView: View {
     private func presentLoggingBlockedFeedback() {
         switch attendanceViewModel.phase {
         case .absent:
-            showAbsentBlocksDiaryAlert = true
+            return
         case .onPremises:
             showOutsideDiaryHoursAlert = true
-        case .expected, .departed:
+        case .expected:
+            return
+        case .departed:
             showCheckInRequiredAlert = true
         }
     }
@@ -297,7 +311,7 @@ struct DailyDiaryListView: View {
                 Spacer(minLength: 0)
             }
 
-            if summary.hasOpenIncident {
+            if shouldShowWarnings && summary.hasOpenIncident {
                 NavigationLink {
                     ChildProfileView(childId: summary.id, context: context)
                 } label: {
@@ -323,7 +337,7 @@ struct DailyDiaryListView: View {
                 .accessibilityHint("Opens this child’s profile.")
             }
 
-            if !summary.allergies.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if shouldShowWarnings && !summary.allergies.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "exclamationmark.shield.fill")
                         .font(.body.weight(.semibold))
