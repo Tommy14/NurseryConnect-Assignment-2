@@ -84,6 +84,7 @@ final class SyncQueueServiceTests: XCTestCase {
         entry.entryType = DiaryEntryType.activity.persistenceValue
         entry.notes = "Observed activity"
         entry.timestamp = Date()
+        entry.submittedAt = Date()
         entry.child = child
         entry.syncState = SyncState.synced.rawValue
         return entry
