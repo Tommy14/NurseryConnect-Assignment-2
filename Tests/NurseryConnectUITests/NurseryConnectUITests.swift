@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 100426     Tommy1914   Created the file with launch and tab visibility checks.
-// 190426     Tommy1914   Keyworker profile sheet smoke test.
+// 150426     Tommy1914   Keyworker profile sheet smoke test.
 // -----------------------------------------------------------------
 
 import XCTest

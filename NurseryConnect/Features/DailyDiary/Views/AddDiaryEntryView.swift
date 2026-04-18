@@ -13,7 +13,7 @@
 // 050426     Tommy1914   Created the file with type chips, validation, and save flow.
 // 100426     Tommy1914   Card chrome, symbol chips, atmosphere background (iOS-native polish).
 // 100426     Tommy1914   Decorative overlays use allowsHitTesting(false) so fields remain tappable.
-// 180426     Tommy1914   Details and notes panels use `ncCardStyle` (glass plate on iOS 26).
+// 140426     Tommy1914   Details and notes panels use `ncCardStyle` (glass plate on iOS 26).
 // -----------------------------------------------------------------
 
 import Combine

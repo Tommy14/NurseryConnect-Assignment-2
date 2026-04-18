@@ -12,8 +12,8 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with duration and position summary.
 // 100426     Tommy1914   Studio tint card; conditional notes.
-// 180426     Tommy1914   Simpler layout; no inset panels.
-// 180426     Tommy1914   Labels for duration and notes.
+// 140426     Tommy1914   Simpler layout; no inset panels.
+// 140426     Tommy1914   Labels for duration and notes.
 // -----------------------------------------------------------------
 
 import Combine

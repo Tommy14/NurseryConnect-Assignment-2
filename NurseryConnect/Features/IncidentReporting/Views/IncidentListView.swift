@@ -17,9 +17,9 @@
 // 100426     Tommy1914   Futuristic inbox: atmosphere, urgency rails, scope header, row accents, FAB polish.
 // 100426     Tommy1914   Category-tinted row surfaces and rails for clearer incident-type contrast.
 // 100426     Tommy1914   Manual in-content title for tighter top spacing alignment with dashboard.
-// 180426     Tommy1914   System large nav title “Incidents” (matches children list behaviour).
-// 180426     Tommy1914   iOS 26: soft top scroll edge for nav legibility with Liquid Glass.
-// 180426     Tommy1914   Row backgrounds via `NCLiquidGlassChrome.incidentRowBackground`.
+// 140426     Tommy1914   System large nav title “Incidents” (matches children list behaviour).
+// 140426     Tommy1914   iOS 26: soft top scroll edge for nav legibility with Liquid Glass.
+// 140426     Tommy1914   Row backgrounds via `NCLiquidGlassChrome.incidentRowBackground`.
 // -----------------------------------------------------------------
 
 import Combine

@@ -12,7 +12,7 @@
 // -----------------------------------------------------------------
 // 050426     Tommy1914   Created the file with manager toggle, delete alert, and layout.
 // 100426     Tommy1914   Studio surfaces + atmosphere backdrop (read-only detail polish).
-// 180426     Tommy1914   Submit via button + confirm alert; hide delete after handover submitted.
+// 140426     Tommy1914   Submit via button + confirm alert; hide delete after handover submitted.
 // -----------------------------------------------------------------
 
 import Combine

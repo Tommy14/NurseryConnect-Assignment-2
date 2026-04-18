@@ -15,10 +15,10 @@
 // 100426     Tommy1914   Diary status capsule, chevron, gradient card edge (iOS-native patterns).
 // 100426     Tommy1914   Denser row height; status on one line to avoid mistaken “bar” when text wraps.
 // 100426     Tommy1914   Leading gradient accent for dashboard list styling.
-// 180426     Tommy1914   Reverted to single clean row: avatar, text, status, chevron (no banner rail).
-// 180426     Tommy1914   Tile shows age only (no gender marker).
-// 180426     Tommy1914   Row chrome via `ncCardStyle` (glass plate on iOS 26).
-// 180426     Tommy1914   Current activity line, allergies with meal-end alert blink (reduce motion safe).
+// 140426     Tommy1914   Reverted to single clean row: avatar, text, status, chevron (no banner rail).
+// 140426     Tommy1914   Tile shows age only (no gender marker).
+// 140426     Tommy1914   Row chrome via `ncCardStyle` (glass plate on iOS 26).
+// 140426     Tommy1914   Current activity line, allergies with meal-end alert blink (reduce motion safe).
 // -----------------------------------------------------------------
 
 import SwiftUI

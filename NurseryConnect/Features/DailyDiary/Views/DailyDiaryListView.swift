@@ -13,10 +13,10 @@
 // 040426     Tommy1914   Created the file with coral header, timeline, and FAB sheet.
 // 100426     Tommy1914   FAB + scroll inset when embedded in keyworker floating tab bar.
 // 100426     Tommy1914   Inline nav title + dossier header (no duplicate name); studio backdrop.
-// 180426     Tommy1914   Daily journal makeover: grouped header card, ContentUnavailableView, circular FAB, nav chrome.
-// 180426     Tommy1914   Transparent nav bar so top gradient merges with page (no solid strip).
-// 180426     Tommy1914   Dossier header shows age only (no gender marker).
-// 180426     Tommy1914   Dossier header uses `ncStudioElevatedSurface` (glass on iOS 26).
+// 140426     Tommy1914   Daily journal makeover: grouped header card, ContentUnavailableView, circular FAB, nav chrome.
+// 140426     Tommy1914   Transparent nav bar so top gradient merges with page (no solid strip).
+// 140426     Tommy1914   Dossier header shows age only (no gender marker).
+// 140426     Tommy1914   Dossier header uses `ncStudioElevatedSurface` (glass on iOS 26).
 // -----------------------------------------------------------------
 
 import Combine

@@ -12,7 +12,7 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with consumption and fluid summary.
 // 100426     Tommy1914   Studio tint card; hide empty lines.
-// 180426     Tommy1914   Flat meta lines; explicit labels (Food, Amount eaten, Fluids, Notes; Time in header).
+// 140426     Tommy1914   Flat meta lines; explicit labels (Food, Amount eaten, Fluids, Notes; Time in header).
 // -----------------------------------------------------------------
 
 import Combine

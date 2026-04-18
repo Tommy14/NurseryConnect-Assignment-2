@@ -12,8 +12,8 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with mood and narrative notes.
 // 100426     Tommy1914   Studio tint card; conditional notes.
-// 180426     Tommy1914   Inline mood hearts; no extra panels.
-// 180426     Tommy1914   Notes label when present.
+// 140426     Tommy1914   Inline mood hearts; no extra panels.
+// 140426     Tommy1914   Notes label when present.
 // -----------------------------------------------------------------
 
 import Combine

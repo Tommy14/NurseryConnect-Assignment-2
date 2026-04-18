@@ -12,8 +12,8 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with activity metadata and timestamp.
 // 100426     Tommy1914   Studio tint card; conditional notes.
-// 180426     Tommy1914   Simpler timeline tile (less chrome).
-// 180426     Tommy1914   Field labels for activity, EYFS, notes.
+// 140426     Tommy1914   Simpler timeline tile (less chrome).
+// 140426     Tommy1914   Field labels for activity, EYFS, notes.
 // -----------------------------------------------------------------
 
 import Combine

@@ -13,7 +13,7 @@
 // 090426     Tommy1914   Created the file with medical and dietary sections.
 // 100426     Tommy1914   Hero header + studio info rows (read-only).
 // 100426     Tommy1914   Bottom scroll inset when shown under keyworker floating tab bar.
-// 180426     Tommy1914   Photo consent row: read-only green tick / red cross from stored data.
+// 140426     Tommy1914   Photo consent row: read-only green tick / red cross from stored data.
 // -----------------------------------------------------------------
 
 import Combine

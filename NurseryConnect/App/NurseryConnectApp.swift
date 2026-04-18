@@ -14,12 +14,12 @@
 // 100426     Tommy1914   Seeding moved into dashboard refresh to avoid racing tasks.
 // 100426     Tommy1914   Added UK nursery-themed launch loading animation before dashboard handoff.
 // 100426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
-// 180426     Tommy1914   Split nav bar: clear scroll-edge (large title) vs translucent standard (scrolled).
-// 180426     Tommy1914   Lighter standard bar tint so collapsed chrome reads more transparent.
-// 180426     Tommy1914   Scroll-edge large title: bold rounded “Children” matches app typography.
-// 180426     Tommy1914   Removed large-title font attrs (children list uses inline title only).
-// 180426     Tommy1914   Large title + transparent collapsed bar; compact title centered when scrolled.
-// 180426     Tommy1914   iOS 26: default bar materials for Liquid Glass; legacy path keeps transparent strip.
+// 140426     Tommy1914   Split nav bar: clear scroll-edge (large title) vs translucent standard (scrolled).
+// 140426     Tommy1914   Lighter standard bar tint so collapsed chrome reads more transparent.
+// 140426     Tommy1914   Scroll-edge large title: bold rounded “Children” matches app typography.
+// 140426     Tommy1914   Removed large-title font attrs (children list uses inline title only).
+// 140426     Tommy1914   Large title + transparent collapsed bar; compact title centered when scrolled.
+// 140426     Tommy1914   iOS 26: default bar materials for Liquid Glass; legacy path keeps transparent strip.
 // -----------------------------------------------------------------
 
 import Combine

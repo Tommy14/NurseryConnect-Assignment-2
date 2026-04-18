@@ -23,24 +23,24 @@
 // 100426     Tommy1914   Root tab shell now uses direct branch switching (avoids blank-screen render glitches).
 // 100426     Tommy1914   Manual in-content title for tighter top spacing control.
 // 100426     Tommy1914   Greeting tile now updates by real time (message, icon, and date readout).
-// 180426     Tommy1914   Native large nav title → compact centered “Dashboard” when scrolling.
-// 180426     Tommy1914   No solid toolbar override; rely on global scroll-edge vs standard translucency.
-// 180426     Tommy1914   Inline nav title + hidden toolbar: removes large-title gap; bar stays see-through.
-// 180426     Tommy1914   Scroll offset: big in-content “Dashboard” at top; compact nav title when scrolled.
-// 180426     Tommy1914   Top scroll sentinel + hysteresis so compact+frosted bar tracks scroll reliably.
-// 180426     Tommy1914   Top safe-area padding when large title visible (empty nav bar would draw under notch).
-// 180426     Tommy1914   System large nav title only (no duplicate in-scroll title / manual top inset).
-// 180426     Tommy1914   Nav title “Children” (leading large title; matches tab naming).
-// 180426     Tommy1914   Inline nav title to remove extra space above “Children” (no large-title band).
-// 180426     Tommy1914   Large title “Children” at top; transparent bar + centered title when scrolled.
-// 180426     Tommy1914   iOS 26: Liquid Glass tab bar + nav chrome; legacy ultra-thin material on older OS.
-// 180426     Tommy1914   Iconic liquid glass dock (`KeyworkerSectionTabBar`): sliding lens + specular rim.
-// 180426     Tommy1914   Section tab bar extracted to `KeyworkerSectionTabBar` (dock + sliding glass lens).
-// 180426     Tommy1914   Hero header uses `ncStudioElevatedSurface` (liquid glass plate on iOS 26).
-// 180426     Tommy1914   Selecting Children tab clears `childPath` (root list from any depth / other tab).
-// 190426     Tommy1914   Trailing profile toolbar opens keyworker profile sheet.
-// 200426     Tommy1914   Leading toolbar brand mark (`NurseryConnectNavLogo`).
-// 200426     Tommy1914   Nav logo shown as plain image (no rounded clip / crop).
+// 140426     Tommy1914   Native large nav title → compact centered “Dashboard” when scrolling.
+// 140426     Tommy1914   No solid toolbar override; rely on global scroll-edge vs standard translucency.
+// 140426     Tommy1914   Inline nav title + hidden toolbar: removes large-title gap; bar stays see-through.
+// 140426     Tommy1914   Scroll offset: big in-content “Dashboard” at top; compact nav title when scrolled.
+// 140426     Tommy1914   Top scroll sentinel + hysteresis so compact+frosted bar tracks scroll reliably.
+// 140426     Tommy1914   Top safe-area padding when large title visible (empty nav bar would draw under notch).
+// 140426     Tommy1914   System large nav title only (no duplicate in-scroll title / manual top inset).
+// 140426     Tommy1914   Nav title “Children” (leading large title; matches tab naming).
+// 140426     Tommy1914   Inline nav title to remove extra space above “Children” (no large-title band).
+// 140426     Tommy1914   Large title “Children” at top; transparent bar + centered title when scrolled.
+// 140426     Tommy1914   iOS 26: Liquid Glass tab bar + nav chrome; legacy ultra-thin material on older OS.
+// 140426     Tommy1914   Iconic liquid glass dock (`KeyworkerSectionTabBar`): sliding lens + specular rim.
+// 140426     Tommy1914   Section tab bar extracted to `KeyworkerSectionTabBar` (dock + sliding glass lens).
+// 140426     Tommy1914   Hero header uses `ncStudioElevatedSurface` (liquid glass plate on iOS 26).
+// 140426     Tommy1914   Selecting Children tab clears `childPath` (root list from any depth / other tab).
+// 150426     Tommy1914   Trailing profile toolbar opens keyworker profile sheet.
+// 160426     Tommy1914   Leading toolbar brand mark (`NurseryConnectNavLogo`).
+// 160426     Tommy1914   Nav logo shown as plain image (no rounded clip / crop).
 // -----------------------------------------------------------------
 
 import Combine

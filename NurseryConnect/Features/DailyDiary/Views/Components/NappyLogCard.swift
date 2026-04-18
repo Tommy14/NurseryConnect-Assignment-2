@@ -12,8 +12,8 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with type and notes summary.
 // 100426     Tommy1914   Studio tint card; conditional notes.
-// 180426     Tommy1914   Simpler headline + notes.
-// 180426     Tommy1914   Labels for type and notes.
+// 140426     Tommy1914   Simpler headline + notes.
+// 140426     Tommy1914   Labels for type and notes.
 // -----------------------------------------------------------------
 
 import Combine

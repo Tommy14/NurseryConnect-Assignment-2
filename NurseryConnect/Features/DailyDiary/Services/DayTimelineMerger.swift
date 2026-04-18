@@ -4,7 +4,7 @@
 //
 //  Feature: Daily Diary
 //  Role: Keyworker
-//  Created: 18 April 2026
+//  Created: 16 April 2026
 //  Description: Merges the shared nursery schedule with diary rows; entries nest under planned sessions by timestamp.
 //
 

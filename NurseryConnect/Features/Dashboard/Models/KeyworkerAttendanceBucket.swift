@@ -4,7 +4,7 @@
 //
 //  Feature: Dashboard
 //  Role: Keyworker
-//  Created: 20 April 2026
+//  Created: 16 April 2026
 //  Description: Derives today’s attendance grouping for dashboard sections and child cards.
 //
 

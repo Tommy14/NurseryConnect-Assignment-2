@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with semantic palette accessors.
-// 200426     Tommy1914   Background/card/glow from assets; dynamic glass + hairline helpers for dark mode.
+// 160426     Tommy1914   Background/card/glow from assets; dynamic glass + hairline helpers for dark mode.
 // -----------------------------------------------------------------
 
 import SwiftUI

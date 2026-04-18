@@ -4,7 +4,7 @@
 //
 //  Feature: Daily Diary
 //  Role: Keyworker
-//  Created: 18 April 2026
+//  Created: 16 April 2026
 //  Description: Shared nursery timetable (meals + activity bands) for merging with per-child diary entries.
 //
 

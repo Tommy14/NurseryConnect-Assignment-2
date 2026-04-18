@@ -4,13 +4,13 @@
 //
 //  Feature: Dashboard
 //  Role: Keyworker
-//  Created: 18 April 2026
+//  Created: 16 April 2026
 //  Description: Floating pill bar switching Children / Incidents. Frosted shell uses `Material` so labels stay sharp.
-// 190426     Tommy1914   Reference-style: light glass track, inner selection capsule (lavender / amber), no drag scrub.
-// 190426     Tommy1914   `onReselectTab` when the user taps an already-selected segment (pop-to-root hooks).
-// 200426     Tommy1914   Dock track + rim: neutral glass only (no blue wash from glow/primary).
-// 200426     Tommy1914   iOS 26+: Liquid Glass `glassEffect` on dock + selection pill (icons/labels above).
-// 200426     Tommy1914   Selected segment: white icon + label on tinted pill for contrast.
+// 150426     Tommy1914   Reference-style: light glass track, inner selection capsule (lavender / amber), no drag scrub.
+// 150426     Tommy1914   `onReselectTab` when the user taps an already-selected segment (pop-to-root hooks).
+// 160426     Tommy1914   Dock track + rim: neutral glass only (no blue wash from glow/primary).
+// 160426     Tommy1914   iOS 26+: Liquid Glass `glassEffect` on dock + selection pill (icons/labels above).
+// 160426     Tommy1914   Selected segment: white icon + label on tinted pill for contrast.
 //
 
 import SwiftUI

@@ -12,10 +12,10 @@
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with card chrome and haptic helpers.
 // 100426     Tommy1914   `ncStudioElevatedSurface` for glassy gradient-bordered panels (decorative overlays non-interactive).
-// 180426     Tommy1914   `ncDiaryTimelineCard` — toned down to light tint + single shadow (diary list).
-// 180426     Tommy1914   Card/timeline modifiers use `NCLiquidGlassChrome` on iOS 26 (background plates only).
-// 200426     Tommy1914   Card rim gradients use `ncGlassHighlight` for dark mode.
-// 200426     Tommy1914   Bolder 2pt gradient rims on `ncCardStyle`, `ncStudioElevatedSurface`, tinted/diary tiles.
+// 140426     Tommy1914   `ncDiaryTimelineCard` — toned down to light tint + single shadow (diary list).
+// 140426     Tommy1914   Card/timeline modifiers use `NCLiquidGlassChrome` on iOS 26 (background plates only).
+// 160426     Tommy1914   Card rim gradients use `ncGlassHighlight` for dark mode.
+// 160426     Tommy1914   Bolder 2pt gradient rims on `ncCardStyle`, `ncStudioElevatedSurface`, tinted/diary tiles.
 // -----------------------------------------------------------------
 
 import SwiftUI

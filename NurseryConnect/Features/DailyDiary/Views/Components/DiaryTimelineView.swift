@@ -12,10 +12,10 @@
 // -----------------------------------------------------------------
 // 040426     Tommy1914   Created the file with grouped sections and connector line.
 // 100426     Tommy1914   Time-band headers with index accent for dossier-style timeline.
-// 180426     Tommy1914   Sync badge on tile; calmer time-band marker.
-// 180426     Tommy1914   Merged schedule + entries; expandable past rows.
-// 180426     Tommy1914   Planned sessions nest logs; tap-to-log from session row.
-// 180426     Tommy1914   Log UI by phase: big button current only; past small plus; upcoming none.
+// 140426     Tommy1914   Sync badge on tile; calmer time-band marker.
+// 140426     Tommy1914   Merged schedule + entries; expandable past rows.
+// 140426     Tommy1914   Planned sessions nest logs; tap-to-log from session row.
+// 140426     Tommy1914   Log UI by phase: big button current only; past small plus; upcoming none.
 // -----------------------------------------------------------------
 
 import Combine

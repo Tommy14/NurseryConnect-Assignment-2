@@ -14,8 +14,8 @@
 // 100426     Tommy1914   Seed-before-fetch and loading state to avoid empty dashboard race.
 // 100426     Tommy1914   Refresh summaries when `DiaryEntry` saves (no restart required).
 // 100426     Tommy1914   Marked save-notification helper `nonisolated` to avoid main-actor sync warning pauses.
-// 180426     Tommy1914   Green dot when every planned session has a log (`DayTimelineMerger`).
-// 180426     Tommy1914   Removed gender from child summaries and persistence.
+// 140426     Tommy1914   Green dot when every planned session has a log (`DayTimelineMerger`).
+// 140426     Tommy1914   Removed gender from child summaries and persistence.
 // -----------------------------------------------------------------
 
 import Combine

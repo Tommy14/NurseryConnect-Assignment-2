@@ -11,7 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with rounded headings and semantic colours.
-// 180426     Tommy1914   `ncRootScrollEdgeEffectForTopNavigation` for iOS 26 root lists.
+// 140426     Tommy1914   `ncRootScrollEdgeEffectForTopNavigation` for iOS 26 root lists.
 // -----------------------------------------------------------------
 
 import SwiftUI
