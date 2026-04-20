@@ -31,6 +31,17 @@ struct KeyworkerProfileView: View {
                     text: AppConstants.nurseryDisplayName,
                     symbol: "building.2.fill"
                 )
+                NavigationLink {
+                    LegalComplianceView()
+                } label: {
+                    keyworkerInfoRow(
+                        title: ComplianceContent.legalScreenTitle,
+                        text: "EYFS, Ofsted, RIDDOR, and UK GDPR visibility",
+                        symbol: "doc.text.magnifyingglass"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(AppConstants.AccessibilityID.legalComplianceEntry)
             }
             .padding()
             .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)

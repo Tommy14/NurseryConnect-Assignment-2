@@ -94,6 +94,10 @@ struct ChildProfileView: View {
                         symbol: "checklist",
                         prefersSentenceBullets: true
                     )
+                    complianceNoteRow(
+                        title: "Compliance note",
+                        text: ComplianceContent.childProfileConsentNote
+                    )
                     profileInfoRow(
                         title: "EYFS development notes",
                         text: child.eyfsDevelopmentNotes ?? "",
@@ -282,5 +286,27 @@ struct ChildProfileView: View {
         .accessibilityLabel(
             "Photo consent on file. \(isOn ? "Consent is on file." : "No consent on file.")"
         )
+    }
+
+    private func complianceNoteRow(title: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(title, systemImage: "shield.checkered")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ncPrimary)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.ncPrimary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.ncPrimary.opacity(0.18), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .accessibilityElement(children: .combine)
     }
 }

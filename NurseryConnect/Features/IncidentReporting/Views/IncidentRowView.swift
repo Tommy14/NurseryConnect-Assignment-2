@@ -76,19 +76,21 @@ struct IncidentRowView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 SyncStateBadgeView(state: syncState)
-                IncidentStatusBadge(status: status)
             }
             Spacer(minLength: 8)
-            HStack(alignment: .center, spacing: 6) {
-                if let timestamp = incident.timestamp {
-                    Text(timestamp.formattedTime())
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack(alignment: .center, spacing: 6) {
+                    if let timestamp = incident.timestamp {
+                        Text(timestamp.formattedTime())
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
                 }
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
+                IncidentStatusBadge(status: status)
             }
         }
         .padding(.vertical, 6)

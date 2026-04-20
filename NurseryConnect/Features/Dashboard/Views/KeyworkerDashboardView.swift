@@ -354,42 +354,7 @@ struct KeyworkerDashboardView: View {
     }
 
     private var dashboardHeroHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.green.opacity(0.95), Color.green.opacity(0.35)],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 5
-                            )
-                        )
-                        .frame(width: 8, height: 8)
-                        .shadow(color: Color.green.opacity(0.45), radius: 4, x: 0, y: 0)
-                    Text("LIVE SNAPSHOT")
-                        .font(.caption2.weight(.heavy))
-                        .tracking(1.3)
-                        .foregroundStyle(Color.secondary)
-                }
-                .accessibilityHidden(true)
-                Spacer(minLength: 8)
-                HStack(spacing: 8) {
-                    Image(systemName: "calendar")
-                        .foregroundStyle(Color.ncPrimary)
-                    Text(currentDate.formattedMediumDate())
-                        .font(.footnote.weight(.medium).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.ncPrimary.opacity(0.08))
-                )
-            }
-
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(greetingText)
@@ -409,6 +374,15 @@ struct KeyworkerDashboardView: View {
                     Text(AppConstants.keyworkerDisplayName)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
+                    Text(currentDate.formattedMediumDate())
+                        .font(.caption.weight(.medium).monospacedDigit())
+                        .foregroundStyle(Color.ncPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(Color.ncPrimary.opacity(0.1))
+                        )
                 }
                 Spacer(minLength: 0)
                 Image(systemName: greetingSymbolName)
@@ -488,16 +462,10 @@ struct KeyworkerDashboardView: View {
 
     private func todaySectionLabel(count: Int) -> some View {
         HStack(alignment: .center, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "waveform.path.ecg")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.ncPrimary)
-                    .accessibilityHidden(true)
-                Text("TODAY")
-                    .font(.caption.weight(.heavy))
-                    .tracking(1.4)
-                    .foregroundStyle(.secondary)
-            }
+            Text("TODAY")
+                .font(.caption.weight(.heavy))
+                .tracking(1.4)
+                .foregroundStyle(.secondary)
             Spacer(minLength: 8)
             HStack(spacing: 6) {
                 Text("\(count)")

@@ -36,6 +36,9 @@ struct DailyDiaryListView: View {
     @State private var showCheckInRequiredAlert = false
     @State private var showOutsideDiaryHoursAlert = false
     @State private var showAbsentBlocksDiaryAlert = false
+    @State private var isAttendanceCardExpanded = false
+    @State private var isSummaryCardExpanded = false
+    @State private var hasAutoExpandedForPickupTime = false
 
     private enum AddDiarySheet: Identifiable {
         case freeform
@@ -94,7 +97,12 @@ struct DailyDiaryListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     sessionDossierHeader
-                    TodayAttendanceCard(firstName: summary.firstName, viewModel: attendanceViewModel)
+                    TodayAttendanceCard(
+                        firstName: summary.firstName,
+                        viewModel: attendanceViewModel,
+                        isExpanded: $isAttendanceCardExpanded
+                    )
+                    DailyDiarySummaryCard(summary: viewModel.dailySummary, isExpanded: $isSummaryCardExpanded)
                     VStack(alignment: .leading, spacing: 10) {
                         if viewModel.entries.isEmpty {
                             ContentUnavailableView {
@@ -222,8 +230,12 @@ struct DailyDiaryListView: View {
         .task {
             await viewModel.loadEntries()
             await attendanceViewModel.load()
+            applyInitialCardExpansionState(at: timelineClock)
         }
-        .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { timelineClock = $0 }
+        .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) {
+            timelineClock = $0
+            autoExpandCardsIfNeeded(at: $0)
+        }
         .alert("Something went wrong", isPresented: Binding(
             get: { viewModel.errorMessage != nil || attendanceViewModel.errorMessage != nil },
             set: {
@@ -362,7 +374,7 @@ struct DailyDiaryListView: View {
     private var sessionStatusTitle: String {
         switch attendanceViewModel.phase {
         case .departed: return "Checked out"
-        case .onPremises: return "Live session"
+        case .onPremises: return "On site"
         case .expected: return "Not checked in yet"
         case .absent: return "Absent today"
         }
@@ -375,6 +387,28 @@ struct DailyDiaryListView: View {
         case .expected: return Color.ncAccentWarm
         case .absent: return Color.ncDanger
         }
+    }
+
+    private func applyInitialCardExpansionState(at date: Date) {
+        let shouldExpand = shouldAutoExpandCards(at: date)
+        isAttendanceCardExpanded = shouldExpand
+        isSummaryCardExpanded = shouldExpand
+        hasAutoExpandedForPickupTime = shouldExpand
+    }
+
+    private func autoExpandCardsIfNeeded(at date: Date) {
+        guard shouldAutoExpandCards(at: date), !hasAutoExpandedForPickupTime else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            isAttendanceCardExpanded = true
+            isSummaryCardExpanded = true
+        }
+        hasAutoExpandedForPickupTime = true
+    }
+
+    private func shouldAutoExpandCards(at date: Date) -> Bool {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        guard let hour = components.hour, let minute = components.minute else { return false }
+        return hour > 17 || (hour == 17 && minute >= 30)
     }
 }
 

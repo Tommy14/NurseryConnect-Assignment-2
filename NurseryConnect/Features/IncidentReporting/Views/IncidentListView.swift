@@ -77,6 +77,8 @@ struct IncidentListView: View {
                         .tint(Color.ncPrimary)
                     }
 
+                    complianceHighlightTile(text: ComplianceContent.incidentListComplianceNote)
+
                     if viewModel.incidents.isEmpty {
                         EmptyStateView(
                             symbolName: "shield.lefthalf.filled",
@@ -275,6 +277,66 @@ struct IncidentListView: View {
             accent: incidentAccentColor(for: category),
             cornerRadius: AppConstants.cardCornerRadius
         )
+    }
+
+    private func complianceHighlightTile(text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ncPrimary)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.ncPrimary.opacity(0.14),
+                    Color.ncGlowBlue.opacity(0.08),
+                    Color.ncGlassHighlight(lightOpacity: 0.28)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.ncGlassHighlight(lightOpacity: 0.7),
+                            Color.ncPrimary.opacity(0.18),
+                            Color.ncGlowBlue.opacity(0.16)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+                .allowsHitTesting(false)
+        }
+        .overlay(alignment: .top) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.ncGlassHighlight(lightOpacity: 0.42),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .padding(1)
+                .allowsHitTesting(false)
+        }
+        .shadow(color: Color.ncPrimary.opacity(0.12), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
     }
 
 }

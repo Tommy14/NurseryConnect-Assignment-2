@@ -197,39 +197,44 @@ struct NewIncidentFormView: View {
                             .foregroundStyle(Color.ncPrimary)
                         requiredFieldTitle("Child")
                     }
-                    TextField("Search My Children", text: $childSearchText)
-                        .textFieldStyle(.roundedBorder)
-                        .textInputAutocapitalization(.words)
-                        .focused($isChildSearchFocused)
-                        .submitLabel(.search)
+                    if hasAssignableChildren {
+                        TextField("Search My Children", text: $childSearchText)
+                            .textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.words)
+                            .focused($isChildSearchFocused)
+                            .submitLabel(.search)
 
-                    if shouldShowChildDropdown {
-                        if filteredAssignableChildren.isEmpty {
-                            Text("No children match your search.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.vertical, 8)
-                        } else {
-                            ScrollView {
-                                LazyVStack(alignment: .leading, spacing: 0) {
-                                    ForEach(filteredAssignableChildren, id: \.objectID) { child in
-                                        childSelectionRow(for: child)
+                        if shouldShowChildDropdown {
+                            if filteredAssignableChildren.isEmpty {
+                                Text("No on-site children match your search.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.vertical, 8)
+                            } else {
+                                ScrollView {
+                                    LazyVStack(alignment: .leading, spacing: 0) {
+                                        ForEach(filteredAssignableChildren, id: \.objectID) { child in
+                                            childSelectionRow(for: child)
+                                        }
                                     }
                                 }
+                                .frame(maxHeight: 320)
                             }
-                            .frame(maxHeight: 320)
                         }
-                    }
-                    if selectedChildID == nil {
-                        Text("Select a child to continue.")
-                            .font(.caption)
-                            .foregroundStyle(Color.ncDanger)
-                    } else {
-                        if let name = selectedChildName {
+                        if selectedChildID == nil {
+                            Text("Select a child to continue.")
+                                .font(.caption)
+                                .foregroundStyle(Color.ncDanger)
+                        } else if let name = selectedChildName {
                             Text("Selected: \(name)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    } else {
+                        Label("No child to select. All assigned children are absent.", systemImage: "person.crop.circle.badge.xmark")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.ncDanger)
+                            .padding(.vertical, 8)
                     }
                 }
                 .padding(16)
@@ -319,6 +324,7 @@ struct NewIncidentFormView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Review & submit", subtitle: "Confirm details before notifying leadership.")
+                complianceHighlightTile(text: ComplianceContent.incidentReviewComplianceNote)
                 VStack(spacing: 0) {
                     IncidentReviewInfoRow(
                         icon: "person.fill",
@@ -375,6 +381,29 @@ struct NewIncidentFormView: View {
             }
             .padding(.bottom, 110)
         }
+    }
+
+    private func complianceHighlightTile(text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.shield.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ncPrimary)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.ncPrimary.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.ncPrimary.opacity(0.24), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var riddorReviewCard: some View {
@@ -442,6 +471,11 @@ struct NewIncidentFormView: View {
     private func advanceStepIfValid() {
         switch step {
         case 0:
+            guard hasAssignableChildren else {
+                validationAlertMessage = "No child is available to select because all assigned children are absent."
+                showValidationAlert = true
+                return
+            }
             guard selectedChildID != nil else {
                 validationAlertMessage = "Please select a child before continuing."
                 showValidationAlert = true
@@ -512,6 +546,10 @@ struct NewIncidentFormView: View {
 
     private var shouldShowChildDropdown: Bool {
         isChildSearchFocused
+    }
+
+    private var hasAssignableChildren: Bool {
+        !viewModel.assignableChildren.isEmpty
     }
 
     private func childSelectionRow(for child: Child) -> some View {

@@ -15,6 +15,7 @@ import SwiftUI
 struct TodayAttendanceCard: View {
     let firstName: String
     @ObservedObject var viewModel: AttendanceViewModel
+    @Binding var isExpanded: Bool
 
     @State private var activeSheet: Sheet?
 
@@ -33,23 +34,38 @@ struct TodayAttendanceCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Image(systemName: "figure.walk.arrival")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.ncPrimary)
                 Text("Today’s attendance")
                     .font(.caption.weight(.bold))
                     .tracking(0.6)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
+                Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(.tertiary)
             }
 
-            statusBlock
-
-            actionButtons
+            if isExpanded {
+                statusBlock
+                actionButtons
+                Text(ComplianceContent.attendanceSafeguardingNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                compactStatusLine
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .ncStudioElevatedSurface(cornerRadius: 16)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                isExpanded.toggle()
+            }
+        }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(isExpanded ? "Collapse today’s attendance" : "Expand today’s attendance")
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .checkIn:
@@ -57,6 +73,56 @@ struct TodayAttendanceCard: View {
             case .checkOut:
                 CheckOutAttendanceSheet(firstName: firstName, viewModel: viewModel) { activeSheet = nil }
             }
+        }
+    }
+
+    private var compactStatusLine: some View {
+        HStack(spacing: 8) {
+            Image(systemName: compactStatusIcon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(compactStatusColor)
+            Text(compactStatusText)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var compactStatusText: String {
+        switch viewModel.phase {
+        case .expected:
+            return "Expected — not checked in yet"
+        case .absent:
+            return "Absent today"
+        case .onPremises:
+            return "On premises"
+        case .departed:
+            return "Departed"
+        }
+    }
+
+    private var compactStatusIcon: String {
+        switch viewModel.phase {
+        case .expected:
+            return "clock.badge.questionmark"
+        case .absent:
+            return "moon.zzz.fill"
+        case .onPremises:
+            return "checkmark.circle.fill"
+        case .departed:
+            return "figure.walk.departure"
+        }
+    }
+
+    private var compactStatusColor: Color {
+        switch viewModel.phase {
+        case .expected, .departed:
+            return .secondary
+        case .absent:
+            return Color.ncDanger
+        case .onPremises:
+            return Color.ncSecondary
         }
     }
 
@@ -331,7 +397,7 @@ private struct CheckOutAttendanceSheet: View {
 #Preview {
     let ctx = PersistenceController.preview.container.viewContext
     let vm = AttendanceViewModel(childID: UUID(), context: ctx)
-    return TodayAttendanceCard(firstName: "Emma", viewModel: vm)
+    return TodayAttendanceCard(firstName: "Emma", viewModel: vm, isExpanded: .constant(true))
         .environment(\.managedObjectContext, ctx)
         .padding()
         .background(Color.ncBackground)

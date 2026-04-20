@@ -23,6 +23,18 @@ struct DiaryDraftValidation {
     var missingFields: [String]
 }
 
+/// - Description: Aggregated daily metrics derived from a child's diary entries.
+struct DailyDiarySummary {
+    var totalSleepMinutes: Int
+    var totalFluidIntakeMl: Int
+    var nappyChangesCount: Int
+    var averageMoodRating: Double?
+    var latestMoodRating: Int?
+    var activeMinutes: Int
+    var restMinutes: Int
+    var activePercentage: Double?
+}
+
 /// - Description: Manages diary CRUD for a single child on the current calendar day.
 @MainActor
 final class DailyDiaryViewModel: ObservableObject {
@@ -34,6 +46,66 @@ final class DailyDiaryViewModel: ObservableObject {
     /// - Description: Shared nursery schedule merged with today’s rows (sleep masks activity placeholders).
     var mergedTimelineRows: [MergedDiaryTimelineRow] {
         DayTimelineMerger.mergedRows(entries: entries, referenceDay: Date())
+    }
+
+    /// - Description: Consolidated overview of today's diary records for top-of-screen summary UI.
+    var dailySummary: DailyDiarySummary {
+        var sleepMinutes = 0
+        var fluidIntakeMl = 0
+        var nappyCount = 0
+        var moodRatings: [Int] = []
+        var latestMood: (rating: Int, timestamp: Date)?
+        var activityMinutes = 0
+        var mealMinutes = 0
+
+        for entry in entries {
+            let type = DiaryEntryType.fromPersistence(entry.entryType ?? "")
+            switch type {
+            case .sleep:
+                sleepMinutes += max(Int(entry.duration), 0)
+            case .meal:
+                fluidIntakeMl += max(Int(entry.fluidIntake), 0)
+                mealMinutes += max(Int(entry.duration), 0)
+            case .nappy:
+                nappyCount += 1
+            case .wellbeing:
+                let rating = Int(entry.moodRating)
+                if rating > 0 {
+                    moodRatings.append(rating)
+                    let timestamp = entry.timestamp ?? .distantPast
+                    if let currentLatest = latestMood {
+                        if timestamp > currentLatest.timestamp {
+                            latestMood = (rating: rating, timestamp: timestamp)
+                        }
+                    } else {
+                        latestMood = (rating: rating, timestamp: timestamp)
+                    }
+                }
+            case .activity:
+                activityMinutes += max(Int(entry.duration), 0)
+            case .milestone:
+                continue
+            }
+        }
+
+        let activeMinutes = activityMinutes + mealMinutes
+        let restMinutes = sleepMinutes
+        let denominator = activeMinutes + restMinutes
+        let activePercentage: Double? = denominator > 0
+            ? (Double(activeMinutes) / Double(denominator)) * 100
+            : nil
+        let averageMood = moodRatings.isEmpty ? nil : Double(moodRatings.reduce(0, +)) / Double(moodRatings.count)
+
+        return DailyDiarySummary(
+            totalSleepMinutes: sleepMinutes,
+            totalFluidIntakeMl: fluidIntakeMl,
+            nappyChangesCount: nappyCount,
+            averageMoodRating: averageMood,
+            latestMoodRating: latestMood?.rating,
+            activeMinutes: activeMinutes,
+            restMinutes: restMinutes,
+            activePercentage: activePercentage
+        )
     }
 
     // MARK: - Properties

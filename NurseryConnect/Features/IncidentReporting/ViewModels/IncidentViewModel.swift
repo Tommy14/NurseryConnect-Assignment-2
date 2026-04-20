@@ -91,12 +91,22 @@ final class IncidentViewModel: ObservableObject {
         }
     }
 
-    /// - Description: Loads children assigned to the demo keyworker for pickers.
+    /// - Description: Loads on-site children assigned to the demo keyworker for incident pickers.
     func loadAssignableChildren() throws {
-        let request: NSFetchRequest<Child> = Child.fetchRequest()
-        request.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
-        assignableChildren = try context.fetch(request)
+        let dayStart = Date().startOfDay
+        let request: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "dayStart == %@", dayStart as NSDate),
+            NSPredicate(format: "child.keyworkerName == %@", AppConstants.keyworkerDisplayName),
+            NSPredicate(format: "checkInAt != nil"),
+            NSPredicate(format: "checkOutAt == nil"),
+            NSPredicate(format: "markedAbsent == NO")
+        ])
+        request.sortDescriptors = [NSSortDescriptor(key: "child.firstName", ascending: true)]
+        request.relationshipKeyPathsForPrefetching = ["child"]
+
+        let records = try context.fetch(request)
+        assignableChildren = records.compactMap(\.child)
     }
 
     /// - Description: Gates statutory RIDDOR/Ofsted workflow and only returns `true` for serious incidents.
