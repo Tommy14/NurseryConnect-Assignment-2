@@ -225,7 +225,6 @@ struct TodayAttendanceCard: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.ncPrimary)
-                .disabled(viewModel.authorisedCollectorLines.isEmpty)
             case .departed:
                 Text("Attendance is complete for today.")
                     .font(.caption.weight(.medium))
@@ -296,40 +295,33 @@ private struct CheckOutAttendanceSheet: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.authorisedCollectorLines.isEmpty {
-                    Form {
-                        Section {
-                            ContentUnavailableView(
-                                "No authorised collectors",
-                                systemImage: "person.crop.circle.badge.xmark",
-                                description: Text("Add authorised collectors on the child’s profile to complete a normal check-out, or report an unauthorised collection attempt below.")
-                            )
-                            .listRowInsets(EdgeInsets())
-                            .padding(.vertical, 8)
-                        }
-                        unauthorisedCollectionSection
-                    }
-                } else {
-                    Form {
-                        Section {
-                            Picker("Collected by", selection: $selectedCollector) {
-                                ForEach(Array(viewModel.authorisedCollectorLines.enumerated()), id: \.offset) { _, line in
-                                    Text(line)
-                                        .tag(line)
-                                }
+            Form {
+                Section {
+                    if viewModel.authorisedCollectorLines.isEmpty {
+                        Text("No authorised collectors are configured for this child.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("Collected by", selection: $selectedCollector) {
+                            ForEach(Array(viewModel.authorisedCollectorLines.enumerated()), id: \.offset) { _, line in
+                                Text(line)
+                                    .tag(line)
                             }
-                        } footer: {
-                            Text("Only people listed as authorised collectors can collect \(firstName).")
                         }
-
-                        Section {
-                            DatePicker("Collection time", selection: $outTime, displayedComponents: [.date, .hourAndMinute])
-                        }
-
-                        unauthorisedCollectionSection
+                    }
+                } footer: {
+                    if viewModel.authorisedCollectorLines.isEmpty {
+                        Text("Add authorised collectors in the child profile before checking out.")
+                    } else {
+                        Text("Select an authorised collector from the list.")
                     }
                 }
+
+                Section {
+                    DatePicker("Collection time", selection: $outTime, displayedComponents: [.date, .hourAndMinute])
+                }
+
+                unauthorisedCollectionSection
             }
             .navigationTitle("Check out")
             .navigationBarTitleDisplayMode(.inline)
@@ -340,7 +332,7 @@ private struct CheckOutAttendanceSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
-                            await viewModel.checkOut(at: outTime, collectedBy: selectedCollector)
+                            await viewModel.checkOut(at: outTime, collectedBy: collectorNameForSave)
                             if viewModel.errorMessage == nil {
                                 onDismiss()
                             }
@@ -367,10 +359,17 @@ private struct CheckOutAttendanceSheet: View {
             Text("This notifies leadership that someone not on the authorised list came to collect \(firstName). The check-out form will close; do not complete check-out until collection is verified.")
         }
         .onAppear {
-            if selectedCollector.isEmpty, let first = viewModel.authorisedCollectorLines.first {
+            guard selectedCollector.isEmpty else { return }
+            if let first = viewModel.authorisedCollectorLines.first {
                 selectedCollector = first
+            } else {
+                selectedCollector = ""
             }
         }
+    }
+
+    private var collectorNameForSave: String {
+        return selectedCollector
     }
 
     private var unauthorisedCollectionSection: some View {

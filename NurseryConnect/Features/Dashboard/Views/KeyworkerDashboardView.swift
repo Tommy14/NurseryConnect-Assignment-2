@@ -498,7 +498,9 @@ private struct DashboardQuickCheckInSheet: View {
     let onCancel: () -> Void
 
     @StateObject private var attendanceViewModel: AttendanceViewModel
-    @State private var droppedOffBy = ""
+    private let manualDropOffOption = "Not listed (enter name)"
+    @State private var selectedDropOff = ""
+    @State private var manualDropOffName = ""
 
     init(summary: KeyworkerChildSummary, context: NSManagedObjectContext, onSuccess: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self.summary = summary
@@ -512,12 +514,31 @@ private struct DashboardQuickCheckInSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Full name", text: $droppedOffBy)
-                        .textInputAutocapitalization(.words)
+                    if attendanceViewModel.authorisedCollectorLines.isEmpty {
+                        TextField("Full name", text: $manualDropOffName)
+                            .textInputAutocapitalization(.words)
+                    } else {
+                        Picker("Dropped off by", selection: $selectedDropOff) {
+                            ForEach(Array(attendanceViewModel.authorisedCollectorLines.enumerated()), id: \.offset) { _, line in
+                                Text(line)
+                                    .tag(line)
+                            }
+                            Text(manualDropOffOption)
+                                .tag(manualDropOffOption)
+                        }
+                        if selectedDropOff == manualDropOffOption {
+                            TextField("Full name", text: $manualDropOffName)
+                                .textInputAutocapitalization(.words)
+                        }
+                    }
                 } header: {
                     Text("Who dropped \(summary.firstName) off?")
                 } footer: {
-                    Text("Arrival time is saved automatically as the current time.")
+                    if attendanceViewModel.authorisedCollectorLines.isEmpty {
+                        Text("No authorised collectors are listed yet. Enter the drop-off name. Arrival time is saved automatically as the current time.")
+                    } else {
+                        Text("Select an authorised collector from the list, or choose “Not listed” and enter a name. Arrival time is saved automatically as the current time.")
+                    }
                 }
             }
             .navigationTitle("Check in")
@@ -529,7 +550,7 @@ private struct DashboardQuickCheckInSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
-                            await attendanceViewModel.checkIn(at: Date(), droppedOffBy: droppedOffBy)
+                            await attendanceViewModel.checkIn(at: Date(), droppedOffBy: dropOffNameForSave)
                             if attendanceViewModel.errorMessage == nil {
                                 onSuccess()
                             }
@@ -543,6 +564,11 @@ private struct DashboardQuickCheckInSheet: View {
         .presentationDragIndicator(.visible)
         .task {
             await attendanceViewModel.load()
+            if let first = attendanceViewModel.authorisedCollectorLines.first {
+                selectedDropOff = first
+            } else {
+                selectedDropOff = manualDropOffOption
+            }
         }
         .alert("Check-in", isPresented: Binding(
             get: { attendanceViewModel.errorMessage != nil },
@@ -552,6 +578,13 @@ private struct DashboardQuickCheckInSheet: View {
         } message: {
             Text(attendanceViewModel.errorMessage ?? "")
         }
+    }
+
+    private var dropOffNameForSave: String {
+        if attendanceViewModel.authorisedCollectorLines.isEmpty || selectedDropOff == manualDropOffOption {
+            return manualDropOffName
+        }
+        return selectedDropOff
     }
 }
 

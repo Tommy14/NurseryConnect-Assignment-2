@@ -166,6 +166,7 @@ struct DiaryEntryDetailView: View {
                 childID: entry.child?.id ?? UUID(),
                 viewModel: viewModel,
                 childAllergies: entry.child?.allergies ?? "",
+                childPhotoConsent: entry.child?.photoConsent ?? false,
                 mode: .correction(existingEntry: entry)
             )
         }

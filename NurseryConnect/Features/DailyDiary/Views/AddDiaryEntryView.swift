@@ -19,6 +19,7 @@
 import Combine
 import CoreData
 import SwiftUI
+import UIKit
 
 /// - Description: Sheet form that creates a `DiaryEntry` for the selected child.
 struct AddDiaryEntryView: View {
@@ -41,6 +42,7 @@ struct AddDiaryEntryView: View {
     let childID: UUID
     @ObservedObject var viewModel: DailyDiaryViewModel
     let childAllergies: String
+    let childPhotoConsent: Bool
     /// - Description: When set, pre-fills type, meal slot, and default log time from a planned session row.
     var plannedSessionContext: PlannedSessionLogContext?
     /// - Description: When false, save is blocked (e.g. before check-in or after check-out). Re-evaluated on each save attempt.
@@ -79,6 +81,12 @@ struct AddDiaryEntryView: View {
     @State private var didApplyCorrectionPrefill = false
     @State private var selectedCorrectionReason: CorrectionReasonOption = .typo
     @State private var correctionReasonOtherText: String = ""
+    @State private var milestonePhotoOriginal: UIImage?
+    @State private var milestonePhotoProcessed: UIImage?
+    @State private var milestonePhotoBlurredFaceCount: Int16 = 0
+    @State private var showCameraCaptureSheet = false
+    @State private var showBlurEditorSheet = false
+    @State private var showCameraUnavailableAlert = false
 
     private var isCorrectionMode: Bool {
         if case .correction = mode { return true }
@@ -89,6 +97,7 @@ struct AddDiaryEntryView: View {
         childID: UUID,
         viewModel: DailyDiaryViewModel,
         childAllergies: String = "",
+        childPhotoConsent: Bool = true,
         mode: EntryMode = .create,
         plannedSessionContext: PlannedSessionLogContext? = nil,
         isDiaryLoggingPermitted: @escaping () -> Bool = { true }
@@ -96,6 +105,7 @@ struct AddDiaryEntryView: View {
         self.childID = childID
         self.viewModel = viewModel
         self.childAllergies = childAllergies
+        self.childPhotoConsent = childPhotoConsent
         self.mode = mode
         self.plannedSessionContext = plannedSessionContext
         self.isDiaryLoggingPermitted = isDiaryLoggingPermitted
@@ -145,11 +155,45 @@ struct AddDiaryEntryView: View {
         .onAppear {
             applyPlannedSessionPrefillIfNeeded()
             applyCorrectionPrefillIfNeeded()
+            loadExistingMilestonePhotoIfNeeded()
         }
         .alert("Required fields missing", isPresented: $showValidationAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(validationMessage)
+        }
+        .alert("Camera unavailable", isPresented: $showCameraUnavailableAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This device does not support camera capture.")
+        }
+        .sheet(isPresented: $showCameraCaptureSheet) {
+            CameraCaptureView(
+                onImageCaptured: { image in
+                    showCameraCaptureSheet = false
+                    milestonePhotoOriginal = image
+                    showBlurEditorSheet = true
+                },
+                onCancel: {
+                    showCameraCaptureSheet = false
+                }
+            )
+            .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showBlurEditorSheet) {
+            if let milestonePhotoOriginal {
+                FaceBlurEditorView(
+                    inputImage: milestonePhotoOriginal,
+                    onCancel: {
+                        showBlurEditorSheet = false
+                    },
+                    onDone: { result in
+                        milestonePhotoProcessed = result.image
+                        milestonePhotoBlurredFaceCount = result.blurredFaceCount
+                        showBlurEditorSheet = false
+                    }
+                )
+            }
         }
     }
 
@@ -197,6 +241,14 @@ struct AddDiaryEntryView: View {
         moodRating = entry.moodRating == 0 ? 3 : entry.moodRating
         milestoneEyfs = EyfsArea(rawValue: entry.eyfsArea ?? "") ?? .communication
         milestoneText = selectedType == .milestone ? (entry.activityType ?? "") : ""
+    }
+
+    private func loadExistingMilestonePhotoIfNeeded() {
+        guard case .correction(let entry) = mode else { return }
+        guard let data = entry.milestonePhotoData, let image = UIImage(data: data) else { return }
+        milestonePhotoOriginal = image
+        milestonePhotoProcessed = image
+        milestonePhotoBlurredFaceCount = entry.milestonePhotoBlurredFaceCount
     }
 
     private var diaryFormAtmosphereBackground: some View {
@@ -522,6 +574,50 @@ struct AddDiaryEntryView: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
                 }
+            milestonePhotoSection
+        }
+    }
+
+    private var milestonePhotoSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Milestone photo")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            if !Self.isMilestonePhotoCaptureAllowed(hasPhotoConsent: childPhotoConsent, entryType: selectedType) {
+                Label("Photo capture is disabled. This child has no photo consent.", systemImage: "hand.raised.fill")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(Color.ncDanger)
+            } else {
+                if let image = milestonePhotoProcessed ?? milestonePhotoOriginal {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    HStack(spacing: 10) {
+                        Button("Retake photo") {
+                            openCamera()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Button("Remove", role: .destructive) {
+                            clearMilestonePhoto()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Text("Faces blurred: \(milestonePhotoBlurredFaceCount)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        openCamera()
+                    } label: {
+                        Label("Take photo", systemImage: "camera.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
         }
     }
 
@@ -764,6 +860,8 @@ struct AddDiaryEntryView: View {
             }
             return notesForType()
         }()
+        let encodedPhoto = (selectedType == .milestone ? milestonePhotoProcessed ?? milestonePhotoOriginal : nil)?
+            .jpegData(compressionQuality: 0.82)
 
         return DiaryEntryDraftValues(
             timestamp: selectedType == .sleep ? sleepStart : logTimestamp,
@@ -778,8 +876,30 @@ struct AddDiaryEntryView: View {
             fluidType: selectedType == .meal ? fluidKind.rawValue : "",
             nappyType: selectedType == .nappy ? nappyKind.rawValue : "",
             moodRating: selectedType == .wellbeing ? moodRating : 0,
-            sleepPosition: selectedType == .sleep ? sleepPosition.rawValue : ""
+            sleepPosition: selectedType == .sleep ? sleepPosition.rawValue : "",
+            milestonePhotoData: encodedPhoto,
+            milestonePhotoMimeType: encodedPhoto == nil ? "" : "image/jpeg",
+            milestonePhotoBlurredFaceCount: selectedType == .milestone ? milestonePhotoBlurredFaceCount : 0
         )
+    }
+
+    private func openCamera() {
+        guard Self.isMilestonePhotoCaptureAllowed(hasPhotoConsent: childPhotoConsent, entryType: selectedType) else { return }
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            showCameraUnavailableAlert = true
+            return
+        }
+        showCameraCaptureSheet = true
+    }
+
+    private func clearMilestonePhoto() {
+        milestonePhotoOriginal = nil
+        milestonePhotoProcessed = nil
+        milestonePhotoBlurredFaceCount = 0
+    }
+
+    static func isMilestonePhotoCaptureAllowed(hasPhotoConsent: Bool, entryType: DiaryEntryType) -> Bool {
+        hasPhotoConsent && entryType == .milestone
     }
 
     private func resolvedCorrectionReason() -> String {

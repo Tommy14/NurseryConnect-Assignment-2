@@ -36,7 +36,7 @@ final class AttendanceViewModelTests: XCTestCase {
         XCTAssertEqual(vm.collectedBy, "Parent One")
     }
 
-    func testCheckOutRejectsNonAuthorisedName() async {
+    func testCheckOutAllowsManualCollectorName() async {
         let stack = PersistenceController(inMemory: true)
         let ctx = stack.container.viewContext
         let childId = insertChild(authorisedCollectors: "Only Authorised", in: ctx)
@@ -46,11 +46,12 @@ final class AttendanceViewModelTests: XCTestCase {
         await vm.checkIn(at: Date(), droppedOffBy: "Someone")
 
         await vm.checkOut(at: Date(), collectedBy: "Not On List")
-        XCTAssertNotNil(vm.errorMessage)
-        XCTAssertEqual(vm.phase, .onPremises)
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(vm.phase, .departed)
+        XCTAssertEqual(vm.collectedBy, "Not On List")
     }
 
-    func testCheckOutBlockedWhenNoAuthorisedCollectors() async {
+    func testCheckOutAllowsCollectorWhenNoAuthorisedCollectors() async {
         let stack = PersistenceController(inMemory: true)
         let ctx = stack.container.viewContext
         let childId = insertChild(authorisedCollectors: "", in: ctx)
@@ -60,8 +61,9 @@ final class AttendanceViewModelTests: XCTestCase {
         await vm.checkIn(at: Date(), droppedOffBy: "Drop off")
 
         await vm.checkOut(at: Date(), collectedBy: "Anyone")
-        XCTAssertNotNil(vm.errorMessage)
-        XCTAssertEqual(vm.phase, .onPremises)
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(vm.phase, .departed)
+        XCTAssertEqual(vm.collectedBy, "Anyone")
     }
 
     func testReportUnauthorisedCollectionCreatesSafeguardingIncident() async throws {

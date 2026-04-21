@@ -76,20 +76,12 @@ final class AttendanceViewModel: ObservableObject {
         }
     }
 
-    /// - Description: Records departure; pick-up name must match an authorised collector line.
+    /// - Description: Records departure with the collector name selected or entered by staff.
     func checkOut(at time: Date, collectedBy name: String) async {
         errorMessage = nil
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else {
-            errorMessage = "Select who collected the child."
-            return
-        }
-        guard authorisedCollectorLines.isEmpty == false else {
-            errorMessage = "Add authorised collectors to this child’s profile before check-out."
-            return
-        }
-        guard AuthorisedCollectorsParsing.isAuthorisedCollector(trimmed, allowedLines: authorisedCollectorLines) else {
-            errorMessage = "Pick-up must be an authorised collector."
+            errorMessage = "Enter who collected the child."
             return
         }
         do {

@@ -25,6 +25,9 @@ struct DiaryEntrySnapshot: Codable {
     let nappyType: String
     let moodRating: Int16
     let sleepPosition: String
+    let hasMilestonePhoto: Bool
+    let milestonePhotoMimeType: String
+    let milestonePhotoBlurredFaceCount: Int16
 
     init(
         entryType: String,
@@ -39,7 +42,10 @@ struct DiaryEntrySnapshot: Codable {
         fluidType: String,
         nappyType: String,
         moodRating: Int16,
-        sleepPosition: String
+        sleepPosition: String,
+        hasMilestonePhoto: Bool,
+        milestonePhotoMimeType: String,
+        milestonePhotoBlurredFaceCount: Int16
     ) {
         self.entryType = entryType
         self.timestamp = timestamp
@@ -54,6 +60,9 @@ struct DiaryEntrySnapshot: Codable {
         self.nappyType = nappyType
         self.moodRating = moodRating
         self.sleepPosition = sleepPosition
+        self.hasMilestonePhoto = hasMilestonePhoto
+        self.milestonePhotoMimeType = milestonePhotoMimeType
+        self.milestonePhotoBlurredFaceCount = milestonePhotoBlurredFaceCount
     }
 
     init(entry: DiaryEntry) {
@@ -70,6 +79,9 @@ struct DiaryEntrySnapshot: Codable {
         nappyType = entry.nappyType ?? ""
         moodRating = entry.moodRating
         sleepPosition = entry.sleepPosition ?? ""
+        hasMilestonePhoto = entry.milestonePhotoData != nil
+        milestonePhotoMimeType = entry.milestonePhotoMimeType ?? ""
+        milestonePhotoBlurredFaceCount = entry.milestonePhotoBlurredFaceCount
     }
 }
 
@@ -121,6 +133,9 @@ extension DiaryEntry {
         nappyType = draft.nappyType
         moodRating = draft.moodRating
         sleepPosition = draft.sleepPosition
+        milestonePhotoData = draft.milestonePhotoData
+        milestonePhotoMimeType = draft.milestonePhotoMimeType
+        milestonePhotoBlurredFaceCount = draft.milestonePhotoBlurredFaceCount
     }
 
     func correctionChanges(comparedTo draft: DiaryEntryDraftValues) -> [DiaryCorrectionFieldChange] {
@@ -146,6 +161,13 @@ extension DiaryEntry {
         append("nappyType", oldSnapshot.nappyType, newSnapshot.nappyType)
         append("moodRating", "\(oldSnapshot.moodRating)", "\(newSnapshot.moodRating)")
         append("sleepPosition", oldSnapshot.sleepPosition, newSnapshot.sleepPosition)
+        append("milestonePhotoAttached", "\(oldSnapshot.hasMilestonePhoto)", "\(newSnapshot.hasMilestonePhoto)")
+        append("milestonePhotoMimeType", oldSnapshot.milestonePhotoMimeType, newSnapshot.milestonePhotoMimeType)
+        append(
+            "milestonePhotoBlurredFaceCount",
+            "\(oldSnapshot.milestonePhotoBlurredFaceCount)",
+            "\(newSnapshot.milestonePhotoBlurredFaceCount)"
+        )
 
         return changes
     }

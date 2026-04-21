@@ -34,6 +34,9 @@ struct ActivityLogCard: View {
         let activityText = (entry.activityType ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let eyfsText = (entry.eyfsArea ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let noteText = (entry.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let milestoneImage = entry.milestonePhotoData.flatMap { UIImage(data: $0) }
+        let hasMilestonePhoto = milestoneImage != nil
+        let isSubmitted = entry.submittedAt != nil
 
         VStack(alignment: .leading, spacing: 10) {
             DiaryEntryCardHeader(
@@ -72,6 +75,29 @@ struct ActivityLogCard: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary.opacity(0.92))
                         .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if type == .milestone, hasMilestonePhoto {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Photo evidence")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    if isSubmitted {
+                        Label("Photo evidence recorded", systemImage: "checkmark.seal.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    } else if let milestoneImage {
+                        Image(uiImage: milestoneImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 132)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    Text("Blurred faces: \(entry.milestonePhotoBlurredFaceCount)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

@@ -24,6 +24,9 @@ struct DiaryEntryDraftValues {
     let nappyType: String
     let moodRating: Int16
     let sleepPosition: String
+    let milestonePhotoData: Data?
+    let milestonePhotoMimeType: String
+    let milestonePhotoBlurredFaceCount: Int16
 
     var snapshot: DiaryEntrySnapshot {
         DiaryEntrySnapshot(
@@ -39,7 +42,10 @@ struct DiaryEntryDraftValues {
             fluidType: fluidType,
             nappyType: nappyType,
             moodRating: moodRating,
-            sleepPosition: sleepPosition
+            sleepPosition: sleepPosition,
+            hasMilestonePhoto: milestonePhotoData != nil,
+            milestonePhotoMimeType: milestonePhotoMimeType,
+            milestonePhotoBlurredFaceCount: milestonePhotoBlurredFaceCount
         )
     }
 }

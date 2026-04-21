@@ -71,7 +71,10 @@ final class DailyDiaryViewModelTests: XCTestCase {
             fluidType: "",
             nappyType: "",
             moodRating: 0,
-            sleepPosition: ""
+            sleepPosition: "",
+            milestonePhotoData: nil,
+            milestonePhotoMimeType: "",
+            milestonePhotoBlurredFaceCount: 0
         )
 
         let ok = await vm.correctEntry(entry, with: draft, reason: " ")
@@ -100,7 +103,10 @@ final class DailyDiaryViewModelTests: XCTestCase {
             fluidType: "",
             nappyType: "",
             moodRating: 0,
-            sleepPosition: ""
+            sleepPosition: "",
+            milestonePhotoData: nil,
+            milestonePhotoMimeType: "",
+            milestonePhotoBlurredFaceCount: 0
         )
 
         let ok = await vm.correctEntry(entry, with: draft, reason: "Typo fixed")
@@ -132,7 +138,10 @@ final class DailyDiaryViewModelTests: XCTestCase {
             fluidType: "",
             nappyType: "",
             moodRating: 0,
-            sleepPosition: ""
+            sleepPosition: "",
+            milestonePhotoData: nil,
+            milestonePhotoMimeType: "",
+            milestonePhotoBlurredFaceCount: 0
         )
         _ = await vm.correctEntry(entry, with: firstDraft, reason: "Initial correction")
         let originalSnapshot = entry.originalSnapshotJSON
@@ -150,7 +159,10 @@ final class DailyDiaryViewModelTests: XCTestCase {
             fluidType: "",
             nappyType: "",
             moodRating: 0,
-            sleepPosition: ""
+            sleepPosition: "",
+            milestonePhotoData: nil,
+            milestonePhotoMimeType: "",
+            milestonePhotoBlurredFaceCount: 0
         )
         _ = await vm.correctEntry(entry, with: secondDraft, reason: "More precise wording")
 

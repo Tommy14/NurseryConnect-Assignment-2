@@ -204,6 +204,7 @@ struct DailyDiaryListView: View {
                         childID: summary.id,
                         viewModel: viewModel,
                         childAllergies: summary.allergies,
+                        childPhotoConsent: summary.photoConsent,
                         plannedSessionContext: nil,
                         isDiaryLoggingPermitted: {
                             attendanceViewModel.phase == .onPremises
@@ -215,6 +216,7 @@ struct DailyDiaryListView: View {
                         childID: summary.id,
                         viewModel: viewModel,
                         childAllergies: summary.allergies,
+                        childPhotoConsent: summary.photoConsent,
                         plannedSessionContext: ctx,
                         isDiaryLoggingPermitted: {
                             attendanceViewModel.phase == .onPremises
