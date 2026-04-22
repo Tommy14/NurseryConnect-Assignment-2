@@ -12,6 +12,7 @@ import Combine
 import CoreData
 import Foundation
 
+@MainActor
 protocol SyncTransport {
     func uploadDiaryEntry(_ entry: DiaryEntry) async throws
     func uploadIncident(_ incident: Incident) async throws
@@ -22,12 +23,12 @@ struct NoopSyncTransport: SyncTransport {
     func uploadIncident(_ incident: Incident) async throws {}
 }
 
+@MainActor
 final class SyncQueueService: ObservableObject {
     static var shared: SyncQueueService {
         Shared.instance
     }
 
-    @MainActor
     private enum Shared {
         static let instance = SyncQueueService(
             context: PersistenceController.shared.container.viewContext,
@@ -40,46 +41,40 @@ final class SyncQueueService: ObservableObject {
     private let transport: SyncTransport
     private let networkMonitor: NetworkMonitor
 
-    @MainActor
     init(
         context: NSManagedObjectContext,
-        transport: SyncTransport = NoopSyncTransport(),
+        transport: SyncTransport? = nil,
         networkMonitor: NetworkMonitor? = nil
     ) {
         self.context = context
-        self.transport = transport
+        self.transport = transport ?? NoopSyncTransport()
         self.networkMonitor = networkMonitor ?? .shared
     }
 
-    @MainActor
     func enqueueDiary(_ entry: DiaryEntry) async {
         markPending(entry: entry)
         persistContext()
         await processQueueIfPossible()
     }
 
-    @MainActor
     func enqueueIncident(_ incident: Incident) async {
         markPending(incident: incident)
         persistContext()
         await processQueueIfPossible()
     }
 
-    @MainActor
     func retryDiary(_ entry: DiaryEntry) async {
         markPending(entry: entry)
         persistContext()
         await processQueueIfPossible(force: true)
     }
 
-    @MainActor
     func retryIncident(_ incident: Incident) async {
         markPending(incident: incident)
         persistContext()
         await processQueueIfPossible(force: true)
     }
 
-    @MainActor
     func processQueueIfPossible(force: Bool = false) async {
         guard force || networkMonitor.isOnline else { return }
         guard !isProcessing else { return }

@@ -139,7 +139,6 @@ struct DailyDiarySummaryCard: View {
 
     private var hydrationRingProgress: Double {
         let hydrationGoalMl = 1000.0
-        guard hydrationGoalMl > 0 else { return 0 }
         return min(max(Double(summary.totalFluidIntakeMl) / hydrationGoalMl, 0), 1)
     }
 
