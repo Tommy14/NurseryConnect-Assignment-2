@@ -25,7 +25,7 @@ struct FaceBlurEditorView: View {
     let onDone: (FaceBlurEditorResult) -> Void
 
     @State private var detectedFaces: [CGRect] = []
-    @State private var selectedFaceIndexes: Set<Int> = []
+    @State private var selectedClearFaceIndex: Int?
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var displayImage: UIImage?
@@ -63,23 +63,24 @@ struct FaceBlurEditorView: View {
                     Button("Use photo") {
                         Task {
                             guard let displayImage else { return }
-                            let selected = selectedFaceIndexes
+                            let selectedToBlur = indexesToBlur
                             let processed = await FaceBlurProcessor.applyBlurAsync(
                                 to: displayImage,
                                 faceBoxes: detectedFaces,
-                                selectedIndexes: selected
+                                selectedIndexes: selectedToBlur
                             ) ?? displayImage
                             await MainActor.run {
                                 onDone(
                                     FaceBlurEditorResult(
                                         image: processed,
-                                        blurredFaceCount: Int16(selected.count)
+                                        blurredFaceCount: Int16(selectedToBlur.count)
                                     )
                                 )
                             }
                         }
                     }
                     .fontWeight(.semibold)
+                    .disabled(!canUsePhoto)
                 }
             }
         }
@@ -95,7 +96,19 @@ struct FaceBlurEditorView: View {
         if detectedFaces.isEmpty {
             return "No faces detected. You can keep the photo as-is."
         }
-        return "Tap each face you need to blur. Selected faces will be blurred before this image is saved."
+        if selectedClearFaceIndex == nil {
+            return "Select one child's face to keep clear."
+        }
+        return "Tap the child's face to keep clear. All other detected faces will be blurred."
+    }
+
+    private var canUsePhoto: Bool {
+        detectedFaces.isEmpty || selectedClearFaceIndex != nil
+    }
+
+    private var indexesToBlur: Set<Int> {
+        guard let selectedClearFaceIndex else { return [] }
+        return Set(detectedFaces.indices.filter { $0 != selectedClearFaceIndex })
     }
 
     private var faceCanvas: some View {
@@ -114,7 +127,7 @@ struct FaceBlurEditorView: View {
                 ForEach(Array(detectedFaces.enumerated()), id: \.offset) { item in
                     let idx = item.offset
                     let rect = faceRectInDisplaySpace(item.element, imageFrame: frame)
-                    let isSelected = selectedFaceIndexes.contains(idx)
+                    let isSelected = selectedClearFaceIndex == idx
                     ZStack {
                         // Invisible enlarged hit area so selecting faces is easier.
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -127,7 +140,7 @@ struct FaceBlurEditorView: View {
                             .stroke(isSelected ? Color.ncPrimary : Color.white.opacity(0.9), lineWidth: isSelected ? 3 : 2)
                             .background(
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(isSelected ? Color.ncPrimary.opacity(0.2) : .clear)
+                                    .fill(isSelected ? Color.ncPrimary.opacity(0.22) : Color.black.opacity(0.28))
                             )
                             .frame(width: rect.width, height: rect.height)
                     }
@@ -136,11 +149,7 @@ struct FaceBlurEditorView: View {
                     )
                     .position(x: rect.midX, y: rect.midY)
                     .onTapGesture {
-                        if isSelected {
-                            selectedFaceIndexes.remove(idx)
-                        } else {
-                            selectedFaceIndexes.insert(idx)
-                        }
+                        selectedClearFaceIndex = idx
                     }
                 }
             }
