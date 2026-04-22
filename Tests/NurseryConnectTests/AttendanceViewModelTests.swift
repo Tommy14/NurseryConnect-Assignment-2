@@ -79,7 +79,7 @@ final class AttendanceViewModelTests: XCTestCase {
         XCTAssertTrue(ok)
         XCTAssertNil(vm.errorMessage)
 
-        let req: NSFetchRequest<Incident> = Incident.fetchRequest()
+        let req = NSFetchRequest<Incident>(entityName: "Incident")
         let incidents = try ctx.fetch(req)
         XCTAssertEqual(incidents.count, 1)
         let incident = try XCTUnwrap(incidents.first)
@@ -120,7 +120,7 @@ final class AttendanceViewModelTests: XCTestCase {
         XCTAssertNil(vm.errorMessage)
         XCTAssertEqual(vm.phase, .onPremises)
 
-        let req: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+        let req = NSFetchRequest<AttendanceRecord>(entityName: "AttendanceRecord")
         let records = try ctx.fetch(req)
         XCTAssertEqual(records.count, 1)
         XCTAssertEqual(records.first?.markedAbsent, false)
@@ -131,7 +131,7 @@ final class AttendanceViewModelTests: XCTestCase {
         let ctx = stack.container.viewContext
         let childId = insertChild(authorisedCollectors: "A", in: ctx)
 
-        let fetch: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+        let fetch = NSFetchRequest<AttendanceRecord>(entityName: "AttendanceRecord")
         XCTAssertEqual(try ctx.count(for: fetch), 0)
 
         let vm = AttendanceViewModel(childID: childId, context: ctx)
@@ -147,7 +147,13 @@ final class AttendanceViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func insertChild(authorisedCollectors: String, in ctx: NSManagedObjectContext) -> UUID {
-        let child = Child(context: ctx)
+        guard let child = NSEntityDescription.insertNewObject(
+            forEntityName: "Child",
+            into: ctx
+        ) as? Child else {
+            XCTFail("Failed to create Child entity.")
+            return UUID()
+        }
         let id = UUID()
         child.id = id
         child.firstName = "Test"

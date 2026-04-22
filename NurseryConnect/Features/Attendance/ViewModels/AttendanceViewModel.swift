@@ -181,7 +181,13 @@ final class AttendanceViewModel: ObservableObject {
             let displayName = [fn, ln].filter { !$0.isEmpty }.joined(separator: " ")
             let nameForCopy = displayName.isEmpty ? "the child" : displayName
 
-            let incident = Incident(context: context)
+            guard let incident = NSEntityDescription.insertNewObject(
+                forEntityName: "Incident",
+                into: context
+            ) as? Incident else {
+                errorMessage = "Unable to create safeguarding report."
+                return false
+            }
             incident.id = UUID()
             incident.timestamp = Date()
             incident.category = category.persistenceValue
@@ -250,14 +256,14 @@ final class AttendanceViewModel: ObservableObject {
     }
 
     private func fetchChild() throws -> Child? {
-        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        let request = NSFetchRequest<Child>(entityName: "Child")
         request.predicate = NSPredicate(format: "id == %@", childID as CVarArg)
         request.fetchLimit = 1
         return try context.fetch(request).first
     }
 
     private func fetchRecord(child: Child, dayStart: Date) throws -> AttendanceRecord? {
-        let request: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+        let request = NSFetchRequest<AttendanceRecord>(entityName: "AttendanceRecord")
         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
             NSPredicate(format: "child == %@", child),
             NSPredicate(format: "dayStart == %@", dayStart as NSDate)
@@ -270,7 +276,16 @@ final class AttendanceViewModel: ObservableObject {
         if let existing = try fetchRecord(child: child, dayStart: dayStart) {
             return existing
         }
-        let record = AttendanceRecord(context: context)
+        guard let record = NSEntityDescription.insertNewObject(
+            forEntityName: "AttendanceRecord",
+            into: context
+        ) as? AttendanceRecord else {
+            throw NSError(
+                domain: "AttendanceViewModel",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Could not create attendance record entity."]
+            )
+        }
         record.id = UUID()
         record.dayStart = dayStart
         record.child = child

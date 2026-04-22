@@ -19,7 +19,13 @@ final class MilestonePhotoPrivacyTests: XCTestCase {
     func testApplyDraftPersistsMilestonePhotoFields() {
         let stack = PersistenceController(inMemory: true)
         let context = stack.container.viewContext
-        let entry = DiaryEntry(context: context)
+        guard let entry = NSEntityDescription.insertNewObject(
+            forEntityName: "DiaryEntry",
+            into: context
+        ) as? DiaryEntry else {
+            XCTFail("Failed to create DiaryEntry entity.")
+            return
+        }
         let photoData = makeSolidColorImageData()
 
         let draft = DiaryEntryDraftValues(

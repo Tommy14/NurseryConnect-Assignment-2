@@ -172,7 +172,13 @@ final class DailyDiaryViewModelTests: XCTestCase {
     }
 
     private func makeChild(context: NSManagedObjectContext) -> Child {
-        let child = Child(context: context)
+        guard let child = NSEntityDescription.insertNewObject(
+            forEntityName: "Child",
+            into: context
+        ) as? Child else {
+            XCTFail("Failed to create Child entity.")
+            fatalError("Failed to create Child entity.")
+        }
         child.id = UUID()
         child.firstName = "Test"
         child.lastName = "Child"
@@ -181,7 +187,13 @@ final class DailyDiaryViewModelTests: XCTestCase {
     }
 
     private func makeDiaryEntry(context: NSManagedObjectContext, child: Child) -> DiaryEntry {
-        let entry = DiaryEntry(context: context)
+        guard let entry = NSEntityDescription.insertNewObject(
+            forEntityName: "DiaryEntry",
+            into: context
+        ) as? DiaryEntry else {
+            XCTFail("Failed to create DiaryEntry entity.")
+            fatalError("Failed to create DiaryEntry entity.")
+        }
         entry.id = UUID()
         entry.child = child
         entry.timestamp = Date()

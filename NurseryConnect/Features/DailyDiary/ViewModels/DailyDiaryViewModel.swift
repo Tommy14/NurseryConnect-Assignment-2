@@ -171,7 +171,13 @@ final class DailyDiaryViewModel: ObservableObject {
                 errorMessage = "Missing child record."
                 return false
             }
-            let entry = DiaryEntry(context: context)
+            guard let entry = NSEntityDescription.insertNewObject(
+                forEntityName: "DiaryEntry",
+                into: context
+            ) as? DiaryEntry else {
+                errorMessage = "Unable to create this diary entry."
+                return false
+            }
             entry.id = UUID()
             entry.submittedAt = Date()
             entry.child = child
@@ -218,7 +224,13 @@ final class DailyDiaryViewModel: ObservableObject {
         entry.storeOriginalSnapshotIfNeeded()
         let correctedAt = Date()
         for change in changes {
-            let correction = DiaryEntryCorrection(context: context)
+            guard let correction = NSEntityDescription.insertNewObject(
+                forEntityName: "DiaryEntryCorrection",
+                into: context
+            ) as? DiaryEntryCorrection else {
+                errorMessage = "Could not update this entry."
+                return false
+            }
             correction.id = UUID()
             correction.correctedAt = correctedAt
             correction.reason = trimmedReason
@@ -296,7 +308,7 @@ final class DailyDiaryViewModel: ObservableObject {
     /// - Description: Locates the `Child` entity backing this view model.
     /// - Returns: Matching child or `nil` if missing.
     private func fetchChild() throws -> Child? {
-        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        let request = NSFetchRequest<Child>(entityName: "Child")
         request.predicate = NSPredicate(format: "id == %@", childID as CVarArg)
         request.fetchLimit = 1
         return try context.fetch(request).first
@@ -308,7 +320,7 @@ final class DailyDiaryViewModel: ObservableObject {
         guard let child = try fetchChild() else { return [] }
         let start = Date().startOfDay
         let end = Date().endOfDay
-        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        let request = NSFetchRequest<DiaryEntry>(entityName: "DiaryEntry")
         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
             NSPredicate(format: "child == %@", child),
             NSPredicate(format: "timestamp >= %@ AND timestamp < %@", start as NSDate, end as NSDate)

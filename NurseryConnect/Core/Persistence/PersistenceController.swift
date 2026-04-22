@@ -41,12 +41,16 @@ final class PersistenceController {
     /// - Parameters:
     ///   - inMemory: When `true`, stores data only in RAM (no disk file).
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "NurseryConnect")
+        let model = Self.loadManagedObjectModel()
+        container = NSPersistentContainer(name: "NurseryConnect", managedObjectModel: model)
         for description in container.persistentStoreDescriptions {
             description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
             description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
             if inMemory {
-                description.url = URL(fileURLWithPath: "/dev/null")
+                // Use the dedicated Core Data in-memory store type so each test stack is isolated
+                // and does not contend on a shared SQLite path under parallel test execution.
+                description.type = NSInMemoryStoreType
+                description.url = nil
             }
         }
         container.loadPersistentStores { _, error in
@@ -71,5 +75,25 @@ final class PersistenceController {
         } catch {
             throw error
         }
+    }
+
+    // MARK: - Private Methods
+
+    /// - Description: Loads a single, explicit Core Data model to avoid duplicate entity resolution in tests.
+    private static func loadManagedObjectModel() -> NSManagedObjectModel {
+        let modelName = "NurseryConnect"
+        let candidateBundles: [Bundle] = [
+            Bundle(for: PersistenceController.self),
+            Bundle.main
+        ]
+
+        for bundle in candidateBundles {
+            if let modelURL = bundle.url(forResource: modelName, withExtension: "momd"),
+               let model = NSManagedObjectModel(contentsOf: modelURL) {
+                return model
+            }
+        }
+
+        fatalError("Unable to locate \(modelName).momd in known bundles.")
     }
 }

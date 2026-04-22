@@ -128,14 +128,14 @@ final class SyncQueueService: ObservableObject {
     }
 
     private func fetchPendingDiaryEntries() throws -> [DiaryEntry] {
-        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        let request = NSFetchRequest<DiaryEntry>(entityName: "DiaryEntry")
         request.predicate = NSPredicate(format: "syncState != %@", SyncState.synced.rawValue)
         request.sortDescriptors = [NSSortDescriptor(key: "syncEnqueuedAt", ascending: true)]
         return try context.fetch(request)
     }
 
     private func fetchPendingIncidents() throws -> [Incident] {
-        let request: NSFetchRequest<Incident> = Incident.fetchRequest()
+        let request = NSFetchRequest<Incident>(entityName: "Incident")
         request.predicate = NSPredicate(format: "syncState != %@", SyncState.synced.rawValue)
         request.sortDescriptors = [NSSortDescriptor(key: "syncEnqueuedAt", ascending: true)]
         return try context.fetch(request)

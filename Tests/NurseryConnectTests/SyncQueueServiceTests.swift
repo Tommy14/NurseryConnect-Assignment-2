@@ -68,7 +68,13 @@ final class SyncQueueServiceTests: XCTestCase {
     }
 
     private func makeChild(in context: NSManagedObjectContext) -> Child {
-        let child = Child(context: context)
+        guard let child = NSEntityDescription.insertNewObject(
+            forEntityName: "Child",
+            into: context
+        ) as? Child else {
+            XCTFail("Failed to create Child entity.")
+            fatalError("Failed to create Child entity.")
+        }
         child.id = UUID()
         child.firstName = "Test"
         child.lastName = "Child"
@@ -79,7 +85,13 @@ final class SyncQueueServiceTests: XCTestCase {
     }
 
     private func makeDiaryEntry(child: Child, in context: NSManagedObjectContext) -> DiaryEntry {
-        let entry = DiaryEntry(context: context)
+        guard let entry = NSEntityDescription.insertNewObject(
+            forEntityName: "DiaryEntry",
+            into: context
+        ) as? DiaryEntry else {
+            XCTFail("Failed to create DiaryEntry entity.")
+            fatalError("Failed to create DiaryEntry entity.")
+        }
         entry.id = UUID()
         entry.entryType = DiaryEntryType.activity.persistenceValue
         entry.notes = "Observed activity"
@@ -91,7 +103,13 @@ final class SyncQueueServiceTests: XCTestCase {
     }
 
     private func makeIncident(child: Child, in context: NSManagedObjectContext) -> Incident {
-        let incident = Incident(context: context)
+        guard let incident = NSEntityDescription.insertNewObject(
+            forEntityName: "Incident",
+            into: context
+        ) as? Incident else {
+            XCTFail("Failed to create Incident entity.")
+            fatalError("Failed to create Incident entity.")
+        }
         incident.id = UUID()
         incident.category = IncidentCategory.accidentMinor.persistenceValue
         incident.severity = IncidentSeverity.minor.persistenceValue
