@@ -30,6 +30,43 @@ extension Date {
         return next
     }
 
+    /// - Description: Start of the calendar week containing this date (locale week).
+    var startOfWeek: Date {
+        let cal = Calendar.current
+        let components = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: self)
+        return cal.date(from: components) ?? startOfDay
+    }
+
+    /// - Description: Exclusive end of the calendar week containing this date.
+    var endOfWeek: Date {
+        let cal = Calendar.current
+        return cal.date(byAdding: .day, value: 7, to: startOfWeek) ?? endOfDay
+    }
+
+    /// - Description: Start of the calendar month containing this date.
+    var startOfMonth: Date {
+        let cal = Calendar.current
+        let components = cal.dateComponents([.year, .month], from: self)
+        return cal.date(from: components) ?? startOfDay
+    }
+
+    /// - Description: Exclusive end of the calendar month containing this date.
+    var endOfMonth: Date {
+        let cal = Calendar.current
+        guard let next = cal.date(byAdding: .month, value: 1, to: startOfMonth) else {
+            return endOfDay
+        }
+        return next
+    }
+
+    /// - Description: Calendar dates for the last seven days including today (oldest first).
+    static func lastSevenCalendarDays(endingOn reference: Date = Date(), calendar: Calendar = .current) -> [Date] {
+        let end = reference.startOfDay
+        return (0..<7).compactMap { offset in
+            calendar.date(byAdding: .day, value: -(6 - offset), to: end)?.startOfDay
+        }
+    }
+
     /// - Description: Whether this date falls on the same calendar day as another.
     /// - Parameters:
     ///   - other: Comparison date.
