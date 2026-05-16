@@ -54,7 +54,7 @@ struct NurseryLaunchView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(Color.ncPrimary)
                     Text("NurseryConnect UK")
-                        .font(.system(.title3, design: .rounded).weight(.bold))
+                        .font(.system(.title3, design: .default).weight(.bold))
                         .foregroundStyle(.primary)
                 }
 
@@ -93,7 +93,7 @@ struct NurseryLaunchView: View {
 
     private func nurseryBlock(letter: String, color: Color, delay: Double) -> some View {
         Text(letter)
-            .font(.system(size: 26, weight: .heavy, design: .rounded))
+            .font(.system(size: 26, weight: .heavy, design: .default))
             .foregroundStyle(.white)
             .frame(width: 60, height: 60)
             .background(
