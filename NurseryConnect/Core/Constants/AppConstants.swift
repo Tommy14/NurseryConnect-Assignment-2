@@ -35,8 +35,39 @@ enum AppConstants {
     /// - Description: Navigation title for the keyworker incidents inbox (large title; compact when scrolled).
     static let navTitleKeyworkerIncidentsList = "Incidents"
 
+    /// - Description: Navigation title for the secure messaging inbox.
+    static let navTitleKeyworkerMessagesList = "Messages"
+
     /// - Description: `UserDefaults` key indicating sample children have been inserted.
     static let hasSeededSampleDataKey = "com.nurseryconnect.hasSeededSampleData"
+
+    /// - Description: `UserDefaults` key indicating demo message threads have been inserted.
+    static let hasSeededDemoMessagesKey = "com.nurseryconnect.hasSeededDemoMessages"
+
+    // MARK: Secure messaging
+
+    /// - Description: Maximum characters for a secure message body.
+    static let messageBodyMaxLength = 500
+
+    /// - Description: Character count at which the composer shows a remaining-character counter.
+    static let messageBodyCounterThreshold = 400
+
+    /// - Description: Safeguarding retention notice shown in the messaging inbox footer.
+    static let messagesRetentionFooter = "Messages retained 3 years per safeguarding policy"
+
+    /// - Description: Display name used for setting manager broadcast messages.
+    static let settingManagerDisplayName = "Setting Manager"
+
+    /// - Description: Hour (24h) after which the end-of-day summary button may appear.
+    static let endOfDaySummaryEarliestHour = 15
+
+    /// - Description: GDPR-safe incident line in end-of-day summaries (no incident details).
+    static let endOfDaySummaryIncidentNotice =
+        "An incident was reported today — your keyworker will contact you."
+
+    /// - Description: Reply-only guidance when keyworkers cannot initiate threads.
+    static let messagingRepliesOnlyNotice =
+        "Replies only — contact your Setting Manager to initiate a new conversation with a parent"
 
     // MARK: Diary completeness
 
@@ -58,6 +89,9 @@ enum AppConstants {
     /// - Description: Standard card corner radius (points).
     static let cardCornerRadius: CGFloat = 16
 
+    /// - Description: Corner radius for roster search fields (dashboard and sidebar).
+    static let searchFieldCornerRadius: CGFloat = 12
+
     /// - Description: Standard button corner radius (points).
     static let buttonCornerRadius: CGFloat = 12
 
@@ -74,6 +108,10 @@ enum AppConstants {
     enum AccessibilityID {
         static let myChildrenTab = "tab_my_children"
         static let incidentsTab = "tab_incidents"
+        static let messagesTab = "tab_messages"
+        static let messageThreadRowPrefix = "message_thread_row_"
+        static let sendMessageButton = "send_message_button"
+        static let sendEndOfDaySummaryButton = "send_end_of_day_summary_button"
         static let keyworkerProfileButton = "keyworker_profile_button"
         static let legalComplianceEntry = "legal_compliance_entry"
         static let legalComplianceScreen = "legal_compliance_screen"
