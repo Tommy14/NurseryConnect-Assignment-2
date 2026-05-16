@@ -16,7 +16,7 @@
 // 100426     Tommy1914   Configurable splash duration (shorter on simulator, longer on device).
 // 140426     Tommy1914   Split nav bar: clear scroll-edge (large title) vs translucent standard (scrolled).
 // 140426     Tommy1914   Lighter standard bar tint so collapsed chrome reads more transparent.
-// 140426     Tommy1914   Scroll-edge large title: bold rounded “Children” matches app typography.
+// 140426     Tommy1914   Scroll-edge large title: bold SF Pro matches app typography.
 // 140426     Tommy1914   Removed large-title font attrs (children list uses inline title only).
 // 140426     Tommy1914   Large title + transparent collapsed bar; compact title centered when scrolled.
 // 140426     Tommy1914   iOS 26: default bar materials for Liquid Glass; legacy path keeps transparent strip.
@@ -35,6 +35,7 @@ struct NurseryConnectApp: App {
     @StateObject private var networkMonitor = NetworkMonitor.shared
     private let syncQueue = SyncQueueService.shared
     @State private var isShowingLaunchAnimation = true
+    @StateObject private var keyworkerCoordinator = KeyworkerIPadCoordinator()
     @State private var syncTimer = Timer.publish(every: 90, on: .main, in: .common).autoconnect()
     private let launchDurationNanoseconds: UInt64 = {
 #if targetEnvironment(simulator)
@@ -65,16 +66,13 @@ struct NurseryConnectApp: App {
         scrollEdgeAppearance.backgroundColor = .clear
         scrollEdgeAppearance.backgroundEffect = nil
         scrollEdgeAppearance.shadowColor = .clear
-        let largeTitleDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .largeTitle)
-        if let roundedLarge = largeTitleDescriptor.withDesign(.rounded)?.withSymbolicTraits(.traitBold) {
-            let largeParagraph = NSMutableParagraphStyle()
-            largeParagraph.alignment = .natural
-            scrollEdgeAppearance.largeTitleTextAttributes = [
-                .foregroundColor: UIColor.label,
-                .font: UIFont(descriptor: roundedLarge, size: 34),
-                .paragraphStyle: largeParagraph
-            ]
-        }
+        let largeParagraph = NSMutableParagraphStyle()
+        largeParagraph.alignment = .natural
+        scrollEdgeAppearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor.label,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold),
+            .paragraphStyle: largeParagraph
+        ]
 
         // Collapsed inline title: system default bar material (Liquid Glass when running on iOS 26).
         let standardAppearance = UINavigationBarAppearance()
@@ -102,16 +100,13 @@ struct NurseryConnectApp: App {
         scrollEdgeAppearance.backgroundColor = .clear
         scrollEdgeAppearance.backgroundEffect = nil
         scrollEdgeAppearance.shadowColor = .clear
-        let largeTitleDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .largeTitle)
-        if let roundedLarge = largeTitleDescriptor.withDesign(.rounded)?.withSymbolicTraits(.traitBold) {
-            let largeParagraph = NSMutableParagraphStyle()
-            largeParagraph.alignment = .natural
-            scrollEdgeAppearance.largeTitleTextAttributes = [
-                .foregroundColor: UIColor.label,
-                .font: UIFont(descriptor: roundedLarge, size: 34),
-                .paragraphStyle: largeParagraph
-            ]
-        }
+        let largeParagraph = NSMutableParagraphStyle()
+        largeParagraph.alignment = .natural
+        scrollEdgeAppearance.largeTitleTextAttributes = [
+            .foregroundColor: UIColor.label,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold),
+            .paragraphStyle: largeParagraph
+        ]
 
         let standardAppearance = UINavigationBarAppearance()
         standardAppearance.configureWithTransparentBackground()
@@ -142,8 +137,9 @@ struct NurseryConnectApp: App {
                     NurseryLaunchView()
                         .transition(.opacity)
                 } else {
-                    KeyworkerDashboardView(managedObjectContext: persistence.container.viewContext)
+                    AdaptiveRootView(managedObjectContext: persistence.container.viewContext)
                         .environment(\.managedObjectContext, persistence.container.viewContext)
+                        .environmentObject(keyworkerCoordinator)
                         .transition(.opacity)
                 }
             }
@@ -167,6 +163,9 @@ struct NurseryConnectApp: App {
                 guard nextPhase == .active else { return }
                 Task { await syncQueue.processQueueIfPossible(force: true) }
             }
+        }
+        .commands {
+            KeyworkerCommands(coordinator: keyworkerCoordinator)
         }
     }
 }
