@@ -36,6 +36,8 @@ enum DataSeeder {
                 UserDefaults.standard.set(true, forKey: AppConstants.hasSeededSampleDataKey)
             }
             try assignDemoKeyworkerToOrphansIfNeeded(in: context)
+            try backfillSessionWeekdaysIfNeeded(in: context)
+            seedDemoMessagesIfNeeded(in: context)
             if context.hasChanges {
                 try context.save()
             }
@@ -49,11 +51,167 @@ enum DataSeeder {
     ///   - context: Context used by preview stacks.
     static func seedPreviewData(in context: NSManagedObjectContext) {
         insertSampleChildren(into: context)
+        seedDemoMessagesIfNeeded(in: context)
         do {
             try context.save()
         } catch {
             assertionFailure("Preview seed failed: \(error.localizedDescription)")
         }
+    }
+
+    /// - Description: Inserts demo secure messaging threads when the store has none.
+    /// - Parameters:
+    ///   - context: Managed object context.
+    private static func seedDemoMessagesIfNeeded(in context: NSManagedObjectContext) {
+        do {
+            let threadFetch: NSFetchRequest<MessageThread> = MessageThread.fetchRequest()
+            threadFetch.fetchLimit = 1
+            let existing = try context.count(for: threadFetch)
+            guard existing == 0 else { return }
+
+            let childFetch: NSFetchRequest<Child> = Child.fetchRequest()
+            childFetch.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
+            childFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+            let children = try context.fetch(childFetch)
+            guard children.count >= 2 else { return }
+
+            let kavi = children[0]
+            let yeil = children[1]
+            let broadcastChild = children.count > 2 ? children[2] : kavi
+            let incidentChild = children.count > 3 ? children[3] : yeil
+
+            let now = Date()
+            let calendar = Calendar.current
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+
+            // Parent thread A — fully read
+            let threadA = insertThread(
+                childID: kavi.id ?? UUID(),
+                initiatorRole: MessageInitiatorRole.parent.persistenceValue,
+                subject: "Pick-up time today",
+                createdAt: yesterday,
+                in: context
+            )
+            insertMessage(
+                threadID: threadA.id ?? UUID(),
+                senderRole: MessageSenderRole.parent.persistenceValue,
+                senderDisplayName: "Tharani Adithya",
+                body: "Could we collect Kavi at 4:15pm today? Thank you.",
+                sentAt: yesterday,
+                isRead: true,
+                messageType: MessageType.message.persistenceValue,
+                in: context
+            )
+            insertMessage(
+                threadID: threadA.id ?? UUID(),
+                senderRole: MessageSenderRole.keyworker.persistenceValue,
+                senderDisplayName: AppConstants.keyworkerDisplayName,
+                body: "Yes, that is fine. I will have him ready at the door.",
+                sentAt: calendar.date(byAdding: .hour, value: 1, to: yesterday) ?? yesterday,
+                isRead: true,
+                messageType: MessageType.message.persistenceValue,
+                in: context
+            )
+
+            // Parent thread B — unread inbound
+            let threadB = insertThread(
+                childID: yeil.id ?? UUID(),
+                initiatorRole: MessageInitiatorRole.parent.persistenceValue,
+                subject: "Allergy update",
+                createdAt: calendar.date(byAdding: .hour, value: -2, to: now) ?? now,
+                in: context
+            )
+            insertMessage(
+                threadID: threadB.id ?? UUID(),
+                senderRole: MessageSenderRole.parent.persistenceValue,
+                senderDisplayName: "Lina Avyan",
+                body: "Please note Yeil had a mild reaction to a new snack at home — no nursery food involved.",
+                sentAt: calendar.date(byAdding: .hour, value: -2, to: now) ?? now,
+                isRead: false,
+                messageType: MessageType.message.persistenceValue,
+                in: context
+            )
+
+            // Broadcast from Setting Manager
+            let broadcastThread = insertThread(
+                childID: broadcastChild.id ?? UUID(),
+                initiatorRole: MessageInitiatorRole.broadcast.persistenceValue,
+                subject: "Reminder: fire drill Friday 10am",
+                createdAt: calendar.date(byAdding: .hour, value: -5, to: now) ?? now,
+                in: context
+            )
+            insertMessage(
+                threadID: broadcastThread.id ?? UUID(),
+                senderRole: MessageSenderRole.manager.persistenceValue,
+                senderDisplayName: AppConstants.settingManagerDisplayName,
+                body: "Reminder: fire drill Friday 10am. Please ensure children wear coats and sensible footwear.",
+                sentAt: calendar.date(byAdding: .hour, value: -5, to: now) ?? now,
+                isRead: false,
+                messageType: MessageType.broadcast.persistenceValue,
+                in: context
+            )
+
+            // Incident notification — GDPR-safe body
+            let incidentThread = insertThread(
+                childID: incidentChild.id ?? UUID(),
+                initiatorRole: MessageInitiatorRole.manager.persistenceValue,
+                subject: "Safeguarding notification",
+                createdAt: calendar.date(byAdding: .day, value: -2, to: now) ?? now,
+                in: context
+            )
+            insertMessage(
+                threadID: incidentThread.id ?? UUID(),
+                senderRole: MessageSenderRole.manager.persistenceValue,
+                senderDisplayName: AppConstants.settingManagerDisplayName,
+                body: "A safeguarding notification has been logged for your child today. Your keyworker will contact you directly. No further details are shared in this message.",
+                sentAt: calendar.date(byAdding: .day, value: -2, to: now) ?? now,
+                isRead: true,
+                messageType: MessageType.incidentNotification.persistenceValue,
+                in: context
+            )
+
+            UserDefaults.standard.set(true, forKey: AppConstants.hasSeededDemoMessagesKey)
+        } catch {
+            assertionFailure("Message seeding failed: \(error.localizedDescription)")
+        }
+    }
+
+    private static func insertThread(
+        childID: UUID,
+        initiatorRole: String,
+        subject: String,
+        createdAt: Date,
+        in context: NSManagedObjectContext
+    ) -> MessageThread {
+        let thread = MessageThread(context: context)
+        thread.id = UUID()
+        thread.childID = childID
+        thread.initiatorRole = initiatorRole
+        thread.subject = subject
+        thread.createdAt = createdAt
+        thread.isArchived = false
+        return thread
+    }
+
+    private static func insertMessage(
+        threadID: UUID,
+        senderRole: String,
+        senderDisplayName: String,
+        body: String,
+        sentAt: Date,
+        isRead: Bool,
+        messageType: String,
+        in context: NSManagedObjectContext
+    ) {
+        let message = Message(context: context)
+        message.id = UUID()
+        message.threadID = threadID
+        message.senderRole = senderRole
+        message.senderDisplayName = senderDisplayName
+        message.body = body
+        message.sentAt = sentAt
+        message.isRead = isRead
+        message.messageType = messageType
     }
 
     // MARK: - Private Methods
@@ -76,6 +234,19 @@ enum DataSeeder {
         }
     }
 
+    /// - Description: Ensures legacy rows have a recurring session pattern for midnight attendance baselines.
+    private static func backfillSessionWeekdaysIfNeeded(in context: NSManagedObjectContext) throws {
+        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        request.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "sessionWeekdays == nil"),
+            NSPredicate(format: "sessionWeekdays == %@", "")
+        ])
+        let rows = try context.fetch(request)
+        for child in rows {
+            child.sessionWeekdays = ChildSessionSchedule.defaultWeekdaysStorageValue
+        }
+    }
+
     private static func insertSampleChildren(into context: NSManagedObjectContext) {
         // GDPR: Synthetic demo records only; fictional names, addresses, and contacts.
         let samples: [SampleChildSeed] = [
@@ -94,6 +265,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Tharani Adithya (07900 000001). Father: Rohan Adithya. Younger sibling: baby at home. Emergency: maternal grandmother 07700 900123.",
                 eyfsDevelopmentNotes: "CL: enjoys story-led group time. PSED: separates confidently. PD: refining pencil grip. L: retells simple narratives. M: counts reliably to 10.",
                 consentRecordsNotes: "Local walks: signed 12/2025. Farm trip: signed 01/2026. Photo/video for learning journals: yes. Data processing (nursery systems): yes.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Tharani Adithya\nRohan Adithya\nMaya Perera (aunt, photo ID on file)"
             ),
             SampleChildSeed(
@@ -111,6 +283,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Lina Avyan (07900 000002). Father: Omar Avyan. Speaks English and Arabic at home. Custody: shared; pickup notes in office file.",
                 eyfsDevelopmentNotes: "EAD: sustained interest in block building. UTW: talks about family celebrations. Strong listening during carpet time.",
                 consentRecordsNotes: "Swimming programme: deferred (parent choice). App messaging (updates): opted in. Allergy information shared with cook: yes.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Lina Avyan\nOmar Avyan"
             ),
             SampleChildSeed(
@@ -128,6 +301,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Nisha Gunawardena (07900 000003). Father: Dineth Gunawardena. One older sibling at primary school (pickup different).",
                 eyfsDevelopmentNotes: "PD: climbing with confidence; risk assessed. M: interest in sorting and patterns. Next step: scissor skills in short bursts.",
                 consentRecordsNotes: "Sun cream application: parental brand supplied, consent on file. First aid: general consent signed. Visitors to setting: agreed.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Nisha Gunawardena\nDineth Gunawardena\nPriya M. (childminder, Mon/Wed — ID verified)"
             ),
             SampleChildSeed(
@@ -145,6 +319,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Anika Yevan (07900 000004). Father: Sanjay Yevan. Dietary plan agreed with kitchen; review date March 2026.",
                 eyfsDevelopmentNotes: "C&L: new vocabulary from small-world play. PSED: beginning to negotiate turns. Next: toileting independence checklist with family.",
                 consentRecordsNotes: "Outings by coach: not yet signed (pending). Learning platform photos: declined — see photo consent flag.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Anika Yevan\nSanjay Yevan"
             ),
             SampleChildSeed(
@@ -162,6 +337,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Elena Tiana (07900 000005). Father: Marco Tiana. Bilingual: English and Italian. Grandmother collects Fridays.",
                 eyfsDevelopmentNotes: "L: enjoys mark-making and songs. UTW: explores textures in messy play. EAD: dance and instruments — high engagement.",
                 consentRecordsNotes: "Library visit: signed. Dental outreach: consent given. Marketing use of images: no.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Elena Tiana\nMarco Tiana\nRosa Tiana (grandmother — password: “sunflower”)"
             ),
             SampleChildSeed(
@@ -179,6 +355,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Ishani Fernando (07900 000006). Father: Malik Fernando. Child attends Tuesday and Thursday dance class after nursery.",
                 eyfsDevelopmentNotes: "EAD: imaginative role-play. C&L: asks clear questions in group time. Next step: confidence in early writing strokes.",
                 consentRecordsNotes: "Forest school sessions: signed. Face painting: approved with hypoallergenic paints only. App notifications: enabled.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Ishani Fernando\nMalik Fernando\nKumari Perera (grandmother, photo ID on file)"
             ),
             SampleChildSeed(
@@ -196,6 +373,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Sofia Martins (07900 000007). Father: Daniel Martins. Home language mix: Portuguese and English.",
                 eyfsDevelopmentNotes: "Maths: enjoys counting objects during tidy-up. UTW: curious about weather and seasons. PD: improving balance beam confidence.",
                 consentRecordsNotes: "Community garden outing: signed. Toothbrushing programme: signed. Public-facing social media use: no.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Sofia Martins\nDaniel Martins\nHelena Costa (aunt, password on file)"
             ),
             SampleChildSeed(
@@ -213,6 +391,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Farah Khan (07900 000008). Father: Ahmed Khan. Older brother in Reception class nearby.",
                 eyfsDevelopmentNotes: "C&L: strong listening in small groups. PSED: kind peer support during transitions. Next step: sentence expansion in storytelling.",
                 consentRecordsNotes: "External specialist visits: signed. Group photos for display boards: no. Emergency medicine consent: signed.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Farah Kulathunga\nAhmed Kulathunga\nSamira Kulathunga (aunt, verified)"
             ),
             SampleChildSeed(
@@ -230,6 +409,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Chloe Bennett (07900 000009). Father: Jack Bennett. Shared custody with alternating weekly pickups.",
                 eyfsDevelopmentNotes: "PD: loves outdoor obstacle courses. EAD: enjoys drumming and rhythm games. Next step: cooperative play turn-taking.",
                 consentRecordsNotes: "Off-site library walk: signed. Water play photography: yes for learning journal only. Allergy sharing with kitchen: not applicable.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Chloe Bennett\nJack Bennett\nMegan Price (childminder, Thu/Fri)"
             ),
             SampleChildSeed(
@@ -247,6 +427,7 @@ enum DataSeeder {
                 familyDetails: "Mother: Priya Patel (07900 000010). Father: Arun Patel. Grandfather frequently attends stay-and-play sessions.",
                 eyfsDevelopmentNotes: "Literacy: recognises name card independently. Maths: sorts by size and colour. Next step: phonological awareness games.",
                 consentRecordsNotes: "Cooking activities: adapted plan signed. Face paints: no. Celebration photos in closed parent app: yes.",
+                sessionWeekdays: ChildSessionSchedule.defaultWeekdaysStorageValue,
                 authorisedCollectors: "Priya Perera\nArun Perera\nRakesh Perera (grandfather, ID held)"
             )
         ]
@@ -270,6 +451,7 @@ enum DataSeeder {
             child.consentRecordsNotes = row.consentRecordsNotes
             child.authorisedCollectors = row.authorisedCollectors
             child.keyworkerName = AppConstants.keyworkerDisplayName
+            child.sessionWeekdays = row.sessionWeekdays
         }
         seedTodayMarkedAbsentDemo(in: context)
     }
@@ -321,5 +503,6 @@ private struct SampleChildSeed {
     let familyDetails: String
     let eyfsDevelopmentNotes: String
     let consentRecordsNotes: String
+    let sessionWeekdays: String
     let authorisedCollectors: String
 }
