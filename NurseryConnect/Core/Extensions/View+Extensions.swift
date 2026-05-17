@@ -149,21 +149,76 @@ extension View {
         .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
     }
 
+    /// - Description: Profile and settings info rows — matches `ncCardStyle` chrome used on dashboard tiles.
+    func ncProfileInfoRowStyle(cornerRadius: CGFloat = AppConstants.cardCornerRadius) -> some View {
+        ncCardStyle(radius: cornerRadius)
+    }
+
     /// - Description: Soft screen backdrop: solid background plus a short top gradient (pair with `scrollContentBackground(.hidden)` on lists when needed).
     func ncStudioScreenBackdrop() -> some View {
-        background {
-            ZStack(alignment: .top) {
-                Color.ncBackground
-                LinearGradient(
-                    colors: [Color.ncGlowBlue.opacity(0.22), Color.ncGlowViolet.opacity(0.18), Color.clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 320)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .allowsHitTesting(false)
-            }
-            .ignoresSafeArea()
+        background { NCStudioBackdropView() }
+    }
+
+    /// - Description: Backdrop on phone/standalone screens; omitted in iPad child workspace where the shell already paints the gradient.
+    @ViewBuilder
+    func ncStudioScreenBackdropUnlessChildWorkspace() -> some View {
+        modifier(NCStudioBackdropUnlessChildWorkspaceModifier())
+    }
+
+    /// - Description: Full-height studio wash for sheets and overlays (avoids a flat base below the top glow).
+    func ncStudioFullBackdrop() -> some View {
+        background { NCStudioFullBackdropView() }
+    }
+}
+
+// MARK: - Studio backdrop
+
+/// - Description: Full-height blue/violet wash on `ncBackground` — use for sheets and modal tiles.
+struct NCStudioFullBackdropView: View {
+    var body: some View {
+        ZStack {
+            Color.ncBackground
+            LinearGradient(
+                colors: [
+                    Color.ncGlowBlue.opacity(0.22),
+                    Color.ncGlowViolet.opacity(0.18),
+                    Color.ncGlowBlue.opacity(0.10),
+                    Color.ncGlowViolet.opacity(0.06)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .allowsHitTesting(false)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+private struct NCStudioBackdropView: View {
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.ncBackground
+            LinearGradient(
+                colors: [Color.ncGlowBlue.opacity(0.22), Color.ncGlowViolet.opacity(0.18), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 320)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .allowsHitTesting(false)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+private struct NCStudioBackdropUnlessChildWorkspaceModifier: ViewModifier {
+    @Environment(\.keyworkerChildWorkspace) private var keyworkerChildWorkspace
+
+    func body(content: Content) -> some View {
+        if keyworkerChildWorkspace {
+            content
+        } else {
+            content.ncStudioScreenBackdrop()
         }
     }
 }
@@ -179,6 +234,66 @@ extension EnvironmentValues {
     var usesFloatingTabBarShell: Bool {
         get { self[UsesFloatingTabBarShellKey.self] }
         set { self[UsesFloatingTabBarShellKey.self] = newValue }
+    }
+}
+
+private struct KeyworkerChildWorkspaceKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// - Description: True when embedded in the iPad child journal + profile workspace (`KeyworkerIPadShellView`).
+    var keyworkerChildWorkspace: Bool {
+        get { self[KeyworkerChildWorkspaceKey.self] }
+        set { self[KeyworkerChildWorkspaceKey.self] = newValue }
+    }
+}
+
+private struct KeyworkerSidebarHiddenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private struct KeyworkerRevealSidebarKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    /// - Description: True when the iPad children sidebar column is collapsed.
+    var keyworkerSidebarHidden: Bool {
+        get { self[KeyworkerSidebarHiddenKey.self] }
+        set { self[KeyworkerSidebarHiddenKey.self] = newValue }
+    }
+
+    /// - Description: Action that expands the iPad children sidebar column.
+    var keyworkerRevealSidebar: (() -> Void)? {
+        get { self[KeyworkerRevealSidebarKey.self] }
+        set { self[KeyworkerRevealSidebarKey.self] = newValue }
+    }
+}
+
+/// - Description: Leading toolbar control to reopen the iPad children sidebar.
+struct KeyworkerSidebarRevealToolbar: ToolbarContent {
+    @Environment(\.keyworkerSidebarHidden) private var sidebarHidden
+    @Environment(\.keyworkerRevealSidebar) private var revealSidebar
+
+    var body: some ToolbarContent {
+        if sidebarHidden, let revealSidebar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: revealSidebar) {
+                    Image(systemName: "sidebar.leading")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.ncPrimary)
+                }
+                .accessibilityLabel("Show children list")
+            }
+        }
+    }
+}
+
+extension View {
+    /// - Description: Adds the standard sidebar reveal button when the children column is hidden.
+    func keyworkerSidebarRevealToolbar() -> some View {
+        toolbar { KeyworkerSidebarRevealToolbar() }
     }
 }
 
