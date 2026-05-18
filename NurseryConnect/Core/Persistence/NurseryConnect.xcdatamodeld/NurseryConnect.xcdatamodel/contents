@@ -18,6 +18,7 @@
         <attribute name="nationality" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <attribute name="photoConsent" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="roomName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="sessionWeekdays" attributeType="String" defaultValueString="2,3,4,5,6" usesScalarValueType="NO"/>
         <relationship name="attendanceRecords" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AttendanceRecord" inverseName="child" inverseEntity="AttendanceRecord"/>
         <relationship name="diaryEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DiaryEntry" inverseName="child" inverseEntity="DiaryEntry"/>
         <relationship name="incidents" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Incident" inverseName="child" inverseEntity="Incident"/>
@@ -91,5 +92,23 @@
         <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="witnesses" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
         <relationship name="child" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Child" inverseName="incidents" inverseEntity="Child"/>
+    </entity>
+    <entity name="Message" representedClassName="Message" syncable="YES" codeGenerationType="class">
+        <attribute name="body" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isRead" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="messageType" attributeType="String" defaultValueString="message" usesScalarValueType="NO"/>
+        <attribute name="senderDisplayName" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="senderRole" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="sentAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="threadID" attributeType="UUID" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="MessageThread" representedClassName="MessageThread" syncable="YES" codeGenerationType="class">
+        <attribute name="childID" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="initiatorRole" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
+        <attribute name="isArchived" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="subject" attributeType="String" defaultValueString="" usesScalarValueType="NO"/>
     </entity>
 </model>
