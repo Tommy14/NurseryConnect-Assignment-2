@@ -36,6 +36,10 @@ final class ChildViewModel: ObservableObject {
     /// - Parameters:
     ///   - id: Stable UUID primary key.
     func loadChild(id: UUID) async {
+        if child?.id != id {
+            child = nil
+        }
+
         let request: NSFetchRequest<Child> = Child.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
