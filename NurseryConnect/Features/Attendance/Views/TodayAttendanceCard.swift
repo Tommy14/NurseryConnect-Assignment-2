@@ -13,7 +13,7 @@ import SwiftUI
 
 /// - Description: Header card for check-in / check-out on the daily diary screen.
 struct TodayAttendanceCard: View {
-    let firstName: String
+    let childFullName: String
     @ObservedObject var viewModel: AttendanceViewModel
     @Binding var isExpanded: Bool
 
@@ -69,9 +69,9 @@ struct TodayAttendanceCard: View {
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .checkIn:
-                CheckInAttendanceSheet(firstName: firstName, viewModel: viewModel) { activeSheet = nil }
+                CheckInAttendanceSheet(childFullName: childFullName, viewModel: viewModel) { activeSheet = nil }
             case .checkOut:
-                CheckOutAttendanceSheet(firstName: firstName, viewModel: viewModel) { activeSheet = nil }
+                CheckOutAttendanceSheet(childFullName: childFullName, viewModel: viewModel) { activeSheet = nil }
             }
         }
     }
@@ -239,7 +239,7 @@ struct TodayAttendanceCard: View {
 // MARK: - Sheets
 
 private struct CheckInAttendanceSheet: View {
-    let firstName: String
+    let childFullName: String
     @ObservedObject var viewModel: AttendanceViewModel
     var onDismiss: () -> Void
 
@@ -253,7 +253,7 @@ private struct CheckInAttendanceSheet: View {
                     TextField("Full name", text: $droppedOffBy, axis: .vertical)
                         .textInputAutocapitalization(.words)
                 } header: {
-                    Text("Who dropped \(firstName) off?")
+                    Text("Who dropped \(childFullName) off?")
                 }
 
                 Section {
@@ -284,7 +284,7 @@ private struct CheckInAttendanceSheet: View {
 }
 
 private struct CheckOutAttendanceSheet: View {
-    let firstName: String
+    let childFullName: String
     @ObservedObject var viewModel: AttendanceViewModel
     var onDismiss: () -> Void
 
@@ -356,7 +356,7 @@ private struct CheckOutAttendanceSheet: View {
                 }
             }
         } message: {
-            Text("This notifies leadership that someone not on the authorised list came to collect \(firstName). The check-out form will close; do not complete check-out until collection is verified.")
+            Text("This notifies leadership that someone not on the authorised list came to collect \(childFullName). The check-out form will close; do not complete check-out until collection is verified.")
         }
         .onAppear {
             guard selectedCollector.isEmpty else { return }
@@ -388,7 +388,7 @@ private struct CheckOutAttendanceSheet: View {
         } header: {
             Text("Safeguarding")
         } footer: {
-            Text("Use this if an unlisted person requests pick-up. It does not check \(firstName) out.")
+            Text("Use this if an unlisted person requests pick-up. It does not check \(childFullName) out.")
         }
     }
 }
@@ -396,7 +396,7 @@ private struct CheckOutAttendanceSheet: View {
 #Preview {
     let ctx = PersistenceController.preview.container.viewContext
     let vm = AttendanceViewModel(childID: UUID(), context: ctx)
-    return TodayAttendanceCard(firstName: "Emma", viewModel: vm, isExpanded: .constant(true))
+    return TodayAttendanceCard(childFullName: "Emma Wilson", viewModel: vm, isExpanded: .constant(true))
         .environment(\.managedObjectContext, ctx)
         .padding()
         .background(Color.ncBackground)
