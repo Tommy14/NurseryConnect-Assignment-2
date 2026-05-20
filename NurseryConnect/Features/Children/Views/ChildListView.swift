@@ -36,7 +36,7 @@ struct ChildListView: View {
                     HStack {
                         ChildAvatarView(firstName: child.firstName ?? "", lastName: child.lastName ?? "", childId: id)
                         VStack(alignment: .leading) {
-                            Text("\(child.firstName ?? "") \(child.lastName ?? "")")
+                            Text(child.fullDisplayName)
                                 .font(.headline)
                             Text(child.roomName ?? "")
                                 .font(.subheadline)
