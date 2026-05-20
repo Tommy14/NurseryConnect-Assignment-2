@@ -176,10 +176,7 @@ final class AttendanceViewModel: ObservableObject {
                 return false
             }
 
-            let fn = child.firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let ln = child.lastName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let displayName = [fn, ln].filter { !$0.isEmpty }.joined(separator: " ")
-            let nameForCopy = displayName.isEmpty ? "the child" : displayName
+            let nameForCopy = child.fullDisplayName == "Child" ? "the child" : child.fullDisplayName
 
             guard let incident = NSEntityDescription.insertNewObject(
                 forEntityName: "Incident",
