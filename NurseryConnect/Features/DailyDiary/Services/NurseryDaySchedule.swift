@@ -52,6 +52,8 @@ enum NurseryDaySchedule {
     static let sessionStartMinutesFromMidnight: Int = 8 * 60
     /// - Description: Local minutes from midnight when the standard session ends (18:00).
     static let sessionEndMinutesFromMidnight: Int = 18 * 60
+    /// - Description: From 9:00 onward staff may collapse the absent-children roster section.
+    static let absentSectionCollapsibleFromMinutesFromMidnight: Int = 9 * 60
 
     /// - Description: Minutes after official session end when diary logging remains allowed (wrap-up window).
     static let diaryLoggingGraceMinutesAfterSessionEnd: Int = 120
@@ -147,6 +149,11 @@ enum NurseryDaySchedule {
     static func minutesFromMidnight(_ date: Date, calendar: Calendar = .current) -> Int {
         let sod = calendar.startOfDay(for: date)
         return Int(date.timeIntervalSince(sod) / 60.0)
+    }
+
+    /// - Description: True from 9:00 local time — absent roster may be collapsed in the child list.
+    static func isAbsentSectionCollapsible(at reference: Date = Date(), calendar: Calendar = .current) -> Bool {
+        minutesFromMidnight(reference, calendar: calendar) >= absentSectionCollapsibleFromMinutesFromMidnight
     }
 
     /// - Description: Inclusive latest minute-of-day for diary logging: session end plus `diaryLoggingGraceMinutesAfterSessionEnd`.
