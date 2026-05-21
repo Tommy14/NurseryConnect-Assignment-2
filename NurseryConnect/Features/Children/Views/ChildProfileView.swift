@@ -14,6 +14,7 @@
 // 100426     Tommy1914   Hero header + studio info rows (read-only).
 // 100426     Tommy1914   Bottom scroll inset when shown under keyworker floating tab bar.
 // 140426     Tommy1914   Photo consent row: read-only green tick / red cross from stored data.
+// 290526     Tommy1914   Shared `ProfileInfoRow` + studio backdrop; panel mode uses shell header.
 // -----------------------------------------------------------------
 
 import Combine
@@ -23,72 +24,75 @@ import SwiftUI
 /// - Description: Shows extended child information for practitioners during care decisions.
 struct ChildProfileView: View {
     let childId: UUID
+    /// When true, omits navigation chrome (e.g. iPad trailing profile column with its own header).
+    var embedsInPanel: Bool = false
 
     @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
     @StateObject private var viewModel: ChildViewModel
 
-    init(childId: UUID, context: NSManagedObjectContext) {
+    init(childId: UUID, context: NSManagedObjectContext, embedsInPanel: Bool = false) {
         self.childId = childId
+        self.embedsInPanel = embedsInPanel
         _viewModel = StateObject(wrappedValue: ChildViewModel(context: context))
     }
 
     var body: some View {
         ScrollView {
             if let child = viewModel.child {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: embedsInPanel ? 12 : 18) {
                     profileHero(for: child)
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Preferred name",
                         text: child.preferredName ?? "",
                         symbol: "quote.bubble"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Room",
                         text: child.roomName ?? "",
                         symbol: "door.left.hand.open"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Age",
                         text: Date.earlyYearsAgeDescription(dateOfBirth: child.dateOfBirth ?? Date()),
                         symbol: "birthday.cake.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Allergies",
                         text: child.allergies ?? "",
                         symbol: "exclamationmark.triangle.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Dietary requirements",
                         text: child.dietaryRequirements ?? "",
                         symbol: "fork.knife"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Cultural and nationality context",
                         text: child.nationality ?? "",
                         symbol: "globe.europe.africa.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Medical notes",
                         text: child.medicalNotes ?? "",
                         symbol: "cross.case.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Key person",
                         text: child.keyworkerName ?? "",
                         symbol: "person.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Authorised collectors",
                         text: child.authorisedCollectors ?? "",
                         symbol: "person.2.fill"
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Family details",
                         text: child.familyDetails ?? "",
                         symbol: "person.3.sequence.fill",
                         prefersSentenceBullets: true
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "Consent records notes",
                         text: child.consentRecordsNotes ?? "",
                         symbol: "checklist",
@@ -98,7 +102,7 @@ struct ChildProfileView: View {
                         title: "Compliance note",
                         text: ComplianceContent.childProfileConsentNote
                     )
-                    profileInfoRow(
+                    ProfileInfoRow(
                         title: "EYFS development notes",
                         text: child.eyfsDevelopmentNotes ?? "",
                         symbol: "book.pages.fill",
@@ -106,7 +110,8 @@ struct ChildProfileView: View {
                     )
                     photoConsentRow(for: child)
                 }
-                .padding()
+                .padding(.horizontal, embedsInPanel ? 12 : 16)
+                .padding(.vertical, embedsInPanel ? 8 : 16)
                 .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
             } else {
                 ProgressView()
@@ -115,11 +120,11 @@ struct ChildProfileView: View {
         }
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
-        .background(Color.ncBackground)
-        .navigationTitle("Profile")
+        .ncStudioScreenBackdropUnlessChildWorkspace()
+        .navigationTitle(embedsInPanel ? "" : "Profile")
         .toolbarBackground(Color.ncBackground, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .task {
+        .toolbarBackground(embedsInPanel ? .automatic : .visible, for: .navigationBar)
+        .task(id: childId) {
             await viewModel.loadChild(id: childId)
         }
         .alert("Something went wrong", isPresented: Binding(
@@ -144,7 +149,7 @@ struct ChildProfileView: View {
                 )
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("\(child.firstName ?? "") \(child.lastName ?? "")")
+                Text(child.fullDisplayName)
                     .font(AppTheme.greetingRounded())
                 Label {
                     Text(Date.earlyYearsAgeDescription(dateOfBirth: child.dateOfBirth ?? Date()))
@@ -160,111 +165,6 @@ struct ChildProfileView: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .ncStudioElevatedSurface(cornerRadius: 20)
-    }
-
-    private func profileInfoRow(
-        title: String,
-        text: String,
-        symbol: String,
-        prefersSentenceBullets: Bool = false
-    ) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.ncPrimary, Color.ncGlowBlue],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 32, alignment: .center)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title.uppercased())
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .tracking(0.6)
-                detailTextView(text, prefersSentenceBullets: prefersSentenceBullets)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.ncCardSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.ncGlassHighlight(lightOpacity: 0.6),
-                            Color.ncPrimary.opacity(0.14),
-                            Color.ncGlowBlue.opacity(0.1)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-                .allowsHitTesting(false)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func detailTextView(_ text: String, prefersSentenceBullets: Bool) -> some View {
-        let lines = text
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        let items = resolvedDetailItems(lines: lines, prefersSentenceBullets: prefersSentenceBullets)
-
-        return Group {
-            if items.isEmpty {
-                Text("—")
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else if items.count == 1 {
-                Text(items[0])
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(items.enumerated()), id: \.offset) { _, line in
-                        HStack(alignment: .top, spacing: 6) {
-                            Text("•")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.primary)
-                            Text(line)
-                                .font(.body)
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func resolvedDetailItems(lines: [String], prefersSentenceBullets: Bool) -> [String] {
-        if lines.count > 1 { return lines }
-        if prefersSentenceBullets { return sentenceItems(from: lines.first ?? "") }
-        return lines
-    }
-
-    private func sentenceItems(from text: String) -> [String] {
-        let normalised = text.replacingOccurrences(of: "\n", with: " ")
-        let rawItems = normalised.components(separatedBy: ". ")
-        return rawItems
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .map { item in
-                if item.hasSuffix(".") { return item }
-                return "\(item)."
-            }
     }
 
     private func photoConsentRow(for child: Child) -> some View {
