@@ -46,7 +46,8 @@ struct LegalComplianceView: View {
         }
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
-        .background(Color.ncBackground)
+        .scrollContentBackground(.hidden)
+        .ncStudioScreenBackdrop()
         .navigationTitle(ComplianceContent.legalScreenTitle)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier(AppConstants.AccessibilityID.legalComplianceScreen)
