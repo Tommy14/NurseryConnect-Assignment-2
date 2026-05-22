@@ -40,6 +40,7 @@ struct KeyworkerChildSummary: Identifiable, Hashable {
     let id: UUID
     let firstName: String
     let lastName: String
+    let preferredName: String
     let roomName: String
     let keyworkerName: String
     let allergies: String
@@ -125,7 +126,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
             let children = try fetchAssignedChildren()
             var rows: [KeyworkerChildSummary] = []
             let now = Date()
-            var didAutoMarkAbsent = false
+            var didMutateAttendance = false
             for child in children {
                 guard let id = child.id else { continue }
                 let entries = try todaysDiaryEntries(for: child)
@@ -134,6 +135,10 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                     ChildSleepInterval(start: $0.start, end: $0.end)
                 }
                 var attendance = try todaysAttendanceRecord(for: child)
+                if try ensureTodaysAttendanceBaseline(for: child, attendance: attendance, at: now) {
+                    didMutateAttendance = true
+                    attendance = try todaysAttendanceRecord(for: child)
+                }
                 if shouldAutoMarkAbsent(attendance: attendance, at: now) {
                     let record: AttendanceRecord
                     if let attendance {
@@ -145,7 +150,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                     record.checkInAt = nil
                     record.checkOutAt = nil
                     record.collectedBy = nil
-                    didAutoMarkAbsent = true
+                    didMutateAttendance = true
                     attendance = record
                 }
                 let hasOpen = try childHasNonAcknowledgedIncident(child)
@@ -160,6 +165,10 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                     id: id,
                     firstName: child.firstName ?? "",
                     lastName: child.lastName ?? "",
+                    preferredName: {
+                        let preferred = child.preferredName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        return preferred.isEmpty ? (child.firstName ?? "") : preferred
+                    }(),
                     roomName: child.roomName ?? "",
                     keyworkerName: child.keyworkerName ?? "",
                     allergies: child.allergies ?? "",
@@ -176,7 +185,7 @@ final class KeyworkerDashboardViewModel: ObservableObject {
                 )
                 rows.append(summary)
             }
-            if didAutoMarkAbsent, context.hasChanges {
+            if didMutateAttendance, context.hasChanges {
                 try context.save()
             }
             childSummaries = rows.sorted { $0.firstName < $1.firstName }
@@ -270,6 +279,26 @@ final class KeyworkerDashboardViewModel: ObservableObject {
         record.droppedOffBy = ""
         record.markedAbsent = false
         return record
+    }
+
+    /// - Description: Creates today’s absent row when the child is not scheduled; expected children stay awaiting until check-in.
+    /// - Returns: True when a new attendance row was inserted.
+    private func ensureTodaysAttendanceBaseline(
+        for child: Child,
+        attendance: AttendanceRecord?,
+        at now: Date
+    ) throws -> Bool {
+        guard attendance == nil else { return false }
+        guard ChildSessionSchedule.isExpected(on: now, sessionWeekdays: child.sessionWeekdays) == false else {
+            return false
+        }
+        let record = try createAttendanceRecord(for: child, dayStart: now.startOfDay)
+        record.markedAbsent = true
+        record.checkInAt = nil
+        record.checkOutAt = nil
+        record.collectedBy = nil
+        record.droppedOffBy = ""
+        return true
     }
 
     /// - Description: True once one hour has passed from session start and the child still has no check-in/check-out and is not already absent.
