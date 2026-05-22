@@ -28,6 +28,8 @@ struct DiaryTimelineView: View {
     @ObservedObject var viewModel: DailyDiaryViewModel
     /// - Description: Reference clock for “past” collapse (parent may tick periodically).
     var now: Date
+    /// - Description: When set, matching diary rows are highlighted and others dimmed.
+    var highlightedEntryType: DiaryEntryType?
     /// - Description: Opens add-diary with prefill for this planned session (plus button / “Log observation”).
     var onLogForPlannedSession: ((NurseryScheduleSegment) -> Void)?
 
@@ -344,6 +346,7 @@ struct DiaryTimelineView: View {
                 }
             }
         }
+        .entryHighlightStyle(type: type, filter: highlightedEntryType)
     }
 
     private func collapsedLabel(timeText: String, title: String, subtitle: String, systemImage: String) -> some View {
@@ -458,5 +461,24 @@ struct DiaryTimelineView: View {
                 Capsule(style: .continuous)
                     .fill(Color.ncPrimary.opacity(0.16))
             )
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func entryHighlightStyle(type: DiaryEntryType, filter: DiaryEntryType?) -> some View {
+        if let filter {
+            let matches = type == filter
+            self
+                .opacity(matches ? 1 : 0.35)
+                .overlay {
+                    if matches {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.ncPrimary, lineWidth: 2)
+                    }
+                }
+        } else {
+            self
+        }
     }
 }
