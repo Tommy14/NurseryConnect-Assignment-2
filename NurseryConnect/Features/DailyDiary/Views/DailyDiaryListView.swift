@@ -23,14 +23,24 @@ import Combine
 import CoreData
 import SwiftUI
 
+/// - Description: Controls navigation chrome when the diary is embedded in the iPad split view.
+enum DailyDiaryPresentationStyle {
+    case phoneNavigation
+    case splitViewEmbedded
+}
+
 /// - Description: Child-scoped diary screen with timeline and add entry affordance.
 struct DailyDiaryListView: View {
     let summary: KeyworkerChildSummary
+    var presentationStyle: DailyDiaryPresentationStyle = .phoneNavigation
 
     @Environment(\.managedObjectContext) private var context
     @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
     @StateObject private var viewModel: DailyDiaryViewModel
     @StateObject private var attendanceViewModel: AttendanceViewModel
+    @Binding private var externalAddSheetTrigger: Bool
+    private var highlightedEntryType: DiaryEntryType?
+    private var showsAnalyticsSummary: Bool
     @State private var addSheet: AddDiarySheet?
     @State private var timelineClock = Date()
     @State private var showCheckInRequiredAlert = false
@@ -56,8 +66,21 @@ struct DailyDiaryListView: View {
     /// - Parameters:
     ///   - summary: Lightweight child metadata from the dashboard.
     ///   - managedObjectContext: Main-queue context shared with the app.
-    init(summary: KeyworkerChildSummary, managedObjectContext: NSManagedObjectContext) {
+    ///   - presentationStyle: Navigation chrome for phone stack vs iPad split column.
+    ///   - externalAddSheetTrigger: Optional keyboard-command trigger for new entry sheet.
+    init(
+        summary: KeyworkerChildSummary,
+        managedObjectContext: NSManagedObjectContext,
+        presentationStyle: DailyDiaryPresentationStyle = .phoneNavigation,
+        externalAddSheetTrigger: Binding<Bool> = .constant(false),
+        highlightedEntryType: DiaryEntryType? = nil,
+        showsAnalyticsSummary: Bool = true
+    ) {
         self.summary = summary
+        self.presentationStyle = presentationStyle
+        self.highlightedEntryType = highlightedEntryType
+        self.showsAnalyticsSummary = showsAnalyticsSummary
+        _externalAddSheetTrigger = externalAddSheetTrigger
         _viewModel = StateObject(wrappedValue: DailyDiaryViewModel(childID: summary.id, context: managedObjectContext))
         _attendanceViewModel = StateObject(wrappedValue: AttendanceViewModel(childID: summary.id, context: managedObjectContext))
     }
@@ -81,15 +104,15 @@ struct DailyDiaryListView: View {
     /// - Description: Explains why the empty timeline cannot be filled yet.
     private var emptyStateDescription: String {
         if attendanceViewModel.phase == .absent {
-            return "\(summary.firstName) is marked absent today. Tap “Mark as attending” on the attendance card when they arrive, then check them in to add observations."
+            return "\(summary.fullName) is marked absent today. Tap “Mark as attending” on the attendance card when they arrive, then check them in to add observations."
         }
         if attendanceViewModel.phase != .onPremises {
-            return "Check \(summary.firstName) in first. After arrival is recorded, you can add diary observations here when the session window allows."
+            return "Check \(summary.fullName) in first. After arrival is recorded, you can add diary observations here when the session window allows."
         }
         if NurseryDaySchedule.isDiaryLoggingPermitted(at: timelineClock, calendar: .current) == false {
             return "Diary logging opens when the nursery session starts and stays available until two hours after closing. Try again during that window."
         }
-        return "The timeline shows today’s nursery schedule. Add entries to record \(summary.firstName)’s day."
+        return "The timeline shows today’s nursery schedule. Add entries to record \(summary.fullName)’s day."
     }
 
     var body: some View {
@@ -98,11 +121,32 @@ struct DailyDiaryListView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     sessionDossierHeader
                     TodayAttendanceCard(
-                        firstName: summary.firstName,
+                        childFullName: summary.fullName,
                         viewModel: attendanceViewModel,
                         isExpanded: $isAttendanceCardExpanded
                     )
                     DailyDiarySummaryCard(summary: viewModel.dailySummary, isExpanded: $isSummaryCardExpanded)
+                    if showsAnalyticsSummary {
+                        JournalAnalyticsSummaryCard(
+                            childID: summary.id,
+                            childDisplayName: summary.fullName
+                        )
+                    }
+                    if let highlightedEntryType {
+                        HStack(spacing: 8) {
+                            Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                                .foregroundStyle(Color.ncPrimary)
+                            Text("Showing \(highlightedEntryType.title) entries")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(.label))
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 4)
+                    }
+                    EndOfDaySummaryJournalButton(
+                        childID: summary.id,
+                        childDisplayName: summary.fullName
+                    )
                     VStack(alignment: .leading, spacing: 10) {
                         if viewModel.entries.isEmpty {
                             ContentUnavailableView {
@@ -126,6 +170,7 @@ struct DailyDiaryListView: View {
                             mergedRows: viewModel.mergedTimelineRows,
                             viewModel: viewModel,
                             now: timelineClock,
+                            highlightedEntryType: highlightedEntryType,
                             onLogForPlannedSession: { segment in
                                 guard canLogObservations else {
                                     presentLoggingBlockedFeedback()
@@ -181,21 +226,8 @@ struct DailyDiaryListView: View {
                         : "Diary logging is only available during nursery hours (session start through two hours after closing).")
             )
         }
-        .ncStudioScreenBackdrop()
-        .navigationTitle("Daily journal")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    ChildProfileView(childId: summary.id, context: context)
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .font(.body.weight(.medium))
-                }
-                .accessibilityLabel("Child profile")
-            }
-        }
+        .ncStudioScreenBackdropUnlessChildWorkspace()
+        .modifier(DailyDiaryNavigationChrome(presentationStyle: presentationStyle, summary: summary, context: context))
         .sheet(item: $addSheet) { sheet in
             Group {
                 switch sheet {
@@ -238,6 +270,15 @@ struct DailyDiaryListView: View {
             timelineClock = $0
             autoExpandCardsIfNeeded(at: $0)
         }
+        .onChange(of: externalAddSheetTrigger) { _, shouldOpen in
+            guard shouldOpen else { return }
+            externalAddSheetTrigger = false
+            guard canLogObservations else {
+                presentLoggingBlockedFeedback()
+                return
+            }
+            addSheet = .freeform
+        }
         .alert("Something went wrong", isPresented: Binding(
             get: { viewModel.errorMessage != nil || attendanceViewModel.errorMessage != nil },
             set: {
@@ -267,7 +308,7 @@ struct DailyDiaryListView: View {
         .alert("Marked absent", isPresented: $showAbsentBlocksDiaryAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Use “Mark as attending” on the attendance card if \(summary.firstName) arrives, then check them in before logging diary observations.")
+            Text("Use “Mark as attending” on the attendance card if \(summary.fullName) arrives, then check them in before logging diary observations.")
         }
     }
 
@@ -302,27 +343,29 @@ struct DailyDiaryListView: View {
                     .monospacedDigit()
             }
 
-            HStack(alignment: .center, spacing: 14) {
-                ChildAvatarView(
-                    firstName: summary.firstName,
-                    lastName: summary.lastName,
-                    childId: summary.id,
-                    showsAccentRing: true,
-                    dimension: 56
-                )
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(summary.firstName) \(summary.lastName)")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.primary)
-                    Label {
-                        Text(Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth))
-                    } icon: {
-                        Image(systemName: "calendar")
+            if presentationStyle != .splitViewEmbedded {
+                HStack(alignment: .center, spacing: 14) {
+                    ChildAvatarView(
+                        firstName: summary.firstName,
+                        lastName: summary.lastName,
+                        childId: summary.id,
+                        showsAccentRing: true,
+                        dimension: 56
+                    )
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(summary.fullName)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.primary)
+                        Label {
+                            Text(Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth))
+                        } icon: {
+                            Image(systemName: "calendar")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
 
             if shouldShowWarnings && summary.hasOpenIncident {
@@ -414,6 +457,36 @@ struct DailyDiaryListView: View {
     }
 }
 
+/// - Description: Applies phone-only navigation chrome so split-view embedding stays toolbar-free.
+private struct DailyDiaryNavigationChrome: ViewModifier {
+    let presentationStyle: DailyDiaryPresentationStyle
+    let summary: KeyworkerChildSummary
+    let context: NSManagedObjectContext
+
+    func body(content: Content) -> some View {
+        switch presentationStyle {
+        case .phoneNavigation:
+            content
+                .navigationTitle("Daily journal")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(.hidden, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        NavigationLink {
+                            ChildProfileView(childId: summary.id, context: context)
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                                .font(.body.weight(.medium))
+                        }
+                        .accessibilityLabel("Child profile")
+                    }
+                }
+        case .splitViewEmbedded:
+            content
+        }
+    }
+}
+
 #Preview {
     let ctx = PersistenceController.preview.container.viewContext
     return NavigationStack {
@@ -422,6 +495,7 @@ struct DailyDiaryListView: View {
                 id: UUID(),
                 firstName: "Emma",
                 lastName: "Wilson",
+                preferredName: "Emma",
                 roomName: "Sunshine Room",
                 keyworkerName: "Alex",
                 allergies: "Peanuts",
