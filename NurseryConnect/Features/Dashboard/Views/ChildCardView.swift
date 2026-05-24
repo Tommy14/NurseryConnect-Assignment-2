@@ -38,7 +38,7 @@ struct ChildCardView: View {
     private var activitySubtitle: String {
         switch summary.attendanceBucket {
         case .absent:
-            return "Absent today — not on site"
+            return "Absent today - not on site"
         case .departed:
             return "Left for the day"
         case .awaiting:
@@ -136,7 +136,7 @@ struct ChildCardView: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("\(summary.firstName) \(summary.lastName)")
+                        Text(summary.fullName)
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -329,6 +329,7 @@ struct ChildCardView: View {
             id: UUID(),
             firstName: "Emma",
             lastName: "Wilson",
+            preferredName: "Emma",
             roomName: "Sunshine Room",
             keyworkerName: "Alex Keyworker",
             allergies: "Peanuts",
