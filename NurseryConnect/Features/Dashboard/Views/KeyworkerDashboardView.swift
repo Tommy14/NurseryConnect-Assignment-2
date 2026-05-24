@@ -60,6 +60,8 @@ struct KeyworkerDashboardView: View {
     @State private var isKeyworkerProfilePresented = false
     @State private var quickCheckInSummary: KeyworkerChildSummary?
     @State private var absentConfirmationSummary: KeyworkerChildSummary?
+    @State private var isAbsentSectionCollapsed = false
+    @State private var trackedDayStart = Date().startOfDay
 
     init(context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: KeyworkerDashboardViewModel(context: context))
@@ -73,10 +75,13 @@ struct KeyworkerDashboardView: View {
     var body: some View {
         ZStack {
             Color.ncBackground.ignoresSafeArea()
-            if selectedTab == 0 {
+            switch selectedTab {
+            case 0:
                 myChildrenRoot
-            } else {
+            case 1:
                 incidentsRoot
+            default:
+                messagesRoot
             }
         }
         .animation(.easeInOut(duration: 0.22), value: selectedTab)
@@ -103,6 +108,12 @@ struct KeyworkerDashboardView: View {
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
             currentDate = tick
+            let dayStart = tick.startOfDay
+            if dayStart != trackedDayStart {
+                trackedDayStart = dayStart
+                isAbsentSectionCollapsed = false
+                Task { await viewModel.reloadChildSummariesFromStore(showLoading: false) }
+            }
         }
         .onChange(of: childPath.count) { _, newCount in
             if newCount == 0 {
@@ -149,39 +160,45 @@ struct KeyworkerDashboardView: View {
                         .padding(.vertical, 24)
                     } else {
                         todaySectionLabel(count: filteredChildSummaries.count)
-                        dashboardSearchField
+                        NCSearchField(text: $childSearchText)
                         LazyVStack(spacing: 12) {
                             ForEach(KeyworkerAttendanceBucket.dashboardSectionOrder, id: \.self) { bucket in
                                 let rows = filteredChildSummaries
                                     .filter { $0.attendanceBucket == bucket }
                                     .sorted { $0.firstName < $1.firstName }
                                 if rows.isEmpty == false {
-                                    Text(bucket.sectionTitle)
-                                        .font(.caption.weight(.heavy))
-                                        .foregroundStyle(.secondary)
-                                        .textCase(.uppercase)
-                                        .tracking(0.85)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    let canCollapseAbsent = bucket == .absent
+                                        && NurseryDaySchedule.isAbsentSectionCollapsible(at: currentDate)
 
-                                    ForEach(rows) { summary in
-                                        Button {
-                                            switch summary.attendanceBucket {
-                                            case .awaiting:
-                                                quickCheckInSummary = summary
-                                            case .absent:
-                                                absentConfirmationSummary = summary
-                                            case .onSite, .departed:
-                                                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                                                    childPath.append(summary)
+                                    KeyworkerAttendanceSectionHeader(
+                                        bucket: bucket,
+                                        rowCount: rows.count,
+                                        currentDate: currentDate,
+                                        isAbsentSectionCollapsed: $isAbsentSectionCollapsed
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                    if canCollapseAbsent == false || isAbsentSectionCollapsed == false {
+                                        ForEach(rows) { summary in
+                                            Button {
+                                                switch summary.attendanceBucket {
+                                                case .awaiting:
+                                                    quickCheckInSummary = summary
+                                                case .absent:
+                                                    absentConfirmationSummary = summary
+                                                case .onSite, .departed:
+                                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                                        childPath.append(summary)
+                                                    }
                                                 }
+                                            } label: {
+                                                ChildCardView(summary: summary, currentDate: currentDate)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
                                             }
-                                        } label: {
-                                            ChildCardView(summary: summary, currentDate: currentDate)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                            .id(summary.dashboardRowIdentity)
+                                            .buttonStyle(.plain)
+                                            .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
                                         }
-                                        .id(summary.dashboardRowIdentity)
-                                        .buttonStyle(.plain)
-                                        .accessibilityIdentifier("\(AppConstants.AccessibilityID.childCardPrefix)\(summary.id.uuidString)")
                                     }
                                 }
                             }
@@ -195,7 +212,7 @@ struct KeyworkerDashboardView: View {
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
             .ncRootScrollEdgeEffectForTopNavigation()
-            .background { dashboardAtmosphereBackground }
+            .ncStudioScreenBackdrop()
             .navigationTitle(AppConstants.navTitleKeyworkerChildrenList)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -219,9 +236,7 @@ struct KeyworkerDashboardView: View {
                 }
             }
             .sheet(isPresented: $isKeyworkerProfilePresented) {
-                NavigationStack {
-                    KeyworkerProfileView(assignedRoomName: assignedRoomName)
-                }
+                KeyworkerProfileSheet(assignedRoomName: assignedRoomName)
             }
             .sheet(item: $quickCheckInSummary) { summary in
                 DashboardQuickCheckInSheet(
@@ -244,7 +259,7 @@ struct KeyworkerDashboardView: View {
                     onCancel: { quickCheckInSummary = nil }
                 )
             }
-            .alert("Is \(absentConfirmationSummary?.firstName ?? "this child") attending today?", isPresented: Binding(
+            .alert("Is \(absentConfirmationSummary?.fullName ?? "this child") attending today?", isPresented: Binding(
                 get: { absentConfirmationSummary != nil },
                 set: { if !$0 { absentConfirmationSummary = nil } }
             )) {
@@ -285,33 +300,12 @@ struct KeyworkerDashboardView: View {
         }
     }
 
-    private var dashboardSearchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField("Search My Children", text: $childSearchText)
-                .textInputAutocapitalization(.words)
-                .autocorrectionDisabled()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.ncCardSurface)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-        }
-    }
-
     private var filteredChildSummaries: [KeyworkerChildSummary] {
         let query = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard query.isEmpty == false else { return viewModel.childSummaries }
         return viewModel.childSummaries.filter { summary in
-            let fullName = "\(summary.firstName) \(summary.lastName)"
             let ageText = Date.earlyYearsAgeDescription(dateOfBirth: summary.dateOfBirth)
-            return fullName.localizedCaseInsensitiveContains(query)
+            return summary.fullName.localizedCaseInsensitiveContains(query)
                 || summary.roomName.localizedCaseInsensitiveContains(query)
                 || ageText.localizedCaseInsensitiveContains(query)
         }
@@ -330,27 +324,8 @@ struct KeyworkerDashboardView: View {
         }
     }
 
-    /// Soft radial “haze” behind the dashboard so it feels less flat than a single flat fill.
-    private var dashboardAtmosphereBackground: some View {
-        ZStack {
-            Color.ncBackground
-            Circle()
-                .fill(Color.ncGlowBlue.opacity(0.13))
-                .frame(width: 320, height: 320)
-                .blur(radius: 70)
-                .offset(x: -130, y: -210)
-            Circle()
-                .fill(Color.ncGlowViolet.opacity(0.11))
-                .frame(width: 280, height: 280)
-                .blur(radius: 62)
-                .offset(x: 150, y: -120)
-            Circle()
-                .fill(Color.ncPrimary.opacity(0.08))
-                .frame(width: 200, height: 200)
-                .blur(radius: 40)
-                .offset(x: 40, y: 150)
-        }
-        .ignoresSafeArea()
+    private var messagesRoot: some View {
+        MessagingView(managedObjectContext: context)
     }
 
     private var dashboardHeroHeader: some View {
@@ -463,9 +438,7 @@ struct KeyworkerDashboardView: View {
     private func todaySectionLabel(count: Int) -> some View {
         HStack(alignment: .center, spacing: 10) {
             Text("TODAY")
-                .font(.caption.weight(.heavy))
-                .tracking(1.4)
-                .foregroundStyle(.secondary)
+                .ncSectionOverlineStyle()
             Spacer(minLength: 8)
             HStack(spacing: 6) {
                 Text("\(count)")
@@ -485,106 +458,6 @@ struct KeyworkerDashboardView: View {
         .padding(.top, 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Today, \(count) assigned")
-    }
-}
-
-// MARK: - Dashboard quick check-in
-
-/// - Description: Sheet shown when a child card is tapped before check-in: captures drop-off name only; arrival time is `Date()` at save.
-private struct DashboardQuickCheckInSheet: View {
-    let summary: KeyworkerChildSummary
-    let context: NSManagedObjectContext
-    let onSuccess: () -> Void
-    let onCancel: () -> Void
-
-    @StateObject private var attendanceViewModel: AttendanceViewModel
-    private let manualDropOffOption = "Not listed (enter name)"
-    @State private var selectedDropOff = ""
-    @State private var manualDropOffName = ""
-
-    init(summary: KeyworkerChildSummary, context: NSManagedObjectContext, onSuccess: @escaping () -> Void, onCancel: @escaping () -> Void) {
-        self.summary = summary
-        self.context = context
-        self.onSuccess = onSuccess
-        self.onCancel = onCancel
-        _attendanceViewModel = StateObject(wrappedValue: AttendanceViewModel(childID: summary.id, context: context))
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    if attendanceViewModel.authorisedCollectorLines.isEmpty {
-                        TextField("Full name", text: $manualDropOffName)
-                            .textInputAutocapitalization(.words)
-                    } else {
-                        Picker("Dropped off by", selection: $selectedDropOff) {
-                            ForEach(Array(attendanceViewModel.authorisedCollectorLines.enumerated()), id: \.offset) { _, line in
-                                Text(line)
-                                    .tag(line)
-                            }
-                            Text(manualDropOffOption)
-                                .tag(manualDropOffOption)
-                        }
-                        if selectedDropOff == manualDropOffOption {
-                            TextField("Full name", text: $manualDropOffName)
-                                .textInputAutocapitalization(.words)
-                        }
-                    }
-                } header: {
-                    Text("Who dropped \(summary.firstName) off?")
-                } footer: {
-                    if attendanceViewModel.authorisedCollectorLines.isEmpty {
-                        Text("No authorised collectors are listed yet. Enter the drop-off name. Arrival time is saved automatically as the current time.")
-                    } else {
-                        Text("Select an authorised collector from the list, or choose “Not listed” and enter a name. Arrival time is saved automatically as the current time.")
-                    }
-                }
-            }
-            .navigationTitle("Check in")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            await attendanceViewModel.checkIn(at: Date(), droppedOffBy: dropOffNameForSave)
-                            if attendanceViewModel.errorMessage == nil {
-                                onSuccess()
-                            }
-                        }
-                    }
-                    .fontWeight(.semibold)
-                    .accessibilityIdentifier(AppConstants.AccessibilityID.dashboardQuickCheckInSave)
-                }
-            }
-        }
-        .presentationDragIndicator(.visible)
-        .task {
-            await attendanceViewModel.load()
-            if let first = attendanceViewModel.authorisedCollectorLines.first {
-                selectedDropOff = first
-            } else {
-                selectedDropOff = manualDropOffOption
-            }
-        }
-        .alert("Check-in", isPresented: Binding(
-            get: { attendanceViewModel.errorMessage != nil },
-            set: { if !$0 { attendanceViewModel.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { attendanceViewModel.errorMessage = nil }
-        } message: {
-            Text(attendanceViewModel.errorMessage ?? "")
-        }
-    }
-
-    private var dropOffNameForSave: String {
-        if attendanceViewModel.authorisedCollectorLines.isEmpty || selectedDropOff == manualDropOffOption {
-            return manualDropOffName
-        }
-        return selectedDropOff
     }
 }
 
