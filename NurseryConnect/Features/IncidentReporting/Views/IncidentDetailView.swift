@@ -24,6 +24,8 @@ import SwiftUI
 struct IncidentDetailView: View {
     @ObservedObject var incident: Incident
     @ObservedObject var viewModel: IncidentViewModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
 
     @State private var annotations: [BodyMapAnnotation] = []
@@ -50,16 +52,29 @@ struct IncidentDetailView: View {
                 BodyMapView(isInteractive: false, annotations: $annotations, side: $side)
             }
             .padding()
-            .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance : 0)
+            .padding(.bottom, usesFloatingTabBarShell ? 12 : 0)
         }
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
-        .background(Color.ncBackground)
+        .ncStudioScreenBackdrop()
+        .ncRootScrollEdgeEffectForTopNavigation()
         .navigationTitle("Incident")
-        .toolbarBackground(Color.ncBackground, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward")
+                            .font(.body.weight(.semibold))
+                        Text("Incidents")
+                            .font(.body.weight(.semibold))
+                    }
+                }
+                .accessibilityLabel("Back to incidents")
+            }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if status == .draft {
                     Button("Edit") {
@@ -71,10 +86,27 @@ struct IncidentDetailView: View {
         .onAppear {
             annotations = BodyMapCodec.decode(incident.bodyMapAnnotations)
         }
-        .fullScreenCover(isPresented: $showEdit) {
+        .overlay {
+            if showEdit && horizontalSizeClass == .regular {
+                IncidentComposerOverlay(
+                    viewModel: viewModel,
+                    isPresented: $showEdit,
+                    existingIncident: incident
+                )
+                .environment(\.managedObjectContext, incident.managedObjectContext ?? PersistenceController.shared.container.viewContext)
+            }
+        }
+        .fullScreenCover(isPresented: fullScreenEditPresented) {
             NewIncidentFormView(viewModel: viewModel, existingIncident: incident)
                 .environment(\.managedObjectContext, incident.managedObjectContext ?? PersistenceController.shared.container.viewContext)
         }
+    }
+
+    private var fullScreenEditPresented: Binding<Bool> {
+        Binding(
+            get: { showEdit && horizontalSizeClass != .regular },
+            set: { showEdit = $0 }
+        )
     }
 
     private var statusTracker: some View {
