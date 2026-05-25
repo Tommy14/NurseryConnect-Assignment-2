@@ -29,6 +29,7 @@ import SwiftUI
 /// - Description: Lists incidents for the keyworker with quick filters and navigation to detail.
 struct IncidentListView: View {
     @Environment(\.managedObjectContext) private var context
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
     @StateObject private var viewModel: IncidentViewModel
     @Binding var composerPresented: Bool
@@ -45,7 +46,7 @@ struct IncidentListView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if !viewModel.parentNotificationBanners.isEmpty {
                         ForEach(viewModel.parentNotificationBanners) { banner in
-                            parentNotificationUrgencyBanner(childFirstName: banner.childFirstName, message: banner.message)
+                            parentNotificationUrgencyBanner(childDisplayName: banner.childDisplayName, message: banner.message)
                         }
                     }
 
@@ -62,9 +63,7 @@ struct IncidentListView: View {
                                 )
                                 .accessibilityHidden(true)
                             Text("INBOX SCOPE")
-                                .font(.caption2.weight(.heavy))
-                                .tracking(1.35)
-                                .foregroundStyle(.secondary)
+                                .ncSectionOverlineStyle()
                         }
                         .accessibilityHidden(true)
 
@@ -145,7 +144,7 @@ struct IncidentListView: View {
                 .padding(.horizontal)
                 .padding(.bottom)
                 .padding(.top, 8)
-                .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 0)
+                .padding(.bottom, usesFloatingTabBarShell ? 12 : 0)
             }
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
@@ -173,16 +172,16 @@ struct IncidentListView: View {
                     .shadow(color: Color.ncPrimary.opacity(0.3), radius: 14, x: 0, y: 8)
                     .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 5)
             }
-            .padding(.horizontal, 16)
+            .padding(.trailing, 56)
             .padding(.top, 16)
-            .padding(.bottom, 16 + (usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance : 0))
+            .padding(.bottom, usesFloatingTabBarShell ? 24 : 16)
             .accessibilityIdentifier(AppConstants.AccessibilityID.addIncidentFAB)
             .accessibilityLabel("New incident")
         }
-        .background { incidentAtmosphereBackground }
+        .ncStudioScreenBackdrop()
         .navigationTitle(AppConstants.navTitleKeyworkerIncidentsList)
         .navigationBarTitleDisplayMode(.large)
-        .fullScreenCover(isPresented: $composerPresented) {
+        .fullScreenCover(isPresented: fullScreenComposerPresented) {
             NewIncidentFormView(viewModel: viewModel)
                 .environment(\.managedObjectContext, context)
         }
@@ -205,25 +204,18 @@ struct IncidentListView: View {
         }
     }
 
-    /// Soft depth field behind the inbox (aligned with dashboard atmosphere).
-    private var incidentAtmosphereBackground: some View {
-        ZStack {
-            Color.ncBackground
-            Circle()
-                .fill(Color.ncPrimary.opacity(0.09))
-                .frame(width: 320, height: 320)
-                .blur(radius: 65)
-                .offset(x: 140, y: -220)
-            Circle()
-                .fill(Color.ncGlowViolet.opacity(0.08))
-                .frame(width: 250, height: 250)
-                .blur(radius: 50)
-                .offset(x: -110, y: 20)
-        }
-        .ignoresSafeArea()
+    private var usesOverlayComposer: Bool {
+        horizontalSizeClass == .regular
     }
 
-    private func parentNotificationUrgencyBanner(childFirstName: String, message: String) -> some View {
+    private var fullScreenComposerPresented: Binding<Bool> {
+        Binding(
+            get: { composerPresented && !usesOverlayComposer },
+            set: { composerPresented = $0 }
+        )
+    }
+
+    private func parentNotificationUrgencyBanner(childDisplayName: String, message: String) -> some View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
                 Circle()
@@ -257,7 +249,7 @@ struct IncidentListView: View {
                 .stroke(Color.ncGlassHighlight(lightOpacity: 0.22), lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(childFirstName) incident alert. \(message)")
+        .accessibilityLabel("\(childDisplayName) incident alert. \(message)")
     }
 
     private func incidentAccentColor(for category: IncidentCategory) -> Color {
