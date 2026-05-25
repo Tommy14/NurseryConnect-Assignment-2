@@ -39,7 +39,7 @@ enum IncidentListFilter: String, CaseIterable, Identifiable {
 struct ParentNotificationBanner: Identifiable, Hashable {
     /// Stable per child so multiple qualifying incidents do not duplicate the banner.
     let id: String
-    let childFirstName: String
+    let childDisplayName: String
     let message: String
 }
 
@@ -261,13 +261,13 @@ final class IncidentViewModel: ObservableObject {
             guard let child = incident.child else { continue }
             if seenChildObjectIDs.contains(child.objectID) { continue }
             seenChildObjectIDs.insert(child.objectID)
-            let childName = child.firstName ?? "Child"
+            let childName = child.fullDisplayName
             let bannerId = child.objectID.uriRepresentation().absoluteString
             guard let timing = escalationPresentation(for: incident, referenceDate: referenceDate) else { continue }
             let message = incident.managerCountersigned
                 ? "Awaiting parent notification - submitted at \(timing.submittedAtText). \(timing.statusLine)"
                 : "Awaiting manager review - submitted at \(timing.submittedAtText). \(timing.statusLine)"
-            banners.append(ParentNotificationBanner(id: bannerId, childFirstName: childName, message: message))
+            banners.append(ParentNotificationBanner(id: bannerId, childDisplayName: childName, message: message))
         }
         return banners
     }
