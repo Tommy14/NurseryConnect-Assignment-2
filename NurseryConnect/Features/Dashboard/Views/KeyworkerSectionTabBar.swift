@@ -33,6 +33,10 @@ struct KeyworkerSectionTabBar: View {
     private let childrenAccent = Color(red: 0.58, green: 0.45, blue: 0.92)
     /// - Description: Active “Incidents” — warm amber.
     private let incidentsAccent = Color(red: 0.92, green: 0.52, blue: 0.14)
+    /// - Description: Active “Messages” — teal aligned with keyworker chat bubbles.
+    private let messagesAccent = Color(red: 0.2, green: 0.65, blue: 0.62)
+
+    private let segmentCount = 3
 
     var body: some View {
         GeometryReader { outer in
@@ -52,14 +56,15 @@ struct KeyworkerSectionTabBar: View {
     private func dockChrome(width: CGFloat) -> some View {
         let outerRadius = dockBarHeight / 2
         let innerW = width - trackMargin * 2
-        let segmentW = (innerW - innerSegmentGutter) / 2
+        let gutterTotal = innerSegmentGutter * CGFloat(segmentCount - 1)
+        let segmentW = (innerW - gutterTotal) / CGFloat(segmentCount)
         let segmentStride = segmentW + innerSegmentGutter
         let pillHeight = dockBarHeight - trackMargin * 2
         let pillWidth = segmentW
         let pillCorner = pillHeight / 2
         let restingPillX = trackMargin + CGFloat(selectedIndex) * segmentStride
         let minPillX = trackMargin
-        let maxPillX = trackMargin + segmentStride
+        let maxPillX = trackMargin + CGFloat(segmentCount - 1) * segmentStride
         let displayedPillX = clampedPillX(dragPillX ?? restingPillX, minX: minPillX, maxX: maxPillX)
         let visualIndex = indexForPillX(displayedPillX, firstSlotX: trackMargin, segmentStride: segmentStride)
 
@@ -92,6 +97,11 @@ struct KeyworkerSectionTabBar: View {
                         systemImage: "exclamationmark.triangle.fill",
                         index: 1,
                         accessibilityID: AppConstants.AccessibilityID.incidentsTab,
+                        segmentWidth: segmentW,
+                        height: dockBarHeight,
+                        visualIndex: visualIndex
+                    )
+                    messagesSegmentButton(
                         segmentWidth: segmentW,
                         height: dockBarHeight,
                         visualIndex: visualIndex
@@ -199,7 +209,7 @@ struct KeyworkerSectionTabBar: View {
     @ViewBuilder
     private func selectionPill(width: CGFloat, height: CGFloat, corner: CGFloat, visualIndex: Int) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        let accent = visualIndex == 0 ? childrenAccent : incidentsAccent
+        let accent = accentColor(for: visualIndex)
         if #available(iOS 26.0, *) {
             ZStack {
                 shape
@@ -319,13 +329,55 @@ struct KeyworkerSectionTabBar: View {
         return AnyShapeStyle(Color.primary.opacity(0.78))
     }
 
-    /// - Description: Maps pill offset to nearest section index.
-    private func indexForPillX(_ pillX: CGFloat, firstSlotX: CGFloat, segmentStride: CGFloat) -> Int {
-        let threshold = firstSlotX + (segmentStride / 2)
-        return pillX >= threshold ? 1 : 0
+    private func messagesSegmentButton(segmentWidth: CGFloat, height: CGFloat, visualIndex: Int) -> some View {
+        let selected = visualIndex == 2
+        return Button {
+            if selectedIndex == 2 {
+                onReselectTab?(2)
+            } else {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.84)) {
+                    selectedIndex = 2
+                }
+            }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 4) {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 20, weight: selected ? .semibold : .medium))
+                    Text("Messages")
+                        .font(.caption2.weight(selected ? .semibold : .medium))
+                }
+                .multilineTextAlignment(.center)
+                .frame(width: segmentWidth, height: height, alignment: .center)
+                .foregroundStyle(segmentForeground(selected: selected))
+
+                UnreadBadge()
+                    .offset(x: 4, y: 2)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Messages")
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityIdentifier(AppConstants.AccessibilityID.messagesTab)
     }
 
-    /// - Description: Keeps the moving lens inside the two-segment track.
+    private func accentColor(for index: Int) -> Color {
+        switch index {
+        case 0: childrenAccent
+        case 1: incidentsAccent
+        default: messagesAccent
+        }
+    }
+
+    /// - Description: Maps pill offset to nearest section index.
+    private func indexForPillX(_ pillX: CGFloat, firstSlotX: CGFloat, segmentStride: CGFloat) -> Int {
+        let relative = pillX - firstSlotX + (segmentStride / 2)
+        let raw = Int(relative / segmentStride)
+        return min(max(raw, 0), segmentCount - 1)
+    }
+
+    /// - Description: Keeps the moving lens inside the segment track.
     private func clampedPillX(_ x: CGFloat, minX: CGFloat, maxX: CGFloat) -> CGFloat {
         min(max(x, minX), maxX)
     }
