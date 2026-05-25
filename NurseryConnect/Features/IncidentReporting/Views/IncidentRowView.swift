@@ -71,7 +71,7 @@ struct IncidentRowView: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text(childName)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                    .font(.system(.headline, design: .default).weight(.semibold))
                 Text(category.title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
@@ -99,9 +99,7 @@ struct IncidentRowView: View {
     }
 
     private var childName: String {
-        let first = incident.child?.firstName ?? ""
-        let last = incident.child?.lastName ?? ""
-        let combined = "\(first) \(last)".trimmingCharacters(in: .whitespaces)
-        return combined.isEmpty ? "Child" : combined
+        guard let child = incident.child else { return "Child" }
+        return child.fullDisplayName
     }
 }
