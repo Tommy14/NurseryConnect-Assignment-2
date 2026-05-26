@@ -7,17 +7,9 @@
 //  Created: 7 April 2026
 //  Description: Front/back body silhouette with tap-to-place injury markers.
 //
-// -----------------------------------------------------------------
-// Date       Name        What has done
-// -----------------------------------------------------------------
-// 070426     Tommy1914   Created the file with Path silhouettes and normalised taps.
-// 100426     Tommy1914   Keep Front/Back picker enabled when read-only; only taps/clear respect `isInteractive`.
-// 100426     Tommy1914   Asset catalog body illustrations (front/back) instead of vector shapes.
-// 100426     Tommy1914   Taller map area (400pt) for easier tapping and visibility.
-// 100426     Tommy1914   `scaledToFill` so wide assets fill the tile (no letterboxing).
-// -----------------------------------------------------------------
 
 import SwiftUI
+import UIKit
 
 /// Vertical space reserved for the body illustration and markers.
 private let bodyMapAreaHeight: CGFloat = 420
@@ -37,43 +29,16 @@ struct BodyMapView: View {
             .pickerStyle(.segmented)
 
             GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
+                let fittedSize = fittedBodySize(in: geo.size, assetName: bodyAssetName)
+
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(Color.ncPrimary.opacity(0.06))
                         .allowsHitTesting(false)
 
-                    Image(bodyAssetName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: w, height: h)
-                        .clipped()
-                        .accessibilityHidden(true)
-
-                    ForEach(displayAnnotations) { marker in
-                        Circle()
-                            .fill(Color.ncDanger)
-                            .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.ncGlassHighlight(lightOpacity: 0.45), lineWidth: 1))
-                            .position(x: marker.normalizedX * w, y: marker.normalizedY * h)
-                    }
+                    bodyIllustration(size: fittedSize)
                 }
-                .frame(width: w, height: h)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.ncPrimary.opacity(0.12), lineWidth: 1)
-                        .allowsHitTesting(false)
-                }
-                .contentShape(Rectangle())
-                .onTapGesture { location in
-                    guard isInteractive else { return }
-                    let nx = Double(location.x / max(w, 1))
-                    let ny = Double(location.y / max(h, 1))
-                    annotations.append(BodyMapAnnotation(side: side, normalizedX: nx, normalizedY: ny))
-                    NCHaptics.impactLight()
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity)
             .frame(height: bodyMapAreaHeight)
@@ -93,6 +58,65 @@ struct BodyMapView: View {
 
     private var displayAnnotations: [BodyMapAnnotation] {
         annotations.filter { $0.side == side }
+    }
+
+    private func bodyIllustration(size: CGSize) -> some View {
+        Image(bodyAssetName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size.width, height: size.height)
+            .overlay {
+                ForEach(displayAnnotations) { marker in
+                    Circle()
+                        .fill(Color.ncDanger)
+                        .frame(width: 14, height: 14)
+                        .overlay(Circle().stroke(Color.ncGlassHighlight(lightOpacity: 0.45), lineWidth: 1))
+                        .position(
+                            x: marker.normalizedX * size.width,
+                            y: marker.normalizedY * size.height
+                        )
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.ncPrimary.opacity(0.12), lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                guard isInteractive else { return }
+                guard size.width > 0, size.height > 0 else { return }
+                let nx = Double(location.x / size.width)
+                let ny = Double(location.y / size.height)
+                guard (0 ... 1).contains(nx), (0 ... 1).contains(ny) else { return }
+                annotations.append(BodyMapAnnotation(side: side, normalizedX: nx, normalizedY: ny))
+                NCHaptics.impactLight()
+            }
+            .accessibilityHidden(true)
+    }
+
+    private func fittedBodySize(in container: CGSize, assetName: String) -> CGSize {
+        guard container.width > 0, container.height > 0 else { return .zero }
+        guard
+            let image = UIImage(named: assetName),
+            image.size.width > 0,
+            image.size.height > 0
+        else {
+            let side = min(container.width, container.height * 0.92)
+            return CGSize(width: side * 0.55, height: side)
+        }
+
+        let imageAspect = image.size.width / image.size.height
+        let containerAspect = container.width / container.height
+
+        if imageAspect >= containerAspect {
+            let width = container.width
+            return CGSize(width: width, height: width / imageAspect)
+        }
+
+        let height = container.height
+        return CGSize(width: height * imageAspect, height: height)
     }
 }
 
