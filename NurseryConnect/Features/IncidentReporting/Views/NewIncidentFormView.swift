@@ -26,6 +26,8 @@ import SwiftUI
 struct NewIncidentFormView: View {
     @ObservedObject var viewModel: IncidentViewModel
     var existingIncident: Incident?
+    var embedsInOverlay: Bool = false
+    var onDismiss: (() -> Void)?
 
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -48,108 +50,315 @@ struct NewIncidentFormView: View {
     @State private var showSuccess = false
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if embedsInOverlay {
+                overlayFormStack
+            } else {
+                NavigationStack {
+                    standardFormStack
+                        .navigationTitle(existingIncident == nil ? "New incident" : "Edit draft")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                if step == 0 {
+                                    Button(role: .cancel) { closeForm() } label: {
+                                        Image(systemName: "xmark")
+                                    }
+                                } else {
+                                    Button {
+                                        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                                            step = max(step - 1, 0)
+                                        }
+                                    } label: {
+                                        Label("Back", systemImage: "chevron.backward")
+                                    }
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                if step < 3 {
+                                    Button {
+                                        advanceStepIfValid()
+                                    } label: {
+                                        Text("Next")
+                                    }
+                                    .fontWeight(.semibold)
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        .overlay(alignment: .center) {
+            if showSuccess {
+                successOverlay
+            }
+        }
+        .alert("Missing information", isPresented: $showValidationAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(validationAlertMessage)
+        }
+        .safeAreaInset(edge: .bottom) {
+            if step == 3 && !embedsInOverlay {
+                HStack {
+                    PrimaryButton(title: "Submit to room leader") {
+                        Task { await submit() }
+                    }
+                    .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
+                    .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 6)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 8)
+                .background(Color.clear)
+            }
+        }
+        .task {
+            await viewModel.refresh()
+            if let existingIncident {
+                hydrate(from: existingIncident)
+            }
+        }
+        .onChange(of: category) { _, newValue in
+            severity = newValue.defaultSeverity
+            riddorRequired = viewModel.suggestsRiddor(for: newValue)
+        }
+        .onChange(of: selectedChildID) { _, _ in
+            if let selectedChildName {
+                childSearchText = selectedChildName
+            }
+        }
+        .onChange(of: isChildSearchFocused) { _, focused in
+            if focused {
+                if let name = selectedChildName {
+                    let trimmed = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmed.caseInsensitiveCompare(name) == .orderedSame {
+                        childSearchText = ""
+                    }
+                }
+            } else if let name = selectedChildName {
+                childSearchText = name
+            }
+        }
+    }
+
+    private var overlayFormStack: some View {
+        ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
+                overlayGrabber
+                overlayHeaderBar
+                formStepsContent
+            }
+            .padding(.horizontal, 20)
+
+            overlayBottomFade
+                .allowsHitTesting(false)
+
+            overlayFloatingActions
+                .padding(.horizontal, 24)
+                .padding(.bottom, 22)
+        }
+        .ncStudioScreenBackdrop()
+    }
+
+    private var overlayBottomFade: some View {
+        LinearGradient(
+            colors: [
+                Color.ncBackground.opacity(0),
+                Color.ncGlowBlue.opacity(0.08),
+                Color.ncBackground.opacity(0.88),
+                Color.ncBackground
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: 132)
+    }
+
+    private var standardFormStack: some View {
+        formStepsContent
+            .padding(.horizontal, 16)
+            .ncStudioScreenBackdropUnlessChildWorkspace()
+    }
+
+    private var formStepsContent: some View {
+        VStack(spacing: 0) {
+            if embedsInOverlay {
+                overlayStepIndicator
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
+            } else {
                 stepRail
                     .padding(.top, 8)
                     .padding(.bottom, 12)
+            }
 
-                Group {
-                    switch step {
-                    case 0: stepChildAndCategory
-                    case 1: stepDetails
-                    case 2: stepBodyMap
-                    case 3: stepReview
-                    default: EmptyView()
+            Group {
+                switch step {
+                case 0: stepChildAndCategory
+                case 1: stepDetails
+                case 2: stepBodyMap
+                case 3: stepReview
+                default: EmptyView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: step)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if embedsInOverlay {
+                Color.ncBackground.frame(height: 76)
+            }
+        }
+    }
+
+    private var overlayGrabber: some View {
+        Capsule()
+            .fill(Color.secondary.opacity(0.28))
+            .frame(width: 36, height: 5)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+            .accessibilityHidden(true)
+    }
+
+    private var overlayHeaderBar: some View {
+        ZStack(alignment: .center) {
+            Text(existingIncident == nil ? "New Incident" : "Edit Draft")
+                .font(.headline)
+
+            HStack {
+                Spacer()
+                Button(role: .cancel) { closeForm() } label: {
+                    Image(systemName: "xmark")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.ncCardSurface.opacity(0.92), in: Circle())
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.ncGlassHighlight(lightOpacity: 0.35), lineWidth: 0.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
+            }
+        }
+        .padding(.bottom, 10)
+    }
+
+    private var overlayStepIndicator: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ProgressView(value: Double(step + 1), total: 4)
+                .tint(Color.ncPrimary)
+            Text("Step \(step + 1) of 4 · \(Self.formSteps[step].title)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Step \(step + 1) of 4, \(Self.formSteps[step].title)")
+    }
+
+    private var overlayFloatingActions: some View {
+        HStack(spacing: 14) {
+            if step > 0 {
+                overlaySecondaryFloatingButton(title: "Back", systemImage: "chevron.left") {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                        step = max(step - 1, 0)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(.spring(response: 0.38, dampingFraction: 0.86), value: step)
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
-            .padding(.horizontal, 16)
-            .background(Color.ncBackground.ignoresSafeArea())
-            .navigationTitle(existingIncident == nil ? "New incident" : "Edit draft")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    if step == 0 {
-                        Button(role: .cancel) { dismiss() } label: {
-                            Image(systemName: "xmark")
-                        }
-                    } else {
-                        Button {
-                            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                                step = max(step - 1, 0)
-                            }
-                        } label: {
-                            Label("Back", systemImage: "chevron.backward")
-                        }
-                    }
+
+            Spacer(minLength: 0)
+
+            if step < 3 {
+                overlayPrimaryFloatingButton(title: "Next") {
+                    advanceStepIfValid()
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if step < 3 {
-                        Button {
-                            advanceStepIfValid()
-                        } label: {
-                            Text("Next")
-                        }
-                        .fontWeight(.semibold)
-                    }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                overlayPrimaryFloatingButton(title: "Submit") {
+                    Task { await submit() }
                 }
+                .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
+                .accessibilityLabel("Submit to room leader")
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
-            .overlay(alignment: .center) {
-                if showSuccess {
-                    successOverlay
+        }
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: step)
+    }
+
+    private func overlaySecondaryFloatingButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                Text(title)
+                    .font(.body.weight(.medium))
+            }
+            .foregroundStyle(Color.ncPrimary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background {
+                Capsule()
+                    .fill(Color.ncCardSurface)
+                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
+            }
+            .overlay {
+                Capsule()
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.ncGlassHighlight(lightOpacity: 0.55),
+                                Color.ncGlowBlue.opacity(0.28)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func overlayPrimaryFloatingButton(
+        title: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.ncPrimary, Color.ncGlowBlue.opacity(0.88)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: Color.ncGlowBlue.opacity(0.35), radius: 12, x: 0, y: 6)
                 }
-            }
-            .alert("Missing information", isPresented: $showValidationAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(validationAlertMessage)
-            }
-            .safeAreaInset(edge: .bottom) {
-                if step == 3 {
-                    HStack {
-                        PrimaryButton(title: "Submit to room leader") {
-                            Task { await submit() }
-                        }
-                        .accessibilityIdentifier(AppConstants.AccessibilityID.submitIncident)
-                        .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 6)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 6)
-                    .padding(.bottom, 8)
-                    .background(Color.clear)
-                }
-            }
-            .task {
-                await viewModel.refresh()
-                if let existingIncident {
-                    hydrate(from: existingIncident)
-                }
-            }
-            .onChange(of: category) { _, newValue in
-                severity = newValue.defaultSeverity
-                riddorRequired = viewModel.suggestsRiddor(for: newValue)
-            }
-            .onChange(of: selectedChildID) { _, _ in
-                if let selectedChildName {
-                    childSearchText = selectedChildName
-                }
-            }
-            .onChange(of: isChildSearchFocused) { _, focused in
-                if focused {
-                    if let name = selectedChildName {
-                        let trimmed = childSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if trimmed.caseInsensitiveCompare(name) == .orderedSame {
-                            childSearchText = ""
-                        }
-                    }
-                } else if let name = selectedChildName {
-                    childSearchText = name
-                }
-            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func closeForm() {
+        if embedsInOverlay {
+            onDismiss?()
+        } else {
+            dismiss()
         }
     }
 
@@ -379,7 +588,7 @@ struct NewIncidentFormView: View {
                 .padding(.vertical, 4)
                 .ncCardStyle(radius: 16)
             }
-            .padding(.bottom, 110)
+            .padding(.bottom, embedsInOverlay ? 24 : 110)
         }
     }
 
@@ -516,7 +725,7 @@ struct NewIncidentFormView: View {
               let child = viewModel.assignableChildren.first(where: { $0.id == id }) else {
             return "Child not selected"
         }
-        return "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
+        return child.fullDisplayName
     }
 
     private var filteredAssignableChildren: [Child] {
@@ -524,13 +733,10 @@ struct NewIncidentFormView: View {
         let children = viewModel.assignableChildren
         guard query.isEmpty == false else { return children }
         return children.filter { child in
-            let firstName = child.firstName ?? ""
-            let lastName = child.lastName ?? ""
             let roomName = child.roomName ?? ""
-            let fullName = "\(firstName) \(lastName)"
-            return firstName.localizedCaseInsensitiveContains(query)
-                || lastName.localizedCaseInsensitiveContains(query)
-                || fullName.localizedCaseInsensitiveContains(query)
+            let preferred = child.preferredName ?? ""
+            return child.fullDisplayName.localizedCaseInsensitiveContains(query)
+                || preferred.localizedCaseInsensitiveContains(query)
                 || roomName.localizedCaseInsensitiveContains(query)
         }
     }
@@ -540,8 +746,8 @@ struct NewIncidentFormView: View {
               let child = viewModel.assignableChildren.first(where: { $0.id == id }) else {
             return nil
         }
-        let fullName = "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
-        return fullName.isEmpty ? "Unnamed child" : fullName
+        let fullName = child.fullDisplayName
+        return fullName == "Child" ? "Unnamed child" : fullName
     }
 
     private var shouldShowChildDropdown: Bool {
@@ -555,8 +761,7 @@ struct NewIncidentFormView: View {
     private func childSelectionRow(for child: Child) -> some View {
         let id = child.id
         let isSelected = id != nil && id == selectedChildID
-        let fullName = "\(child.firstName ?? "") \(child.lastName ?? "")".trimmingCharacters(in: .whitespaces)
-        let displayName = fullName.isEmpty ? "Unnamed child" : fullName
+        let displayName = child.fullDisplayName == "Child" ? "Unnamed child" : child.fullDisplayName
 
         return Button {
             selectedChildID = id
@@ -644,7 +849,7 @@ struct NewIncidentFormView: View {
         await viewModel.submit(incident: incident)
         try? await Task.sleep(nanoseconds: 900_000_000)
         await MainActor.run {
-            dismiss()
+            closeForm()
         }
     }
 }
