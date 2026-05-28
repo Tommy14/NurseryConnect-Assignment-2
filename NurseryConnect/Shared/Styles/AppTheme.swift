@@ -11,6 +11,7 @@
 // Date       Name        What has done
 // -----------------------------------------------------------------
 // 290326     Tommy1914   Created the file with rounded headings and semantic colours.
+// 300526     Tommy1914   Headings use SF Pro (default system design) instead of SF Pro Rounded.
 // 140426     Tommy1914   `ncRootScrollEdgeEffectForTopNavigation` for iOS 26 root lists.
 // 210426     Tommy1914   Stronger top scroll-edge style so nav-bar drag shows the same magnified glass response as the tab dock.
 // -----------------------------------------------------------------
@@ -19,19 +20,19 @@ import SwiftUI
 
 /// - Description: Central place for fonts and semantic colours used across SwiftUI screens.
 enum AppTheme {
-    /// - Description: Friendly rounded style for major headings (SF Pro Rounded via design).
+    /// - Description: Major headings using SF Pro via the default system design.
     static func headlineRounded() -> Font {
-        .system(.title2, design: .rounded).weight(.semibold)
+        .system(.title2, design: .default).weight(.semibold)
     }
 
     /// - Description: Large greeting style for the dashboard banner.
     static func greetingRounded() -> Font {
-        .system(.title, design: .rounded).weight(.bold)
+        .system(.title, design: .default).weight(.bold)
     }
 
-    /// - Description: Secondary rounded title for section headers.
+    /// - Description: Secondary title for section headers.
     static func titleRounded() -> Font {
-        .system(.title3, design: .rounded).weight(.semibold)
+        .system(.title3, design: .default).weight(.semibold)
     }
 
     /// - Description: Body text uses default SF Pro via semantic text styles.
@@ -63,6 +64,14 @@ enum AppTheme {
 }
 
 extension View {
+    /// - Description: Uppercase section overline (e.g. “TODAY”, “INBOX SCOPE”) used on dashboard and incidents.
+    func ncSectionOverlineStyle() -> some View {
+        font(.caption2.weight(.heavy))
+            .tracking(1.1)
+            .textCase(.uppercase)
+            .foregroundStyle(.secondary)
+    }
+
     /// - Description: Enables the top scroll-edge/nav-bar drag response on root scroll views where this modifier is applied.
     @ViewBuilder
     func ncRootScrollEdgeEffectForTopNavigation() -> some View {

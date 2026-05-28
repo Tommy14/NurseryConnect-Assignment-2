@@ -42,7 +42,7 @@ struct ChildAvatarView: View {
     var body: some View {
         let fontSize = max(12, dimension * 0.33)
         Text(initials)
-            .font(.system(size: fontSize, weight: .semibold, design: .rounded))
+            .font(.system(size: fontSize, weight: .semibold, design: .default))
             .foregroundStyle(Color.primary.opacity(0.85))
             .frame(width: dimension, height: dimension)
             .background(background)
