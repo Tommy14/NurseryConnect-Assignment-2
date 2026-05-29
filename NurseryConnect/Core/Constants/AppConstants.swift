@@ -89,6 +89,9 @@ enum AppConstants {
     /// - Description: Standard card corner radius (points).
     static let cardCornerRadius: CGFloat = 16
 
+    /// - Description: visionOS window corner radius — continuous curve matching iOS window glass.
+    static let spatialWindowCornerRadius: CGFloat = 28
+
     /// - Description: Corner radius for roster search fields (dashboard and sidebar).
     static let searchFieldCornerRadius: CGFloat = 12
 

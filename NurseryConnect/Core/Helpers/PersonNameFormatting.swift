@@ -29,12 +29,14 @@ enum PersonNameFormatting {
     }
 }
 
+#if os(iOS)
 extension KeyworkerChildSummary {
     /// - Description: Legal/full name for roster, journal chrome, and analytics labels.
     var fullName: String {
         PersonNameFormatting.fullName(first: firstName, last: lastName)
     }
 }
+#endif
 
 extension Child {
     /// - Description: Legal/full name for incidents, messaging, and profile headers.
