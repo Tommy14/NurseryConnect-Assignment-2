@@ -14,6 +14,7 @@
 // 100426     Tommy1914   Keyworker fix-up and single save after seed.
 // 140426     Tommy1914   Extended seed rows with profile fields (address, EYFS, consents, collectors).
 // 140426     Tommy1914   Removed child gender field from model and seed data.
+// 040626     Tommy1914   Added visionOS spatial demo store with all-success presentation data.
 // -----------------------------------------------------------------
 
 import CoreData
@@ -46,16 +47,86 @@ enum DataSeeder {
         }
     }
 
+    /// - Description: Seeds the in-memory visionOS store with presentation-friendly “all green” metrics.
+    /// - Parameters:
+    ///   - context: Spatial app view context (always in-memory).
+    static func seedSpatialDemoStore(in context: NSManagedObjectContext) {
+        seedPreviewData(in: context)
+        seedDemoWellbeingIfNeeded(in: context)
+        applySpatialDemoSuccessState(in: context)
+        do {
+            try context.save()
+        } catch {
+            assertionFailure("Spatial demo seed failed: \(error.localizedDescription)")
+        }
+    }
+
     /// - Description: Inserts preview-only children for SwiftUI previews (in-memory contexts).
     /// - Parameters:
     ///   - context: Context used by preview stacks.
     static func seedPreviewData(in context: NSManagedObjectContext) {
         insertSampleChildren(into: context)
         seedDemoMessagesIfNeeded(in: context)
+        seedDemoWellbeingIfNeeded(in: context)
         do {
             try context.save()
         } catch {
             assertionFailure("Preview seed failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// - Description: Inserts seven-day wellbeing mood trends and today's diary entries for spatial/chart demos.
+    /// - Parameters:
+    ///   - context: Managed object context.
+    static func seedDemoWellbeingIfNeeded(in context: NSManagedObjectContext) {
+        do {
+            let childFetch: NSFetchRequest<Child> = Child.fetchRequest()
+            childFetch.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
+            childFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+            let children = try context.fetch(childFetch)
+            guard !children.isEmpty else { return }
+
+            let calendar = Calendar.current
+            let today = Date().startOfDay
+            let moodPatterns: [[Int16]] = [
+                [3, 3, 4, 4, 3, 4, 5],
+                [4, 3, 2, 3, 4, 4, 3],
+                [5, 4, 4, 3, 3, 4, 5]
+            ]
+
+            for (index, child) in children.prefix(3).enumerated() {
+                guard let childID = child.id else { continue }
+                let wellbeingFetch: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+                wellbeingFetch.fetchLimit = 1
+                wellbeingFetch.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                    NSPredicate(format: "child.id == %@", childID as CVarArg),
+                    NSPredicate(format: "entryType == %@", DiaryEntryType.wellbeing.persistenceValue)
+                ])
+                guard try context.count(for: wellbeingFetch) == 0 else { continue }
+
+                let pattern = moodPatterns[index % moodPatterns.count]
+                for dayOffset in 0..<7 {
+                    guard let day = calendar.date(byAdding: .day, value: -(6 - dayOffset), to: today) else { continue }
+                    let entry = DiaryEntry(context: context)
+                    entry.id = UUID()
+                    entry.child = child
+                    entry.entryType = DiaryEntryType.wellbeing.persistenceValue
+                    entry.moodRating = pattern[dayOffset]
+                    entry.timestamp = calendar.date(byAdding: .hour, value: 9, to: day) ?? day
+                    entry.notes = "Wellbeing observation"
+                    entry.syncState = "synced"
+                }
+
+                if index == 0 {
+                    insertTodayDiaryDemo(for: child, on: today, in: context)
+                }
+            }
+
+            if context.hasChanges {
+                try context.save()
+            }
+        } catch {
+            assertionFailure("Wellbeing seed failed: \(error.localizedDescription)")
         }
     }
 
@@ -456,6 +527,68 @@ enum DataSeeder {
         seedTodayMarkedAbsentDemo(in: context)
     }
 
+    /// - Description: Ensures several children appear checked in today so spatial catering and manager views have on-site counts.
+    static func seedSpatialCateringDemoIfNeeded(in context: NSManagedObjectContext) {
+        if hasOnSiteChildrenToday(in: context) { return }
+
+        let key = "com.nurseryconnect.hasSeededSpatialCatering"
+        guard !UserDefaults.standard.bool(forKey: key) else {
+            seedTodayCheckInsForSpatialDemo(in: context)
+            try? context.save()
+            return
+        }
+        seedTodayCheckInsForSpatialDemo(in: context)
+        try? context.save()
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
+    private static func hasOnSiteChildrenToday(in context: NSManagedObjectContext) -> Bool {
+        let dayStart = Date().startOfDay
+        let request: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "dayStart == %@", dayStart as NSDate),
+            NSPredicate(format: "checkInAt != nil"),
+            NSPredicate(format: "checkOutAt == nil"),
+            NSPredicate(format: "markedAbsent == NO")
+        ])
+        return ((try? context.count(for: request)) ?? 0) > 0
+    }
+
+    private static func seedTodayCheckInsForSpatialDemo(in context: NSManagedObjectContext) {
+        let dayStart = Date().startOfDay
+        let calendar = Calendar.current
+        let checkIn = calendar.date(byAdding: .hour, value: 8, to: dayStart) ?? dayStart
+
+        let request: NSFetchRequest<Child> = Child.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+        request.fetchLimit = 6
+        guard let children = try? context.fetch(request) else { return }
+
+        for child in children {
+            let existing: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+            existing.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "child == %@", child),
+                NSPredicate(format: "dayStart == %@", dayStart as NSDate)
+            ])
+            existing.fetchLimit = 1
+            if let row = try? context.fetch(existing).first {
+                if row.markedAbsent { continue }
+                if row.checkInAt == nil {
+                    row.checkInAt = checkIn
+                    row.markedAbsent = false
+                }
+                continue
+            }
+            let record = AttendanceRecord(context: context)
+            record.id = UUID()
+            record.dayStart = dayStart
+            record.child = child
+            record.checkInAt = checkIn
+            record.markedAbsent = false
+            record.droppedOffBy = "Demo drop-off"
+        }
+    }
+
     /// - Description: Gives one seeded child an `AttendanceRecord` for today with `markedAbsent` so the dashboard “Absent today” section is visible on first launch.
     private static func seedTodayMarkedAbsentDemo(in context: NSManagedObjectContext) {
         let request: NSFetchRequest<Child> = Child.fetchRequest()
@@ -483,6 +616,351 @@ enum DataSeeder {
         record.child = child
         record.droppedOffBy = ""
         record.markedAbsent = true
+    }
+
+    /// - Description: Inserts meal, sleep, and activity entries for today's end-of-day summary demo.
+    private static func insertTodayDiaryDemo(for child: Child, on dayStart: Date, in context: NSManagedObjectContext) {
+        insertTodayCareLogDemo(for: child, on: dayStart, in: context)
+        let calendar = Calendar.current
+
+        let arrivalWellbeing = DiaryEntry(context: context)
+        arrivalWellbeing.id = UUID()
+        arrivalWellbeing.child = child
+        arrivalWellbeing.entryType = DiaryEntryType.wellbeing.persistenceValue
+        arrivalWellbeing.moodRating = 4
+        arrivalWellbeing.timestamp = calendar.date(byAdding: .hour, value: 8, to: dayStart) ?? dayStart
+        arrivalWellbeing.notes = "Settled quickly on arrival"
+        arrivalWellbeing.syncState = "synced"
+    }
+
+    private static func insertTodayCareLogDemo(for child: Child, on dayStart: Date, in context: NSManagedObjectContext) {
+        let calendar = Calendar.current
+
+        let meal = DiaryEntry(context: context)
+        meal.id = UUID()
+        meal.child = child
+        meal.entryType = DiaryEntryType.meal.persistenceValue
+        meal.mealDescription = "Vegetable pasta"
+        meal.mealConsumed = "Most"
+        meal.timestamp = calendar.date(byAdding: .hour, value: 12, to: dayStart) ?? dayStart
+        meal.syncState = "synced"
+
+        let sleep = DiaryEntry(context: context)
+        sleep.id = UUID()
+        sleep.child = child
+        sleep.entryType = DiaryEntryType.sleep.persistenceValue
+        sleep.duration = 75
+        sleep.timestamp = calendar.date(byAdding: .hour, value: 13, to: dayStart) ?? dayStart
+        sleep.syncState = "synced"
+
+        let activity = DiaryEntry(context: context)
+        activity.id = UUID()
+        activity.child = child
+        activity.entryType = DiaryEntryType.activity.persistenceValue
+        activity.activityType = "Outdoor play"
+        activity.notes = "Explored the sand pit and water table."
+        activity.timestamp = calendar.date(byAdding: .hour, value: 10, to: dayStart) ?? dayStart
+        activity.syncState = "synced"
+    }
+
+    // MARK: - Spatial demo (visionOS)
+
+    /// Positive seven-day mood scores for volumetric chart and welfare review (average ≥ 2.5).
+    private static let spatialDemoMoodPattern: [Int16] = [4, 4, 5, 4, 5, 5, 5]
+
+    /// - Description: Normalises seeded data so spatial dashboards show zero alerts, full attendance, and complete diaries.
+    private static func applySpatialDemoSuccessState(in context: NSManagedObjectContext) {
+        do {
+            let children = try context.fetch(Child.fetchRequest())
+            for child in children {
+                child.photoConsent = true
+            }
+
+            try ensureAllChildrenCheckedInToday(in: context)
+            try ensureSpatialWellbeingTrends(in: context)
+            try ensureSpatialTodayDiariesComplete(in: context)
+            try markAllMessagesRead(in: context)
+            try seedSpatialEngagementMessagesIfNeeded(in: context)
+            try seedSpatialDemoIncidentsIfNeeded(in: context)
+        } catch {
+            assertionFailure("Spatial success state failed: \(error.localizedDescription)")
+        }
+    }
+
+    private static func ensureAllChildrenCheckedInToday(in context: NSManagedObjectContext) throws {
+        let dayStart = Date().startOfDay
+        let calendar = Calendar.current
+        let checkIn = calendar.date(byAdding: .hour, value: 8, to: dayStart) ?? dayStart
+        let children = try context.fetch(Child.fetchRequest())
+
+        for child in children {
+            let existing: NSFetchRequest<AttendanceRecord> = AttendanceRecord.fetchRequest()
+            existing.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "child == %@", child),
+                NSPredicate(format: "dayStart == %@", dayStart as NSDate)
+            ])
+            existing.fetchLimit = 1
+            let record = try context.fetch(existing).first ?? {
+                let row = AttendanceRecord(context: context)
+                row.id = UUID()
+                row.dayStart = dayStart
+                row.child = child
+                return row
+            }()
+            record.markedAbsent = false
+            record.checkOutAt = nil
+            if record.checkInAt == nil {
+                record.checkInAt = checkIn
+            }
+            if (record.droppedOffBy ?? "").isEmpty {
+                record.droppedOffBy = "Demo drop-off"
+            }
+        }
+    }
+
+    private static func ensureSpatialWellbeingTrends(in context: NSManagedObjectContext) throws {
+        let childFetch: NSFetchRequest<Child> = Child.fetchRequest()
+        childFetch.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
+        childFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+        let children = try context.fetch(childFetch)
+        guard !children.isEmpty else { return }
+
+        let calendar = Calendar.current
+        let today = Date().startOfDay
+
+        for child in children {
+            let wellbeingFetch: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+            wellbeingFetch.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "child == %@", child),
+                NSPredicate(format: "entryType == %@", DiaryEntryType.wellbeing.persistenceValue)
+            ])
+            wellbeingFetch.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.timestamp, ascending: true)]
+            let existing = try context.fetch(wellbeingFetch)
+
+            if existing.isEmpty {
+                for dayOffset in 0..<7 {
+                    guard let day = calendar.date(byAdding: .day, value: -(6 - dayOffset), to: today) else { continue }
+                    let entry = DiaryEntry(context: context)
+                    entry.id = UUID()
+                    entry.child = child
+                    entry.entryType = DiaryEntryType.wellbeing.persistenceValue
+                    entry.moodRating = spatialDemoMoodPattern[dayOffset]
+                    entry.timestamp = calendar.date(byAdding: .hour, value: 9, to: day) ?? day
+                    entry.notes = "Settled and engaged"
+                    entry.syncState = "synced"
+                }
+                continue
+            }
+
+            let lastSeven = Set(Date.lastSevenCalendarDays().map(\.startOfDay))
+            let inRange = existing.filter { entry in
+                guard let timestamp = entry.timestamp else { return false }
+                return lastSeven.contains(timestamp.startOfDay)
+            }
+            let grouped = Dictionary(grouping: inRange) { ($0.timestamp ?? .distantPast).startOfDay }
+            let sortedDays = grouped.keys.sorted()
+
+            if sortedDays.count < 7 {
+                for entry in inRange {
+                    context.delete(entry)
+                }
+                for dayOffset in 0..<7 {
+                    guard let day = calendar.date(byAdding: .day, value: -(6 - dayOffset), to: today) else { continue }
+                    let entry = DiaryEntry(context: context)
+                    entry.id = UUID()
+                    entry.child = child
+                    entry.entryType = DiaryEntryType.wellbeing.persistenceValue
+                    entry.moodRating = spatialDemoMoodPattern[dayOffset]
+                    entry.timestamp = calendar.date(byAdding: .hour, value: 9, to: day) ?? day
+                    entry.notes = "Settled and engaged"
+                    entry.syncState = "synced"
+                }
+                continue
+            }
+
+            for (index, day) in sortedDays.enumerated() {
+                let rating = spatialDemoMoodPattern[min(index, spatialDemoMoodPattern.count - 1)]
+                for entry in grouped[day] ?? [] {
+                    entry.moodRating = max(entry.moodRating, rating)
+                    entry.syncState = "synced"
+                }
+            }
+        }
+    }
+
+    private static func ensureSpatialTodayDiariesComplete(in context: NSManagedObjectContext) throws {
+        let childFetch: NSFetchRequest<Child> = Child.fetchRequest()
+        childFetch.predicate = NSPredicate(format: "keyworkerName == %@", AppConstants.keyworkerDisplayName)
+        childFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+        let children = try context.fetch(childFetch)
+        let today = Date().startOfDay
+
+        for child in children {
+            let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "child == %@", child),
+                NSPredicate(format: "timestamp >= %@ AND timestamp < %@", today as NSDate, today.endOfDay as NSDate)
+            ])
+            let entries = try context.fetch(request)
+            let types = Set(entries.compactMap { DiaryEntryType.fromPersistence($0.entryType ?? "") })
+            let hasWellbeing = types.contains(.wellbeing)
+            let hasCareLog = types.contains(.meal) || types.contains(.nappy) || types.contains(.activity)
+
+            if hasWellbeing && hasCareLog { continue }
+
+            if !hasWellbeing {
+                let arrival = DiaryEntry(context: context)
+                arrival.id = UUID()
+                arrival.child = child
+                arrival.entryType = DiaryEntryType.wellbeing.persistenceValue
+                arrival.moodRating = 5
+                arrival.timestamp = Calendar.current.date(byAdding: .hour, value: 8, to: today) ?? today
+                arrival.notes = "Happy and settled on arrival"
+                arrival.syncState = "synced"
+            }
+
+            if !hasCareLog {
+                insertTodayCareLogDemo(for: child, on: today, in: context)
+            }
+        }
+    }
+
+    private static func markAllMessagesRead(in context: NSManagedObjectContext) throws {
+        let request: NSFetchRequest<Message> = Message.fetchRequest()
+        request.predicate = NSPredicate(format: "isRead == NO")
+        let unread = try context.fetch(request)
+        for message in unread {
+            message.isRead = true
+        }
+    }
+
+    /// - Description: Inserts today’s demo incidents for spatial keyworker and Setting Manager dashboards.
+    private static func seedSpatialDemoIncidentsIfNeeded(in context: NSManagedObjectContext) throws {
+        let check: NSFetchRequest<Incident> = Incident.fetchRequest()
+        check.fetchLimit = 1
+        guard try context.count(for: check) == 0 else { return }
+
+        let childFetch: NSFetchRequest<Child> = Child.fetchRequest()
+        childFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Child.firstName, ascending: true)]
+        let children = try context.fetch(childFetch)
+        func child(named firstName: String) -> Child? {
+            children.first { $0.firstName == firstName }
+        }
+
+        guard let kavi = child(named: "Kavindu"),
+              let yeil = child(named: "Yeil"),
+              let theo = child(named: "Theo") else { return }
+
+        let calendar = Calendar.current
+        let today = Date().startOfDay
+
+        insertSpatialDemoIncident(
+            child: kavi,
+            category: "nearMiss",
+            severity: "nearMiss",
+            status: "managerReviewed",
+            parentNotified: false,
+            managerCountersigned: true,
+            riddorRequired: false,
+            timestamp: calendar.date(byAdding: .hour, value: 10, to: today) ?? today,
+            location: "Outdoor play area",
+            incidentDescription: "Child tripped on edging; no injury. Area cordoned and surface checked.",
+            action: "Comforted child, brief observation, parent informed at collection.",
+            in: context
+        )
+        insertSpatialDemoIncident(
+            child: yeil,
+            category: "accidentMinor",
+            severity: "minor",
+            status: "parentNotified",
+            parentNotified: true,
+            managerCountersigned: true,
+            riddorRequired: false,
+            timestamp: calendar.date(byAdding: .hour, value: 11, to: today) ?? today,
+            location: "Sunshine Room",
+            incidentDescription: "Small graze on knee during free play; cleaned and plaster applied.",
+            action: "First aid completed; accident form shared with parent via secure message.",
+            in: context
+        )
+        insertSpatialDemoIncident(
+            child: theo,
+            category: "accidentFirstAid",
+            severity: "requiresFirstAid",
+            status: "submitted",
+            parentNotified: false,
+            managerCountersigned: false,
+            riddorRequired: false,
+            timestamp: calendar.date(byAdding: .hour, value: 9, to: today) ?? today,
+            location: "Soft play",
+            incidentDescription: "Bump to forehead from low-height tumble; ice pack applied, child calm.",
+            action: "Monitored for 20 minutes; manager review requested.",
+            in: context
+        )
+    }
+
+    private static func insertSpatialDemoIncident(
+        child: Child,
+        category: String,
+        severity: String,
+        status: String,
+        parentNotified: Bool,
+        managerCountersigned: Bool,
+        riddorRequired: Bool,
+        timestamp: Date,
+        location: String,
+        incidentDescription: String,
+        action: String,
+        in context: NSManagedObjectContext
+    ) {
+        let incident = Incident(context: context)
+        incident.id = UUID()
+        incident.child = child
+        incident.category = category
+        incident.severity = severity
+        incident.status = status
+        incident.timestamp = timestamp
+        incident.location = location
+        incident.incidentDescription = incidentDescription
+        incident.immediateActionTaken = action
+        incident.witnesses = "Demo keyworker on duty"
+        incident.riddorRequired = riddorRequired
+        incident.isParentNotified = parentNotified
+        incident.managerCountersigned = managerCountersigned
+        incident.syncState = "synced"
+    }
+
+    /// - Description: Spreads parent messages across the last seven days so the engagement chart is populated during spatial demos.
+    private static func seedSpatialEngagementMessagesIfNeeded(in context: NSManagedObjectContext) throws {
+        let childIDs = try KeyworkerGDPRScope.assignedChildIDs(in: context)
+        let threadIDs = try MessagingGDPRScope.assignedThreadIDs(childIDs: childIDs, in: context)
+        guard let threadID = threadIDs.first else { return }
+
+        let calendar = Calendar.current
+        let today = Date().startOfDay
+
+        for dayOffset in 0..<7 {
+            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+            let check: NSFetchRequest<Message> = Message.fetchRequest()
+            check.fetchLimit = 1
+            check.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "threadID == %@", threadID as CVarArg),
+                NSPredicate(format: "senderRole == %@", MessageSenderRole.parent.persistenceValue),
+                NSPredicate(format: "sentAt >= %@ AND sentAt < %@", day as NSDate, dayEnd as NSDate)
+            ])
+            guard try context.count(for: check) == 0 else { continue }
+
+            insertMessage(
+                threadID: threadID,
+                senderRole: MessageSenderRole.parent.persistenceValue,
+                senderDisplayName: "Demo parent",
+                body: "Thanks for today's update — all good at home.",
+                sentAt: calendar.date(byAdding: .hour, value: 10, to: day) ?? day,
+                isRead: true,
+                messageType: MessageType.message.persistenceValue,
+                in: context
+            )
+        }
     }
 }
 

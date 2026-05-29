@@ -140,6 +140,8 @@ struct DiaryEntryDetailView: View {
             .padding()
             .padding(.bottom, 96)
         }
+        .blur(radius: showCorrectionSheet ? 7 : 0)
+        .animation(.easeInOut(duration: 0.2), value: showCorrectionSheet)
         .scrollIndicators(.hidden)
         .background(Color.ncBackground.ignoresSafeArea())
         .navigationTitle("Diary entry")

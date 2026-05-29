@@ -96,11 +96,17 @@ struct ChildJournalSegmentBar: View {
     @ViewBuilder
     private var trailingChromeControls: some View {
         if let syncStatusLabel {
-            Text(syncStatusLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .frame(minWidth: chromeButtonWidth, alignment: .trailing)
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.ncSecondary)
+                    .accessibilityHidden(true)
+                Text(syncStatusLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(minWidth: chromeButtonWidth, alignment: .trailing)
         } else {
             Color.clear
                 .frame(width: chromeButtonWidth, height: chromeButtonWidth)

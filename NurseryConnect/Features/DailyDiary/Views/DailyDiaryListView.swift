@@ -41,6 +41,7 @@ struct DailyDiaryListView: View {
     @Binding private var externalAddSheetTrigger: Bool
     private var highlightedEntryType: DiaryEntryType?
     private var showsAnalyticsSummary: Bool
+    private var allowsAddingEntries: Bool
     @State private var addSheet: AddDiarySheet?
     @State private var timelineClock = Date()
     @State private var showCheckInRequiredAlert = false
@@ -74,12 +75,14 @@ struct DailyDiaryListView: View {
         presentationStyle: DailyDiaryPresentationStyle = .phoneNavigation,
         externalAddSheetTrigger: Binding<Bool> = .constant(false),
         highlightedEntryType: DiaryEntryType? = nil,
-        showsAnalyticsSummary: Bool = true
+        showsAnalyticsSummary: Bool = true,
+        allowsAddingEntries: Bool = true
     ) {
         self.summary = summary
         self.presentationStyle = presentationStyle
         self.highlightedEntryType = highlightedEntryType
         self.showsAnalyticsSummary = showsAnalyticsSummary
+        self.allowsAddingEntries = allowsAddingEntries
         _externalAddSheetTrigger = externalAddSheetTrigger
         _viewModel = StateObject(wrappedValue: DailyDiaryViewModel(childID: summary.id, context: managedObjectContext))
         _attendanceViewModel = StateObject(wrappedValue: AttendanceViewModel(childID: summary.id, context: managedObjectContext))
@@ -188,44 +191,48 @@ struct DailyDiaryListView: View {
             .scrollIndicators(.hidden)
             .scrollContentBackground(.hidden)
 
-            Button {
-                guard canLogObservations else {
-                    presentLoggingBlockedFeedback()
-                    return
-                }
-                addSheet = .freeform
-            } label: {
-                Image(systemName: "plus")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.ncPrimary, Color.ncGlowBlue],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            if allowsAddingEntries {
+                Button {
+                    guard canLogObservations else {
+                        presentLoggingBlockedFeedback()
+                        return
+                    }
+                    addSheet = .freeform
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.white)
+                        .frame(width: 56, height: 56)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.ncPrimary, Color.ncGlowBlue],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                    .shadow(color: Color.ncPrimary.opacity(0.35), radius: 10, x: 0, y: 6)
-                    .opacity(canLogObservations ? 1.0 : 0.42)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.ncPrimary.opacity(0.35), radius: 10, x: 0, y: 6)
+                        .opacity(canLogObservations ? 1.0 : 0.42)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 16 + (usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance : 0))
+                .accessibilityIdentifier(AppConstants.AccessibilityID.addDiaryFAB)
+                .accessibilityLabel("Add diary entry")
+                .accessibilityHint(
+                    canLogObservations
+                        ? "Opens the form to log a new diary observation."
+                        : (attendanceViewModel.phase == .absent
+                            ? "Clear absent status and check the child in before logging."
+                            : attendanceViewModel.phase != .onPremises
+                            ? "Check the child in on site before logging. Add is unavailable after check-out."
+                            : "Diary logging is only available during nursery hours (session start through two hours after closing).")
+                )
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 16 + (usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance : 0))
-            .accessibilityIdentifier(AppConstants.AccessibilityID.addDiaryFAB)
-            .accessibilityLabel("Add diary entry")
-            .accessibilityHint(
-                canLogObservations
-                    ? "Opens the form to log a new diary observation."
-                    : (attendanceViewModel.phase == .absent
-                        ? "Clear absent status and check the child in before logging."
-                        : attendanceViewModel.phase != .onPremises
-                        ? "Check the child in on site before logging. Add is unavailable after check-out."
-                        : "Diary logging is only available during nursery hours (session start through two hours after closing).")
-            )
         }
+        .blur(radius: addSheet == nil ? 0 : 7)
+        .animation(.easeInOut(duration: 0.2), value: addSheet != nil)
         .ncStudioScreenBackdropUnlessChildWorkspace()
         .modifier(DailyDiaryNavigationChrome(presentationStyle: presentationStyle, summary: summary, context: context))
         .sheet(item: $addSheet) { sheet in

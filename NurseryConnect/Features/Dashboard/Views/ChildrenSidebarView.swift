@@ -30,20 +30,28 @@ struct ChildrenSidebarView: View {
     @State private var trackedDayStart = Date().startOfDay
 
     private let chromeButtonWidth: CGFloat = 44
+    private let sidebarHorizontalMargin: CGFloat = 12
 
     var body: some View {
         sidebarList
             .listStyle(.plain)
             .listRowSeparator(.hidden)
+            .listSectionSeparator(.hidden)
             .listSectionSpacing(18)
+            .contentMargins(.leading, 0, for: .scrollContent)
             .scrollContentBackground(.hidden)
-            .ncStudioScreenBackdrop()
+            .background(
+                Color(red: 0.90, green: 0.91, blue: 0.96)
+                    .ignoresSafeArea()
+            )
             .ncRootScrollEdgeEffectForTopNavigation()
             .navigationTitle(AppConstants.navTitleKeyworkerChildrenList)
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar { sidebarToolbar }
             .toolbar(removing: .sidebarToggle)
+            .blur(radius: isKeyworkerProfilePresented ? 5 : 0)
+            .animation(.easeInOut(duration: 0.2), value: isKeyworkerProfilePresented)
             .task { await loadSidebarData() }
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { tick in
                 currentDate = tick
@@ -108,11 +116,17 @@ struct ChildrenSidebarView: View {
                 )
                 .listRowBackground(Color.clear)
             } else {
-                Section {
-                    NCSearchField(text: $childSearchText)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                        .listRowBackground(Color.clear)
-                }
+                NCSearchField(text: $childSearchText)
+                    .listRowInsets(
+                        EdgeInsets(
+                            top: 4,
+                            leading: sidebarHorizontalMargin,
+                            bottom: 4,
+                            trailing: sidebarHorizontalMargin
+                        )
+                    )
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 childSections
             }
         }
@@ -194,7 +208,14 @@ struct ChildrenSidebarView: View {
             )
         }
         .buttonStyle(.plain)
-        .listRowInsets(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
+        .listRowInsets(
+            EdgeInsets(
+                top: 8,
+                leading: sidebarHorizontalMargin,
+                bottom: 8,
+                trailing: sidebarHorizontalMargin
+            )
+        )
         .listRowSeparator(.hidden)
         .id(summary.dashboardRowIdentity)
     }
