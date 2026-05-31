@@ -19,14 +19,15 @@ struct KeyworkerProfileView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
+                profileHeaderBar
                 hero
-                ProfileInfoRow(
+                profileInfoCard(
                     title: "Role",
                     text: "Keyworker",
                     symbol: "person.fill"
                 )
-                ProfileInfoRow(
+                profileInfoCard(
                     title: "Setting",
                     text: AppConstants.nurseryDisplayName,
                     symbol: "building.2.fill"
@@ -34,8 +35,8 @@ struct KeyworkerProfileView: View {
                 NavigationLink {
                     LegalComplianceView()
                 } label: {
-                    ProfileInfoRow(
-                        title: ComplianceContent.legalScreenTitle,
+                    profileInfoCard(
+                        title: "Legal & Compliance",
                         text: "EYFS, Ofsted, RIDDOR, and UK GDPR visibility",
                         symbol: "doc.text.magnifyingglass"
                     )
@@ -43,52 +44,27 @@ struct KeyworkerProfileView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(AppConstants.AccessibilityID.legalComplianceEntry)
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
             .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 8 : 24)
         }
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ncStudioFullBackdrop()
-        .navigationTitle("My profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .background(profileSheetBackground.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var hero: some View {
         HStack(alignment: .center, spacing: 16) {
             Text(initials(from: AppConstants.keyworkerDisplayName))
                 .font(.title.weight(.bold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.ncPrimary, Color.ncGlowBlue],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .foregroundStyle(Color.ncPrimary.opacity(0.9))
                 .frame(width: 56, height: 56)
                 .background(
                     Circle()
-                        .fill(Color.ncPrimary.opacity(0.12))
+                        .fill(Color.ncPrimary.opacity(0.16))
                 )
-                .overlay {
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.ncGlassHighlight(lightOpacity: 0.65), Color.ncPrimary.opacity(0.25)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppConstants.keyworkerDisplayName)
                     .font(AppTheme.greetingRounded())
@@ -104,13 +80,83 @@ struct KeyworkerProfileView: View {
                         .foregroundStyle(Color.ncPrimary)
                 }
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .ncStudioElevatedSurface(cornerRadius: 20)
+        .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.ncPrimary.opacity(0.25), lineWidth: 1.2)
+        }
+    }
+
+    private var profileHeaderBar: some View {
+        ZStack {
+            Text("My profile")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            HStack {
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.primary.opacity(0.78))
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.55))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
+            }
+        }
+    }
+
+    private func profileInfoCard(title: String, text: String, symbol: String) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.ncPrimary.opacity(0.86))
+                .frame(width: 30)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.caption.weight(.bold))
+                    .textCase(.uppercase)
+                    .tracking(1.1)
+                    .foregroundStyle(.secondary)
+                Text(text)
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.ncPrimary.opacity(0.23), lineWidth: 1.1)
+        }
+    }
+
+    private var profileSheetBackground: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.82, green: 0.9, blue: 0.97),
+                Color(red: 0.79, green: 0.87, blue: 0.94)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     private func initials(from fullName: String) -> String {
@@ -139,6 +185,8 @@ struct KeyworkerProfileSheet: View {
             NCStudioFullBackdropView()
         }
         .presentationDragIndicator(.visible)
+        .presentationDetents([.fraction(0.82)])
+        .presentationCornerRadius(34)
     }
 }
 

@@ -16,31 +16,6 @@ struct ChildSidebarRowView: View {
     var isSelected: Bool = false
     var currentDate: Date = Date()
 
-    private var allergiesTrimmed: String {
-        summary.allergies.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var shouldShowAttendanceWarnings: Bool {
-        summary.attendanceBucket == .onSite
-    }
-
-    private var shouldFlashAllergies: Bool {
-        !allergiesTrimmed.isEmpty && NurseryDaySchedule.isWithinMinutesBeforeAnyMealEnd(reference: currentDate)
-    }
-
-    private var shouldShowAllergies: Bool {
-        shouldShowAttendanceWarnings
-            && !allergiesTrimmed.isEmpty
-            && NurseryDaySchedule.isWithinMealVisibilityWindow(reference: currentDate, minutesBeforeStart: 5)
-    }
-
-    private var moodTint: Color { AppTheme.diaryColor(for: .wellbeing) }
-
-    private var moodStep: Int {
-        guard let rating = summary.latestMoodRating, rating > 0 else { return 0 }
-        return min(5, max(1, Int(rating)))
-    }
-
     private var attendanceCapsuleTint: Color {
         switch summary.attendanceBucket {
         case .onSite: return Color.ncSecondary
@@ -66,8 +41,16 @@ struct ChildSidebarRowView: View {
         }
     }
 
-    private var shouldShowDiaryStatusCapsule: Bool {
-        !(summary.dot == .none && summary.attendanceBucket != .onSite)
+    private var shouldShowNoLogsWarning: Bool {
+        summary.attendanceBucket != .absent && summary.dot == .none
+    }
+
+    private var shouldShowNoPhotographyWarning: Bool {
+        summary.attendanceBucket == .onSite && !summary.photoConsent
+    }
+
+    private var shouldShowDiaryStatusPill: Bool {
+        summary.attendanceBucket != .absent
     }
 
     private var cardShape: RoundedRectangle {
@@ -75,149 +58,90 @@ struct ChildSidebarRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            accentRail
+        HStack(alignment: .center, spacing: 8) {
+            ChildAvatarView(
+                firstName: summary.firstName,
+                lastName: summary.lastName,
+                childId: summary.id,
+                showsAccentRing: false,
+                dimension: 36
+            )
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .center, spacing: 10) {
-                    ChildAvatarView(
-                        firstName: summary.firstName,
-                        lastName: summary.lastName,
-                        childId: summary.id,
-                        showsAccentRing: isSelected,
-                        dimension: 40
-                    )
+            VStack(alignment: .leading, spacing: 5) {
+                Text(compactDisplayName)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(summary.fullName)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.85)
-                            .multilineTextAlignment(.leading)
-
-                        if moodStep > 0 {
-                            moodHeartRow
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    VStack(alignment: .trailing, spacing: 5) {
-                        statusBadge
-
-                        if shouldShowDiaryStatusCapsule {
-                            diaryStatusPill
-                        }
-
-                        if shouldShowAllergies || (shouldShowAttendanceWarnings && summary.hasOpenIncident) {
-                            HStack(spacing: 6) {
-                                if shouldShowAllergies {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(Color.red.opacity(shouldFlashAllergies ? 1 : 0.88))
-                                        .accessibilityLabel("Allergy alert")
-                                }
-
-                                if shouldShowAttendanceWarnings && summary.hasOpenIncident {
-                                    Image(systemName: "exclamationmark.octagon.fill")
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(Color.ncDanger)
-                                        .accessibilityLabel("Open incident")
-                                }
-                            }
-                        }
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(sidebarRowAccessibilityLabel)
-
-                if shouldShowAttendanceWarnings && !summary.photoConsent {
-                    photoConsentWarningBanner
+                if shouldShowNoPhotographyWarning {
+                    noPhotographyIconPill(tint: Color.ncDanger)
                 }
             }
-            .padding(.leading, 12)
-            .padding(.trailing, 12)
-            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 5) {
+                statusBadge
+                HStack(spacing: 6) {
+                    if shouldShowDiaryStatusPill {
+                        diaryStatusPill
+                    }
+                }
+            }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background { tileBackground }
         .overlay { tileBorderOverlay }
         .clipShape(cardShape)
+        .shadow(
+            color: isSelected ? Color.ncPrimary.opacity(0.2) : Color.clear,
+            radius: isSelected ? 10 : 0,
+            x: 0,
+            y: isSelected ? 5 : 0
+        )
         .listRowBackground(Color.clear)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var tileBorderOverlay: some View {
-        ZStack {
-            cardShape
-                .strokeBorder(
-                    tileBorderGradient,
-                    lineWidth: isSelected ? 2.5 : 2
-                )
-            cardShape
-                .strokeBorder(
-                    Color.ncGlassHighlight(lightOpacity: isSelected ? 0.55 : 0.42),
-                    lineWidth: 1
-                )
-                .padding(1)
-        }
+    private var compactDisplayName: String {
+        let first = summary.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackFirst = first.isEmpty ? summary.preferredName.trimmingCharacters(in: .whitespacesAndNewlines) : first
+        let baseFirst = fallbackFirst.isEmpty ? "Child" : fallbackFirst
+        let lastInitial = summary.lastName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .first
+            .map { "\($0)." } ?? ""
+        return lastInitial.isEmpty ? baseFirst : "\(baseFirst) \(lastInitial)"
     }
 
-    private var tileBorderGradient: LinearGradient {
-        if isSelected {
-            return LinearGradient(
-                colors: [
-                    Color.ncPrimary,
-                    Color.ncGlowBlue.opacity(0.85),
-                    Color.ncGlowViolet.opacity(0.75)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+    private var tileBorderOverlay: some View {
+        cardShape
+            .strokeBorder(
+                isSelected ? Color.ncPrimary.opacity(0.65) : Color.secondary.opacity(0.14),
+                lineWidth: isSelected ? 2 : 1
             )
-        }
-        return LinearGradient(
-            colors: [
-                attendanceCapsuleTint.opacity(0.72),
-                Color.ncGlowBlue.opacity(0.55),
-                attendanceCapsuleTint.opacity(0.62)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
     }
 
     private var tileBackground: some View {
-        ZStack {
-            cardShape
-                .fill(Color.ncCardSurface)
-            cardShape
-                .fill(attendanceCapsuleTint.opacity(isSelected ? 0.07 : 0.05))
-        }
-    }
-
-    private var accentRail: some View {
-        Rectangle()
-            .fill(
-                LinearGradient(
-                    colors: [attendanceCapsuleTint, attendanceCapsuleTint.opacity(0.72)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .frame(width: 5)
+        cardShape
+            .fill(isSelected ? Color.ncPrimary.opacity(0.08) : Color.white)
     }
 
     private var statusBadge: some View {
         HStack(spacing: 4) {
             Circle()
                 .fill(attendanceCapsuleTint)
-                .frame(width: 6, height: 6)
+                .frame(width: 5, height: 5)
             Text(summary.attendanceBucket.cardTitle)
                 .font(.caption2.weight(.bold))
                 .lineLimit(1)
         }
         .foregroundStyle(attendanceCapsuleTint)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
         .background(
             Capsule(style: .continuous)
                 .fill(attendanceCapsuleTint.opacity(0.16))
@@ -229,59 +153,53 @@ struct ChildSidebarRowView: View {
     }
 
     private var diaryStatusPill: some View {
-        Text(diaryStatusTitle)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(dotColor)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(Capsule(style: .continuous).fill(dotColor.opacity(0.14)))
-    }
-
-    private var moodHeartRow: some View {
-        HStack(spacing: 3) {
-            ForEach(1 ... 5, id: \.self) { index in
-                Image(systemName: index <= moodStep ? "heart.fill" : "heart")
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(index <= moodStep ? moodTint : Color.secondary.opacity(0.35))
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private var sidebarRowAccessibilityLabel: String {
-        var parts = [summary.fullName, summary.attendanceBucket.cardTitle]
-        if moodStep > 0 { parts.append("Mood \(moodStep) of 5") }
-        if shouldShowDiaryStatusCapsule { parts.append("Diary \(diaryStatusTitle.lowercased())") }
-        if shouldShowAllergies { parts.append("Allergy alert") }
-        if summary.hasOpenIncident { parts.append("Open incident") }
-        return parts.joined(separator: ", ")
-    }
-
-    private var photoConsentWarningBanner: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "camera.fill")
-                .font(.caption2.weight(.semibold))
-            Text("NO PHOTOGRAPHY")
-                .font(.caption2.weight(.heavy))
+        HStack(spacing: 5) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.caption2.weight(.bold))
+            Text(diaryStatusTitle)
+                .font(.caption2.weight(.bold))
                 .lineLimit(1)
         }
-        .foregroundStyle(Color.red.opacity(0.96))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .frame(maxWidth: .infinity)
+        .foregroundStyle(dotColor)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
         .background(
             Capsule(style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.red.opacity(0.16), Color.red.opacity(0.1)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .fill(dotColor.opacity(0.14))
         )
-        .overlay(
+        .overlay {
             Capsule(style: .continuous)
-                .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                .strokeBorder(dotColor.opacity(0.24), lineWidth: 1)
+        }
+    }
+
+    private func noPhotographyIconPill(tint: Color) -> some View {
+        ZStack {
+            Image(systemName: "camera.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.primary.opacity(0.92))
+            Rectangle()
+                .fill(tint)
+                .frame(width: 11, height: 1.8)
+                .rotationEffect(.degrees(-35))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule(style: .continuous)
+                .fill(tint.opacity(0.14))
         )
+        .overlay {
+            Capsule(style: .continuous)
+                .strokeBorder(tint.opacity(0.24), lineWidth: 1)
+        }
+        .accessibilityLabel("No photography warning")
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["\(summary.fullName), \(summary.attendanceBucket.cardTitle)"]
+        if shouldShowNoLogsWarning { parts.append("No logs warning") }
+        if shouldShowNoPhotographyWarning { parts.append("No photography warning") }
+        return parts.joined(separator: ", ")
     }
 }

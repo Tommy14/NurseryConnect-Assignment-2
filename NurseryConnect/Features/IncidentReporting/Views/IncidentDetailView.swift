@@ -24,7 +24,6 @@ import SwiftUI
 struct IncidentDetailView: View {
     @ObservedObject var incident: Incident
     @ObservedObject var viewModel: IncidentViewModel
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.usesFloatingTabBarShell) private var usesFloatingTabBarShell
 
@@ -52,7 +51,7 @@ struct IncidentDetailView: View {
                 BodyMapView(isInteractive: false, annotations: $annotations, side: $side)
             }
             .padding()
-            .padding(.bottom, usesFloatingTabBarShell ? 12 : 0)
+            .padding(.bottom, usesFloatingTabBarShell ? AppConstants.floatingTabBarClearance + 24 : 24)
         }
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
@@ -62,19 +61,6 @@ struct IncidentDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.backward")
-                            .font(.body.weight(.semibold))
-                        Text("Incidents")
-                            .font(.body.weight(.semibold))
-                    }
-                }
-                .accessibilityLabel("Back to incidents")
-            }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if status == .draft {
                     Button("Edit") {

@@ -16,6 +16,11 @@ private enum KeyworkerIPadTrailingPanel {
     static let messageThreadWidth: CGFloat = 400
 }
 
+private enum KeyworkerCollapsedSidebarRail {
+    static let railWidth: CGFloat = 62
+    static let railHorizontalPadding: CGFloat = 14
+}
+
 /// - Description: Regular-width root presenting sidebar and a main workspace (content + optional trailing panel).
 struct KeyworkerIPadShellView: View {
     @Environment(\.managedObjectContext) private var context
@@ -59,6 +64,8 @@ struct KeyworkerIPadShellView: View {
                 .ncStudioScreenBackdrop()
             }
             .environment(\.usesFloatingTabBarShell, true)
+            .blur(radius: incidentComposerPresented ? 7 : 0)
+            .animation(.easeInOut(duration: 0.2), value: incidentComposerPresented)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if !incidentComposerPresented {
                     KeyworkerIPadBottomDock(
@@ -128,39 +135,50 @@ struct KeyworkerIPadShellView: View {
     }
 
     private var childrenWorkspace: some View {
-        VStack(spacing: 0) {
-            if let selectedSummary {
-                ChildJournalSegmentBar(
-                    selection: $coordinator.journalContentSegment,
-                    childDisplayName: selectedSummary.fullName,
-                    syncStatusLabel: coordinator.journalContentSegment == .charts
-                        ? nil
-                        : journalSyncStatusLabel,
-                    showsSidebarToggle: isChildrenSidebarHidden,
-                    onShowSidebar: showChildrenSidebar,
-                    isProfilePanelCollapsed: isProfilePanelCollapsed,
-                    onToggleProfile: toggleProfilePanel
-                )
-            } else if isChildrenSidebarHidden {
-                childrenEmptyChromeBar
-            }
-
-            HStack(spacing: 0) {
-                ChildJournalView(
-                    summary: selectedSummary,
-                    managedObjectContext: context,
-                    dashboardViewModel: dashboardViewModel,
-                    usesExternalSegmentBar: true,
-                    selectedSummary: $selectedSummary,
-                    segmentBarSyncStatus: $journalSyncStatusLabel
-                )
-                .id(selectedSummary?.id)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if let selectedSummary, !isProfilePanelCollapsed {
-                    childProfilePanel(for: selectedSummary)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+        ZStack(alignment: .leading) {
+            VStack(spacing: 0) {
+                if let selectedSummary {
+                    ChildJournalSegmentBar(
+                        selection: $coordinator.journalContentSegment,
+                        childDisplayName: selectedSummary.fullName,
+                        syncStatusLabel: coordinator.journalContentSegment == .charts
+                            ? nil
+                            : journalSyncStatusLabel,
+                        showsSidebarToggle: false,
+                        isProfilePanelCollapsed: isProfilePanelCollapsed,
+                        onToggleProfile: toggleProfilePanel
+                    )
                 }
+
+                HStack(spacing: 0) {
+                    ChildJournalView(
+                        summary: selectedSummary,
+                        managedObjectContext: context,
+                        dashboardViewModel: dashboardViewModel,
+                        usesExternalSegmentBar: true,
+                        selectedSummary: $selectedSummary,
+                        segmentBarSyncStatus: $journalSyncStatusLabel
+                    )
+                    .id(selectedSummary?.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    if let selectedSummary, !isProfilePanelCollapsed {
+                        childProfilePanel(for: selectedSummary)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
+                }
+            }
+            .padding(
+                .leading,
+                isChildrenSidebarHidden
+                    ? (KeyworkerCollapsedSidebarRail.railWidth + (KeyworkerCollapsedSidebarRail.railHorizontalPadding * 2))
+                    : 0
+            )
+
+            if isChildrenSidebarHidden {
+                minimizedChildrenSidebarRail
+                    .padding(.leading, KeyworkerCollapsedSidebarRail.railHorizontalPadding)
+                    .padding(.vertical, 12)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: isProfilePanelCollapsed)
@@ -199,21 +217,77 @@ struct KeyworkerIPadShellView: View {
         }
     }
 
-    private var childrenEmptyChromeBar: some View {
-        HStack(spacing: 0) {
+    private var minimizedChildrenSidebarRail: some View {
+        VStack(spacing: 10) {
+            Image("NurseryConnectNavLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 26, height: 26)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(Color.white.opacity(0.62))
+                )
+
             Button(action: showChildrenSidebar) {
                 Image(systemName: "sidebar.leading")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.ncPrimary)
+                    .foregroundStyle(Color.primary.opacity(0.72))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Show children list")
-            Spacer(minLength: 0)
+
+            Divider()
+                .overlay(Color.primary.opacity(0.08))
+                .padding(.horizontal, 9)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 12) {
+                    ForEach(sortedChildSummaries) { summary in
+                        Button {
+                            selectedSummary = summary
+                        } label: {
+                            ChildAvatarView(
+                                firstName: summary.firstName,
+                                lastName: summary.lastName,
+                                childId: summary.id,
+                                showsAccentRing: selectedSummary?.id == summary.id,
+                                dimension: 48
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Select \(summary.fullName)")
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 2)
+            }
+
+            RoundedRectangle(cornerRadius: 999, style: .continuous)
+                .fill(Color.primary.opacity(0.22))
+                .frame(width: 38, height: 8)
+                .padding(.bottom, 4)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 4)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .frame(width: KeyworkerCollapsedSidebarRail.railWidth)
+        .frame(maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color.white.opacity(0.62))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 8)
+    }
+
+    private var sortedChildSummaries: [KeyworkerChildSummary] {
+        dashboardViewModel.childSummaries.sorted {
+            $0.fullName.localizedCaseInsensitiveCompare($1.fullName) == .orderedAscending
+        }
     }
 
     private func selectSection(_ newSection: KeyworkerIPadSection) {

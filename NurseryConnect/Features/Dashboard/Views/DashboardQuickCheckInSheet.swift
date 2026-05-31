@@ -83,6 +83,8 @@ struct DashboardQuickCheckInSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
+        .presentationDetents([.height(340), .medium])
+        .presentationCornerRadius(28)
         .task {
             await attendanceViewModel.load()
             if let first = attendanceViewModel.authorisedCollectorLines.first {
