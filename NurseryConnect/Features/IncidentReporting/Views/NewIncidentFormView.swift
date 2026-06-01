@@ -76,7 +76,7 @@ struct NewIncidentFormView: View {
                                 }
                             }
                             ToolbarItem(placement: .confirmationAction) {
-                                if step < 3 {
+                                if step < 4 {
                                     Button {
                                         advanceStepIfValid()
                                     } label: {
@@ -100,7 +100,7 @@ struct NewIncidentFormView: View {
             Text(validationAlertMessage)
         }
         .safeAreaInset(edge: .bottom) {
-            if step == 3 && !embedsInOverlay {
+            if step == 4 && !embedsInOverlay {
                 HStack {
                     PrimaryButton(title: "Submit to room leader") {
                         Task { await submit() }
@@ -160,6 +160,8 @@ struct NewIncidentFormView: View {
                 .padding(.bottom, 22)
         }
         .ncStudioScreenBackdrop()
+        .frame(height: overlayHeightForCurrentStep)
+        .animation(.easeInOut(duration: 0.24), value: step)
     }
 
     private var overlayBottomFade: some View {
@@ -199,8 +201,9 @@ struct NewIncidentFormView: View {
                 switch step {
                 case 0: stepChildAndCategory
                 case 1: stepDetails
-                case 2: stepBodyMap
-                case 3: stepReview
+                case 2: stepPeopleInvolved
+                case 3: stepBodyMap
+                case 4: stepReview
                 default: EmptyView()
                 }
             }
@@ -209,10 +212,13 @@ struct NewIncidentFormView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if embedsInOverlay {
-                Color.ncBackground.frame(height: 76)
+                Color.clear.frame(height: overlayFloatingActionsClearance)
             }
         }
     }
+
+    /// - Description: Keeps scrollable step content above overlay Back/Next controls.
+    private var overlayFloatingActionsClearance: CGFloat { 108 }
 
     private var overlayGrabber: some View {
         Capsule()
@@ -250,15 +256,15 @@ struct NewIncidentFormView: View {
 
     private var overlayStepIndicator: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ProgressView(value: Double(step + 1), total: 4)
+            ProgressView(value: Double(step + 1), total: 5)
                 .tint(Color.ncPrimary)
-            Text("Step \(step + 1) of 4 · \(Self.formSteps[step].title)")
+            Text("Step \(step + 1) of 5 · \(Self.formSteps[step].title)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Step \(step + 1) of 4, \(Self.formSteps[step].title)")
+        .accessibilityLabel("Step \(step + 1) of 5, \(Self.formSteps[step].title)")
     }
 
     private var overlayFloatingActions: some View {
@@ -274,7 +280,7 @@ struct NewIncidentFormView: View {
 
             Spacer(minLength: 0)
 
-            if step < 3 {
+            if step < 4 {
                 overlayPrimaryFloatingButton(title: "Next") {
                     advanceStepIfValid()
                 }
@@ -365,13 +371,13 @@ struct NewIncidentFormView: View {
     private var stepRail: some View {
         VStack(spacing: 10) {
             HStack(spacing: 0) {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(0..<5, id: \.self) { index in
                     IncidentFormStepBubble(
                         index: index,
                         currentStep: step,
                         symbol: Self.formSteps[index].symbol
                     )
-                    if index < 3 {
+                    if index < 4 {
                         IncidentFormStepConnector(filled: step > index)
                     }
                 }
@@ -383,12 +389,13 @@ struct NewIncidentFormView: View {
         .padding(14)
         .ncStudioElevatedSurface(cornerRadius: 18)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Step \(step + 1) of 4, \(Self.formSteps[step].title)")
+        .accessibilityLabel("Step \(step + 1) of 5, \(Self.formSteps[step].title)")
     }
 
     private static let formSteps: [(title: String, symbol: String)] = [
         ("Child & category", "person.crop.circle.fill"),
         ("Details", "text.alignleft.fill"),
+        ("People involved", "person.2.fill"),
         ("Body map", "figure.stand"),
         ("Review", "checkmark.seal.fill")
     ]
@@ -480,44 +487,106 @@ struct NewIncidentFormView: View {
                         .stroke(Color.ncDanger.opacity(0.28), lineWidth: 1)
                 }
             }
+            .padding(.bottom, embedsInOverlay ? overlayFloatingActionsClearance : 0)
         }
+        .scrollIndicators(.hidden)
     }
 
     private var stepDetails: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                SectionHeader(title: "Details", subtitle: "Describe what happened and the response.")
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Location")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    TextField("Location", text: $locationText)
-                        .textFieldStyle(.roundedBorder)
-                }
+                SectionHeader(title: "What happened?", subtitle: "Record the facts clearly and objectively.")
                 VStack(alignment: .leading, spacing: 6) {
                     requiredFieldTitle("Description")
-                    TextEditor(text: $descriptionText)
-                        .frame(minHeight: 120)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
+                    incidentFormTextEditor(
+                        text: $descriptionText,
+                        placeholder: "Describe what happened, where, and who was present...",
+                        minHeight: 120
+                    )
                     Text("\(descriptionText.count) / \(AppConstants.incidentDescriptionMaxLength)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     requiredFieldTitle("Immediate action taken")
-                    TextEditor(text: $actionText)
-                        .frame(minHeight: 100)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)).allowsHitTesting(false))
+                    incidentFormTextEditor(
+                        text: $actionText,
+                        placeholder: "First aid given, comfort offered, monitoring...",
+                        minHeight: 100
+                    )
                 }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Location")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    TextField("Location", text: $locationText)
+                        .textInputAutocapitalization(.words)
+                        .padding(.horizontal, 14)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.ncCardSurface)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        }
+                }
+            }
+            .padding(.bottom, embedsInOverlay ? overlayFloatingActionsClearance : 0)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private var stepPeopleInvolved: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                SectionHeader(title: "People involved", subtitle: "Witnesses and staff present at the time.")
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Witnesses")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    TextField("Witnesses", text: $witnessesText)
-                        .textFieldStyle(.roundedBorder)
+                    TextField("Names of staff or adults present", text: $witnessesText)
+                        .textInputAutocapitalization(.words)
+                        .padding(.horizontal, 14)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.ncCardSurface)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        }
+                }
+
+                VStack(alignment: .leading, spacing: 14) {
+                    incidentInfoRow(
+                        icon: "message.badge",
+                        title: "Parent notification",
+                        detail: "A notification banner will be queued for the parent once a manager reviews this report."
+                    )
+                    incidentInfoRow(
+                        icon: "shield",
+                        title: "Safeguarding",
+                        detail: "Serious and safeguarding incidents are escalated to the designated lead automatically."
+                    )
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.ncCardSurface)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.16), lineWidth: 1)
                 }
             }
+            .padding(.bottom, embedsInOverlay ? overlayFloatingActionsClearance : 0)
         }
+        .scrollIndicators(.hidden)
     }
 
     private var stepBodyMap: some View {
@@ -526,7 +595,58 @@ struct NewIncidentFormView: View {
                 SectionHeader(title: "Body map", subtitle: "Tap the outline to place injury markers.")
                 BodyMapView(isInteractive: true, annotations: $annotations, side: $bodySide)
             }
+            .padding(.bottom, embedsInOverlay ? overlayFloatingActionsClearance : 0)
         }
+        .scrollIndicators(.hidden)
+    }
+
+    private func incidentInfoRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ncPrimary.opacity(0.85))
+                .frame(width: 18, height: 18)
+                .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func incidentFormTextEditor(
+        text: Binding<String>,
+        placeholder: String,
+        minHeight: CGFloat
+    ) -> some View {
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.ncCardSurface)
+            if text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(placeholder)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 14)
+                    .padding(.horizontal, 14)
+            }
+            TextEditor(text: text)
+                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+        }
+        .frame(minHeight: minHeight)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                .allowsHitTesting(false)
+        )
     }
 
     private var stepReview: some View {
@@ -588,8 +708,9 @@ struct NewIncidentFormView: View {
                 .padding(.vertical, 4)
                 .ncCardStyle(radius: 16)
             }
-            .padding(.bottom, embedsInOverlay ? 24 : 110)
+            .padding(.bottom, embedsInOverlay ? overlayFloatingActionsClearance : 110)
         }
+        .scrollIndicators(.hidden)
     }
 
     private func complianceHighlightTile(text: String) -> some View {
@@ -702,7 +823,19 @@ struct NewIncidentFormView: View {
         }
 
         withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-            step = min(step + 1, 3)
+            step = min(step + 1, 4)
+        }
+    }
+
+    private var overlayHeightForCurrentStep: CGFloat {
+        guard embedsInOverlay else { return .infinity }
+        switch step {
+        case 0: return 800
+        case 1: return 740
+        case 2: return 680
+        case 3: return 820
+        case 4: return 820
+        default: return 760
         }
     }
 

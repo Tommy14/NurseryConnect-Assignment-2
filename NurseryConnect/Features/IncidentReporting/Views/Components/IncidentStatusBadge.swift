@@ -19,18 +19,25 @@ import SwiftUI
 struct IncidentStatusBadge: View {
     let status: IncidentStatus
 
+    private var text: String {
+        switch status {
+        case .submitted: return "Awaiting review"
+        case .managerReviewed: return "Awaiting review"
+        default: return status.title
+        }
+    }
+
     private var color: Color {
         switch status {
         case .draft: return .gray
-        case .submitted: return .blue
-        case .managerReviewed: return .purple
+        case .submitted, .managerReviewed: return Color(red: 0.68, green: 0.36, blue: 0.35)
         case .parentNotified: return Color.ncAccentWarm
-        case .acknowledged: return Color.ncSecondary
+        case .acknowledged: return Color(red: 0.41, green: 0.62, blue: 0.38)
         }
     }
 
     var body: some View {
-        StatusBadge(text: status.title, color: color)
+        StatusBadge(text: text, color: color)
     }
 }
 

@@ -46,26 +46,9 @@ struct IncidentComposerOverlay: View {
                     onDismiss: { isPresented = false }
                 )
                 .environment(\.managedObjectContext, context)
-                .frame(
-                    width: min(880, geo.size.width - 64),
-                    height: min(820, geo.size.height - 56)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    Color.ncGlassHighlight(lightOpacity: 0.55),
-                                    Color.ncGlowBlue.opacity(0.32),
-                                    Color.ncGlowViolet.opacity(0.24)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
+                .frame(width: min(880, geo.size.width - 64))
+                .frame(maxHeight: min(860, geo.size.height - 56))
+                .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
                 .shadow(color: Color.black.opacity(0.16), radius: 48, x: 0, y: 24)
                 .shadow(color: Color.ncGlowBlue.opacity(0.14), radius: 32, x: 0, y: 16)
             }

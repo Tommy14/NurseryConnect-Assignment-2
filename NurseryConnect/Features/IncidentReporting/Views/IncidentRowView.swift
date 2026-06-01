@@ -16,8 +16,6 @@
 // 100426     Tommy1914   Category-driven icon palette for stronger visual separation in incident inbox rows.
 // -----------------------------------------------------------------
 
-import Combine
-import CoreData
 import SwiftUI
 
 /// - Description: One incident row with leading iconography and status capsule.
@@ -32,16 +30,12 @@ struct IncidentRowView: View {
         IncidentStatus.fromPersistence(incident.status ?? "")
     }
 
-    private var syncState: SyncState {
-        SyncState.fromPersistence(incident.syncState)
-    }
-
     private var accentColor: Color {
         switch category {
-        case .accidentMinor: return Color.ncAccentWarm
+        case .accidentMinor: return Color(red: 0.64, green: 0.45, blue: 0.23)
         case .accidentFirstAid: return Color.ncPrimary
         case .safeguardingConcern: return Color.ncDanger
-        case .nearMiss: return Color.orange
+        case .nearMiss: return Color(red: 0.53, green: 0.49, blue: 0.26)
         case .allergicReaction: return Color.purple
         case .medicalIncident: return Color.teal
         case .seriousIncident: return Color.ncDanger
@@ -49,53 +43,61 @@ struct IncidentRowView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [accentColor.opacity(0.34), accentColor.opacity(0.14)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 44, height: 44)
-                    .shadow(color: accentColor.opacity(0.2), radius: 6, x: 0, y: 3)
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.ncGlassHighlight(lightOpacity: 0.35), lineWidth: 0.7)
-                    .frame(width: 44, height: 44)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(accentColor.opacity(0.16))
+                    .frame(width: 46, height: 46)
                 Image(systemName: category.symbolName)
-                    .font(.title3.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(accentColor)
                     .symbolRenderingMode(.hierarchical)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                Text(childName)
-                    .font(.system(.headline, design: .default).weight(.semibold))
+            VStack(alignment: .leading, spacing: 4) {
                 Text(category.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(subtitleText)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
-                SyncStateBadgeView(state: syncState)
+                    .lineLimit(1)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 8) {
-                HStack(alignment: .center, spacing: 6) {
-                    if let timestamp = incident.timestamp {
-                        Text(timestamp.formattedTime())
-                            .font(.caption.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
-                }
                 IncidentStatusBadge(status: status)
+                Text(timestampText)
+                    .font(.caption.weight(.medium).monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+                .padding(.leading, 2)
+                .padding(.top, 2)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("\(AppConstants.AccessibilityID.incidentRowPrefix)\(incident.id?.uuidString ?? "unknown")")
+    }
+
+    private var subtitleText: String {
+        let roomName = incident.child?.roomName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let location = incident.location?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        let locationOrRoom = location.isEmpty ? roomName : "\(roomName)\(roomName.isEmpty ? "" : " — ")\(location)"
+        if locationOrRoom.isEmpty {
+            return childName
+        }
+        return "\(childName) · \(locationOrRoom)"
+    }
+
+    private var timestampText: String {
+        if let timestamp = incident.timestamp {
+            return timestamp.formattedTime()
+        }
+        return "--:--"
     }
 
     private var childName: String {

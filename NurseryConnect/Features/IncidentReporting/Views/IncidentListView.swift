@@ -89,51 +89,25 @@ struct IncidentListView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(viewModel.incidents, id: \.objectID) { incident in
-                                let category = IncidentCategory.fromPersistence(incident.category ?? "")
                                 NavigationLink {
                                     IncidentDetailView(incident: incident, viewModel: viewModel)
                                 } label: {
                                     IncidentRowView(incident: incident)
                                         .padding(.horizontal, 14)
-                                        .padding(.vertical, 10)
+                                        .padding(.vertical, 12)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .background(incidentCardBackground(for: category))
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
+                                        .fill(Color.ncCardSurface)
+                                )
                                 .clipShape(RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous))
-                                .shadow(color: Color.black.opacity(0.07), radius: 10, x: 0, y: 6)
+                                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: AppConstants.cardCornerRadius, style: .continuous)
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [
-                                                    Color.ncGlassHighlight(lightOpacity: 0.65),
-                                                    incidentAccentColor(for: category).opacity(0.24),
-                                                    Color.ncGlowBlue.opacity(0.1)
-                                                ],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                        .allowsHitTesting(false)
-                                }
-                                .overlay(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [
-                                                    incidentAccentColor(for: category).opacity(0.95),
-                                                    incidentAccentColor(for: category).opacity(0.45)
-                                                ],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(width: 3)
-                                        .padding(.vertical, 12)
-                                        .padding(.leading, 3)
+                                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
                                         .allowsHitTesting(false)
                                 }
                             }
@@ -250,25 +224,6 @@ struct IncidentListView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(childDisplayName) incident alert. \(message)")
-    }
-
-    private func incidentAccentColor(for category: IncidentCategory) -> Color {
-        switch category {
-        case .accidentMinor: return Color.ncAccentWarm
-        case .accidentFirstAid: return Color.ncPrimary
-        case .safeguardingConcern: return Color.ncDanger
-        case .nearMiss: return Color.orange
-        case .allergicReaction: return Color.purple
-        case .medicalIncident: return Color.teal
-        case .seriousIncident: return Color.ncDanger
-        }
-    }
-
-    private func incidentCardBackground(for category: IncidentCategory) -> some View {
-        NCLiquidGlassChrome.incidentRowBackground(
-            accent: incidentAccentColor(for: category),
-            cornerRadius: AppConstants.cardCornerRadius
-        )
     }
 
     private func complianceHighlightTile(text: String) -> some View {
