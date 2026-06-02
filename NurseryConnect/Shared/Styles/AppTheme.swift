@@ -75,10 +75,14 @@ extension View {
     /// - Description: Enables the top scroll-edge/nav-bar drag response on root scroll views where this modifier is applied.
     @ViewBuilder
     func ncRootScrollEdgeEffectForTopNavigation() -> some View {
+        #if os(iOS)
         if #available(iOS 26.0, *) {
             self.scrollEdgeEffectStyle(.hard, for: .top)
         } else {
             self
         }
+        #else
+        self
+        #endif
     }
 }

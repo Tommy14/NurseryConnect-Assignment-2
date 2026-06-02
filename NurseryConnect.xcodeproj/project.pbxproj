@@ -26,8 +26,90 @@
 /* Begin PBXFileReference section */
 		AA0000032F8BCE4B00B7638C /* NurseryConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurseryConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurseryConnectUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000012F8BCE4B00B7638D /* NurseryConnect Spatial.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NurseryConnect Spatial.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4840D402F8BCE4B00B7638C /* NurseryConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NurseryConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BB0000032F8BCE4B00B7638D /* Exceptions for "NurseryConnect" folder in "NurseryConnect Spatial" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/KeyworkerCommands.swift,
+				App/NurseryConnectApp.swift,
+				App/NurseryLaunchView.swift,
+				Core/Helpers/KeyworkerMoodReminderScheduler.swift,
+				Core/Sync/NetworkMonitor.swift,
+				Core/Sync/SyncQueueService.swift,
+				Core/Sync/SyncState.swift,
+				Features/Analytics/Views/Charts/WeeklyActivityDistributionChart.swift,
+				Features/Analytics/Views/ChildAnalyticsDashboardView.swift,
+				Features/Analytics/Views/Components/JournalAnalyticsSummaryCard.swift,
+				Features/Attendance/ViewModels/AttendanceViewModel.swift,
+				Features/Attendance/Views/TodayAttendanceCard.swift,
+				Features/Children/ViewModels/ChildViewModel.swift,
+				Features/Children/Views/ChildDetailPanelView.swift,
+				Features/Children/Views/ChildListView.swift,
+				Features/Children/Views/ChildProfileView.swift,
+				Features/Compliance/Views/LegalComplianceView.swift,
+				Features/DailyDiary/Models/ChildJournalSegment.swift,
+				"Features/DailyDiary/Models/DiaryEntry+Audit.swift",
+				"Features/DailyDiary/Models/DiaryEntry+Corrections.swift",
+				Features/DailyDiary/Models/DiaryEntryDraftValues.swift,
+				Features/DailyDiary/Models/DiarySupportingEnums.swift,
+				Features/DailyDiary/Models/PlannedSessionLogContext.swift,
+				Features/DailyDiary/Services/DayTimelineMerger.swift,
+				Features/DailyDiary/Services/NurseryDaySchedule.swift,
+				Features/DailyDiary/ViewModels/DailyDiaryViewModel.swift,
+				Features/DailyDiary/Views/AddDiaryEntryView.swift,
+				Features/DailyDiary/Views/ChildJournalSegmentBar.swift,
+				Features/DailyDiary/Views/ChildJournalSegmentSwipeModifier.swift,
+				Features/DailyDiary/Views/ChildJournalView.swift,
+				Features/DailyDiary/Views/Components/ActivityLogCard.swift,
+				Features/DailyDiary/Views/Components/DailyDiarySummaryCard.swift,
+				Features/DailyDiary/Views/Components/DiaryEntryCardHeader.swift,
+				Features/DailyDiary/Views/Components/DiaryTimelineView.swift,
+				Features/DailyDiary/Views/Components/FaceBlurEditorView.swift,
+				Features/DailyDiary/Views/Components/MealLogCard.swift,
+				Features/DailyDiary/Views/Components/NappyLogCard.swift,
+				Features/DailyDiary/Views/Components/SleepLogCard.swift,
+				Features/DailyDiary/Views/Components/WellbeingCard.swift,
+				Features/DailyDiary/Views/DailyDiaryListView.swift,
+				Features/DailyDiary/Views/DiaryEntryDetailView.swift,
+				Features/DailyDiary/Views/MilestoneEntriesView.swift,
+				Features/Dashboard/ViewModels/KeyworkerDashboardViewModel.swift,
+				Features/Dashboard/ViewModels/KeyworkerIPadCoordinator.swift,
+				Features/Dashboard/Views/AdaptiveRootView.swift,
+				Features/Dashboard/Views/ChildCardView.swift,
+				Features/Dashboard/Views/ChildrenSidebarView.swift,
+				Features/Dashboard/Views/ChildSidebarRowView.swift,
+				Features/Dashboard/Views/DashboardQuickCheckInSheet.swift,
+				Features/Dashboard/Views/KeyworkerDashboardView.swift,
+				Features/Dashboard/Views/KeyworkerIPadBottomDock.swift,
+				Features/Dashboard/Views/KeyworkerIPadShellView.swift,
+				Features/Dashboard/Views/KeyworkerProfileView.swift,
+				Features/Dashboard/Views/KeyworkerSectionTabBar.swift,
+				Features/IncidentReporting/IncidentPDFExporter.swift,
+				Features/IncidentReporting/Models/BodyMapAnnotation.swift,
+				Features/IncidentReporting/Models/IncidentCategory.swift,
+				Features/IncidentReporting/ViewModels/IncidentViewModel.swift,
+				Features/IncidentReporting/Views/Components/BodyMapView.swift,
+				Features/IncidentReporting/Views/Components/IncidentCategoryPicker.swift,
+				Features/IncidentReporting/Views/Components/IncidentComposerOverlay.swift,
+				Features/IncidentReporting/Views/Components/IncidentSeverityIndicator.swift,
+				Features/IncidentReporting/Views/Components/IncidentStatusBadge.swift,
+				Features/IncidentReporting/Views/Components/IncidentWorkflowTimelineView.swift,
+				Features/IncidentReporting/Views/IncidentDetailView.swift,
+				Features/IncidentReporting/Views/IncidentListView.swift,
+				Features/IncidentReporting/Views/IncidentRowView.swift,
+				Features/IncidentReporting/Views/NewIncidentFormView.swift,
+				Shared/Components/ActivityShare.swift,
+				Shared/Components/CameraCaptureView.swift,
+				Shared/Components/KeyworkerAttendanceSectionHeader.swift,
+				Shared/Components/SyncStateBadgeView.swift,
+			);
+			target = BB0000042F8BCE4B00B7638D /* NurseryConnect Spatial */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA0000012F8BCE4B00B7638C /* NurseryConnectTests */ = {
@@ -40,8 +122,16 @@
 			path = NurseryConnectUITests;
 			sourceTree = "<group>";
 		};
+		BB0000022F8BCE4B00B7638D /* NurseryConnectSpatial */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NurseryConnectSpatial;
+			sourceTree = "<group>";
+		};
 		D4840D422F8BCE4B00B7638C /* NurseryConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BB0000032F8BCE4B00B7638D /* Exceptions for "NurseryConnect" folder in "NurseryConnect Spatial" target */,
+			);
 			path = NurseryConnect;
 			sourceTree = "<group>";
 		};
@@ -56,6 +146,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA00000C2F8BCE4B00B7638C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000062F8BCE4B00B7638D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -85,6 +182,7 @@
 			isa = PBXGroup;
 			children = (
 				D4840D422F8BCE4B00B7638C /* NurseryConnect */,
+				BB0000022F8BCE4B00B7638D /* NurseryConnectSpatial */,
 				AA0000202F8BCE4B00B7638C /* Tests */,
 				D4840D412F8BCE4B00B7638C /* Products */,
 			);
@@ -94,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				D4840D402F8BCE4B00B7638C /* NurseryConnect.app */,
+				BB0000012F8BCE4B00B7638D /* NurseryConnect Spatial.app */,
 				AA0000032F8BCE4B00B7638C /* NurseryConnectTests.xctest */,
 				AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */,
 			);
@@ -149,6 +248,29 @@
 			productReference = AA0000042F8BCE4B00B7638C /* NurseryConnectUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		BB0000042F8BCE4B00B7638D /* NurseryConnect Spatial */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB0000082F8BCE4B00B7638D /* Build configuration list for PBXNativeTarget "NurseryConnect Spatial" */;
+			buildPhases = (
+				BB0000052F8BCE4B00B7638D /* Sources */,
+				BB0000062F8BCE4B00B7638D /* Frameworks */,
+				BB0000072F8BCE4B00B7638D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BB0000022F8BCE4B00B7638D /* NurseryConnectSpatial */,
+				D4840D422F8BCE4B00B7638C /* NurseryConnect */,
+			);
+			name = "NurseryConnect Spatial";
+			packageProductDependencies = (
+			);
+			productName = "NurseryConnect Spatial";
+			productReference = BB0000012F8BCE4B00B7638D /* NurseryConnect Spatial.app */;
+			productType = "com.apple.product-type.application";
+		};
 		D4840D3F2F8BCE4B00B7638C /* NurseryConnect */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D4840D4B2F8BCE4D00B7638C /* Build configuration list for PBXNativeTarget "NurseryConnect" */;
@@ -189,6 +311,9 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = D4840D3F2F8BCE4B00B7638C;
 					};
+					BB0000042F8BCE4B00B7638D = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					D4840D3F2F8BCE4B00B7638C = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -209,6 +334,7 @@
 			projectRoot = "";
 			targets = (
 				D4840D3F2F8BCE4B00B7638C /* NurseryConnect */,
+				BB0000042F8BCE4B00B7638D /* NurseryConnect Spatial */,
 				AA0000052F8BCE4B00B7638C /* NurseryConnectTests */,
 				AA0000062F8BCE4B00B7638C /* NurseryConnectUITests */,
 			);
@@ -224,6 +350,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA0000182F8BCE4B00B7638C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000072F8BCE4B00B7638D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -248,6 +381,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA00000B2F8BCE4B00B7638C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000052F8BCE4B00B7638D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -346,6 +486,70 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = NurseryConnect;
+			};
+			name = Release;
+		};
+		BB0000092F8BCE4B00B7638D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FQ7D8CMKAL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NurseryConnectSpatial-Info.plist";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.assignment.NurseryConnectSpatial;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				XROS_DEPLOYMENT_TARGET = 1.0;
+			};
+			name = Debug;
+		};
+		BB00000A2F8BCE4B00B7638D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FQ7D8CMKAL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NurseryConnectSpatial-Info.plist";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.assignment.NurseryConnectSpatial;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Release;
 		};
@@ -555,6 +759,15 @@
 			buildConfigurations = (
 				AA0000152F8BCE4B00B7638C /* Debug */,
 				AA0000162F8BCE4B00B7638C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB0000082F8BCE4B00B7638D /* Build configuration list for PBXNativeTarget "NurseryConnect Spatial" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000092F8BCE4B00B7638D /* Debug */,
+				BB00000A2F8BCE4B00B7638D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

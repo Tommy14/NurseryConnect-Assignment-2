@@ -15,16 +15,21 @@ enum NCLiquidGlassChrome {
     /// - Description: Standard list/dashboard card fill: glass on iOS 26+, `ncCardSurface` below.
     @ViewBuilder
     static func cardBackground(cornerRadius: CGFloat) -> some View {
+        #if os(iOS)
         if #available(iOS 26.0, *) {
             LiquidGlassCardPlate(cornerRadius: cornerRadius)
         } else {
             OpaqueCardPlate(cornerRadius: cornerRadius)
         }
+        #else
+        OpaqueCardPlate(cornerRadius: cornerRadius)
+        #endif
     }
 
     /// - Description: Incident row: frosted base on iOS 26 with a soft tint wash; single gradient on older OS.
     @ViewBuilder
     static func incidentRowBackground(accent: Color, cornerRadius: CGFloat) -> some View {
+        #if os(iOS)
         if #available(iOS 26.0, *) {
             ZStack {
                 LiquidGlassCardPlate(cornerRadius: cornerRadius)
@@ -41,15 +46,23 @@ enum NCLiquidGlassChrome {
                     )
             }
         } else {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.ncCardSurface, accent.opacity(0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            incidentRowOpaqueBackground(accent: accent, cornerRadius: cornerRadius)
         }
+        #else
+        incidentRowOpaqueBackground(accent: accent, cornerRadius: cornerRadius)
+        #endif
+    }
+
+    @ViewBuilder
+    private static func incidentRowOpaqueBackground(accent: Color, cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color.ncCardSurface, accent.opacity(0.08)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
     }
 }
 
@@ -64,6 +77,7 @@ private struct OpaqueCardPlate: View {
     }
 }
 
+#if os(iOS)
 @available(iOS 26.0, *)
 struct LiquidGlassCardPlate: View {
     let cornerRadius: CGFloat
@@ -79,3 +93,4 @@ struct LiquidGlassCardPlate: View {
             )
     }
 }
+#endif
