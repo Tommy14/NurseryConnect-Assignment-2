@@ -39,6 +39,9 @@ struct SpatialSettingManagerView: View {
                 SpatialRecentIncidentsPanel(nurseryWide: true) {
                     showsIncidents = true
                 }
+                if viewModel.openIncidentCount > 0 {
+                    IncidentBeaconView(openCount: viewModel.openIncidentCount)
+                }
                 dietaryPanel
                 managerActions
             }

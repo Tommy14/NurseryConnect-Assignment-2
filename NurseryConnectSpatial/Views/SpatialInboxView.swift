@@ -45,6 +45,8 @@ struct SpatialInboxView: View {
     @State private var showsAllMessages = false
     @State private var showsIncidents = false
     @State private var showsNoThreadAlert = false
+    @State private var showsDiarySheet = false
+    @State private var showsIncidentForm = false
 
     init(managedObjectContext: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: MessagingViewModel(context: managedObjectContext))
@@ -127,6 +129,25 @@ struct SpatialInboxView: View {
                     managedObjectContext: context
                 )
             }
+        }
+        .sheet(isPresented: $showsDiarySheet) {
+            if let summary = selectedChildSummary {
+                let child = NCChild(
+                    id: summary.id,
+                    firstName: summary.firstName, lastName: summary.lastName,
+                    preferredName: summary.preferredName,
+                    dateOfBirth: Calendar.current.date(byAdding: .year, value: -3, to: Date()) ?? Date(),
+                    room: summary.roomName, keyworkerName: AppConstants.keyworkerDisplayName,
+                    allergies: [], dietaryRestrictions: [], medicalConditions: [],
+                    photoConsent: summary.photoConsent, socialMediaConsent: true,
+                    status: .onSite
+                )
+                SpatialDailyDiaryView(child: child)
+            }
+        }
+        .sheet(isPresented: $showsIncidentForm) {
+            SpatialIncidentReportView()
+                .environmentObject(SpatialDataStore())
         }
         .alert("Something went wrong", isPresented: errorPresented) {
             Button("OK", role: .cancel) { viewModel.errorMessage = nil }
@@ -373,6 +394,23 @@ struct SpatialInboxView: View {
                     showsIncidents = true
                 } label: {
                     Label("View incidents", systemImage: "exclamationmark.shield.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    showsDiarySheet = selectedChildSummary != nil
+                } label: {
+                    Label("View daily diary", systemImage: "book.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(selectedChildSummary == nil)
+
+                Button {
+                    showsIncidentForm = true
+                } label: {
+                    Label("Log incident", systemImage: "bandage.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)

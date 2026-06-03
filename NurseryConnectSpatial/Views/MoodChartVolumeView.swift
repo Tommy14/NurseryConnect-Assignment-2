@@ -112,6 +112,7 @@ struct MoodChartVolumeView: View {
     @State private var moodBars: [SevenDayMoodBarModel] = []
     @State private var averageMood: Double?
     @State private var rotationAngle: Double = 0
+    @State private var sceneIsReady: Bool = false
 
     private var hasMoodData: Bool {
         moodBars.contains { $0.score > 0 }
@@ -176,30 +177,49 @@ struct MoodChartVolumeView: View {
 
     #if !arch(simulator)
     private var realityBarsStage: some View {
-        VStack(spacing: 6) {
-            RealityView { content in
-                guard content.entities.isEmpty else { return }
-                populateScene(into: content)
-            } update: { content in
-                applyRotation(to: content)
-            }
-            .id(moodBarsSignature)
-            .frame(height: 165)
-            .frame(maxWidth: .infinity)
-            .frame(depth: 0.18)
-            .gesture(dragRotationGesture)
-
-            HStack(spacing: 0) {
-                ForEach(moodBars) { bar in
-                    Text(bar.label)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
+        Group {
+            if sceneIsReady {
+                RealityView { content in
+                    guard content.entities.isEmpty else { return }
+                    do {
+                        try populateScene(into: content)
+                    } catch {
+                        print("RealityKit scene error: \(error)")
+                    }
+                } update: { content in
+                    applyRotation(to: content)
                 }
+                .id(moodBarsSignature)
+                .frame(height: 188)
+                .frame(maxWidth: .infinity)
+                .frame(depth: 0.10)
+                .overlay(alignment: .bottom) { dayLabelsRow }
+                .gesture(dragRotationGesture)
+            } else {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .frame(height: 188)
+                    .overlay { ProgressView() }
+                    .overlay(alignment: .bottom) { dayLabelsRow }
             }
-            .padding(.horizontal, 6)
         }
-        .frame(height: 188)
+        .task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            sceneIsReady = true
+        }
+    }
+
+    private var dayLabelsRow: some View {
+        HStack(spacing: 0) {
+            ForEach(moodBars) { bar in
+                Text(bar.label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.bottom, 6)
     }
     #endif
 
@@ -257,18 +277,18 @@ struct MoodChartVolumeView: View {
         root.orientation = simd_quatf(angle: Float(rotationAngle) * .pi / 180, axis: SIMD3(0, 1, 0))
     }
 
-    private func populateScene(into content: RealityViewContent) {
+    private func populateScene(into content: RealityViewContent) throws {
         guard !moodBars.isEmpty else { return }
 
         let root = Entity()
         root.name = Self.chartRootName
-        root.position = SIMD3(0, -0.02, 0)
+        root.position = SIMD3(0, 0.01, 0)
         content.add(root)
 
         let barWidth: Float = 0.028
         let barDepth: Float = 0.028
-        let maxBarHeight: Float = 0.13
-        let floorY: Float = -0.055
+        let maxBarHeight: Float = 0.11
+        let floorY: Float = -0.04
         let spacing: Float = 0.072
         let count = Float(moodBars.count)
         let xOrigin = -(count - 1) * spacing / 2
