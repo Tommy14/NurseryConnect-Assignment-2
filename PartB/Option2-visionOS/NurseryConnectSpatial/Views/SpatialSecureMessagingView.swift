@@ -45,9 +45,18 @@ struct SpatialSecureMessagingView: View {
     // MARK: - Sidebar
 
     private var sidebar: some View {
-        List(filteredThreads, id: \.id, selection: $selectedThreadID) { thread in
-            ThreadRowView(thread: thread)
-                .tag(thread.id)
+        List(filteredThreads, id: \.id) { thread in
+            Button {
+                selectedThreadID = thread.id
+            } label: {
+                ThreadRowView(thread: thread)
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(
+                selectedThreadID == thread.id
+                    ? Color.accentColor.opacity(0.15)
+                    : Color.clear
+            )
         }
         .navigationTitle("Messages")
         .safeAreaInset(edge: .bottom) {
