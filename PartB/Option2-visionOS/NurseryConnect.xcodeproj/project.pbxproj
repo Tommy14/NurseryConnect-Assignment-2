@@ -30,6 +30,87 @@
 		D4840D402F8BCE4B00B7638C /* NurseryConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NurseryConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BB0000032F8BCE4B00B7638D /* Exceptions for "NurseryConnect" folder in "NurseryConnect Spatial" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/KeyworkerCommands.swift,
+				App/NurseryConnectApp.swift,
+				App/NurseryLaunchView.swift,
+				Core/Helpers/KeyworkerMoodReminderScheduler.swift,
+				Core/Sync/NetworkMonitor.swift,
+				Core/Sync/SyncQueueService.swift,
+				Core/Sync/SyncState.swift,
+				Features/Analytics/Views/Charts/WeeklyActivityDistributionChart.swift,
+				Features/Analytics/Views/ChildAnalyticsDashboardView.swift,
+				Features/Analytics/Views/Components/JournalAnalyticsSummaryCard.swift,
+				Features/Attendance/ViewModels/AttendanceViewModel.swift,
+				Features/Attendance/Views/TodayAttendanceCard.swift,
+				Features/Children/ViewModels/ChildViewModel.swift,
+				Features/Children/Views/ChildDetailPanelView.swift,
+				Features/Children/Views/ChildListView.swift,
+				Features/Children/Views/ChildProfileView.swift,
+				Features/Compliance/Views/LegalComplianceView.swift,
+				Features/DailyDiary/Models/ChildJournalSegment.swift,
+				"Features/DailyDiary/Models/DiaryEntry+Audit.swift",
+				"Features/DailyDiary/Models/DiaryEntry+Corrections.swift",
+				Features/DailyDiary/Models/DiaryEntryDraftValues.swift,
+				Features/DailyDiary/Models/DiarySupportingEnums.swift,
+				Features/DailyDiary/Models/PlannedSessionLogContext.swift,
+				Features/DailyDiary/Services/DayTimelineMerger.swift,
+				Features/DailyDiary/Services/NurseryDaySchedule.swift,
+				Features/DailyDiary/ViewModels/DailyDiaryViewModel.swift,
+				Features/DailyDiary/Views/AddDiaryEntryView.swift,
+				Features/DailyDiary/Views/ChildJournalSegmentBar.swift,
+				Features/DailyDiary/Views/ChildJournalSegmentSwipeModifier.swift,
+				Features/DailyDiary/Views/ChildJournalView.swift,
+				Features/DailyDiary/Views/Components/ActivityLogCard.swift,
+				Features/DailyDiary/Views/Components/DailyDiarySummaryCard.swift,
+				Features/DailyDiary/Views/Components/DiaryEntryCardHeader.swift,
+				Features/DailyDiary/Views/Components/DiaryTimelineView.swift,
+				Features/DailyDiary/Views/Components/FaceBlurEditorView.swift,
+				Features/DailyDiary/Views/Components/MealLogCard.swift,
+				Features/DailyDiary/Views/Components/NappyLogCard.swift,
+				Features/DailyDiary/Views/Components/SleepLogCard.swift,
+				Features/DailyDiary/Views/Components/WellbeingCard.swift,
+				Features/DailyDiary/Views/DailyDiaryListView.swift,
+				Features/DailyDiary/Views/DiaryEntryDetailView.swift,
+				Features/DailyDiary/Views/MilestoneEntriesView.swift,
+				Features/Dashboard/ViewModels/KeyworkerDashboardViewModel.swift,
+				Features/Dashboard/ViewModels/KeyworkerIPadCoordinator.swift,
+				Features/Dashboard/Views/AdaptiveRootView.swift,
+				Features/Dashboard/Views/ChildCardView.swift,
+				Features/Dashboard/Views/ChildrenSidebarView.swift,
+				Features/Dashboard/Views/ChildSidebarRowView.swift,
+				Features/Dashboard/Views/DashboardQuickCheckInSheet.swift,
+				Features/Dashboard/Views/KeyworkerDashboardView.swift,
+				Features/Dashboard/Views/KeyworkerIPadBottomDock.swift,
+				Features/Dashboard/Views/KeyworkerIPadShellView.swift,
+				Features/Dashboard/Views/KeyworkerProfileView.swift,
+				Features/Dashboard/Views/KeyworkerSectionTabBar.swift,
+				Features/IncidentReporting/IncidentPDFExporter.swift,
+				Features/IncidentReporting/Models/BodyMapAnnotation.swift,
+				Features/IncidentReporting/Models/IncidentCategory.swift,
+				Features/IncidentReporting/ViewModels/IncidentViewModel.swift,
+				Features/IncidentReporting/Views/Components/BodyMapView.swift,
+				Features/IncidentReporting/Views/Components/IncidentCategoryPicker.swift,
+				Features/IncidentReporting/Views/Components/IncidentComposerOverlay.swift,
+				Features/IncidentReporting/Views/Components/IncidentSeverityIndicator.swift,
+				Features/IncidentReporting/Views/Components/IncidentStatusBadge.swift,
+				Features/IncidentReporting/Views/Components/IncidentWorkflowTimelineView.swift,
+				Features/IncidentReporting/Views/IncidentDetailView.swift,
+				Features/IncidentReporting/Views/IncidentListView.swift,
+				Features/IncidentReporting/Views/IncidentRowView.swift,
+				Features/IncidentReporting/Views/NewIncidentFormView.swift,
+				Shared/Components/ActivityShare.swift,
+				Shared/Components/CameraCaptureView.swift,
+				Shared/Components/KeyworkerAttendanceSectionHeader.swift,
+				Shared/Components/SyncStateBadgeView.swift,
+			);
+			target = BB0000042F8BCE4B00B7638D /* NurseryConnect Spatial */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA0000012F8BCE4B00B7638C /* NurseryConnectTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -48,6 +129,9 @@
 		};
 		D4840D422F8BCE4B00B7638C /* NurseryConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BB0000032F8BCE4B00B7638D /* Exceptions for "NurseryConnect" folder in "NurseryConnect Spatial" target */,
+			);
 			path = NurseryConnect;
 			sourceTree = "<group>";
 		};
