@@ -1,80 +1,89 @@
-# NurseryConnect
+# SE4020 - Mobile Application Design and Development
 
-**NurseryConnect** is an iOS app for **early-years keyworkers**: a single-role prototype for logging the day, tracking attendance, and recording incidents in line with nursery workflows. It is built with **SwiftUI** and **Core Data**, with offline-first persistence and a background **sync queue** when the network is available.
+## Assignment 02 - Submission Repository
 
----
+**BSc (Hons) in Information Technology, Year 4 - Semester 1, 2026**
 
-## Features
-
-| Area | What it does |
-|------|----------------|
-| **Dashboard** | Keyworker home with tabbed navigation (Children, Incidents), greeting header, and quick access to child profiles and diary actions. |
-| **Children** | Searchable child list, profiles, and links into the daily diary and attendance context. |
-| **Daily diary** | Timeline of meals, sleep, nappies, activities, and wellbeing; merges with planned session windows; audit-aware entries. |
-| **Attendance** | Today-focused attendance cards and check-in style flows aligned with the nursery day. |
-| **Incidents** | Structured incident capture (severity, category, body map annotations), workflow timeline, status, and **PDF export** for records. |
-| **Sync & connectivity** | `NetworkMonitor` and `SyncQueueService` process queued work when online or on a timer; sync also runs when the app becomes active. |
-
-The MVP assumes a **logged-in keyworker** context (sample identity and nursery name are configured in code—no sign-in UI).
+This is your submission repository for Assignment 02. Everything you submit for this assignment lives here: your two codebases, your report, your UI mockups, your AI usage logs, and your demo video link. Read this file fully before you start committing.
 
 ---
 
-## Requirements
+## What this assignment contains
 
-- **Xcode** 15 or newer (recommended: latest stable for your OS)
-- **iOS 17.0+** deployment target
-- **Swift 5**
+Assignment 02 has two parts and is worth **25%** of the module.
 
----
+| Part | What it is | Marks |
+|------|------------|-------|
+| **Part A** (compulsory) | An iPadOS **or** macOS app built in SwiftUI, extending your Assignment 1 NurseryConnect work | 10 |
+| **Part B** (pick one) | Option 1: a watchOS companion app **(5 marks)** or Option 2: a visionOS spatial app **(15 marks)** | up to 15 |
 
-## Getting started
+You commit **two codebases** (Part A and your chosen Part B option) and **one report** that covers both parts.
 
-1. Clone or open this repository folder in Finder.
-2. Open **`NurseryConnect.xcodeproj`** in Xcode.
-3. Select the **NurseryConnect** scheme and a simulator or device (iPhone recommended).
-4. Press **Run** (⌘R).
-
-On first launch, the app can **seed sample data** (see `DataSeeder` and `AppConstants.hasSeededSampleDataKey`) so you can explore flows without manual setup.
+**Deadline:** 3rd June 2026
+**Vivas:** 6th and 7th June 2026
 
 ---
 
-## Project structure (high level)
+## Repository structure
 
 ```
-NurseryConnect/
-├── App/                 # App entry, launch experience, root scene
-├── Core/                # Persistence, sync, helpers, extensions, constants
-├── Features/            # Feature modules (Attendance, Children, DailyDiary, Dashboard, IncidentReporting)
-├── Resources/           # Assets, Core Data model
-├── Shared/              # Reusable UI components and theming
-└── Tests/               # Unit and UI tests
+se4020-2026-Assignment02/
+├── README.md                  <- this file (do not edit)
+├── STUDENT_DETAILS.md         <- FILL THIS IN FIRST
+├── .gitignore                 <- Xcode/Swift ignore rules (already set up)
+│
+├── PartA-iPadOS-macOS/        <- your Part A Xcode project goes here
+│
+├── PartB/
+│   ├── Option1-watchOS/       <- use ONLY if you chose Option 1
+│   └── Option2-visionOS/      <- use ONLY if you chose Option 2
+│
+├── Report/                    <- single report covering Part A AND Part B
+│
+├── UI-Mockups/                <- your 3+ AI-generated mockup variations
+│
+├── AI-Usage/                  <- AI prompt and response logs
+│
+└── Demo/                      <- link to your demo video
 ```
 
----
-
-## Testing
-
-- **Unit tests**: `NurseryConnectTests` (e.g. diary merging, attendance buckets, sync queue, incident view logic).
-- **UI tests**: `NurseryConnectUITests`.
-
-Run tests from Xcode (**Product → Test**, ⌘U) or via `xcodebuild` with the appropriate scheme.
+You only complete the Part B option you chose. **Delete the folder for the option you did not pick**, or leave it empty with its README intact. Do not submit both Part B options.
 
 ---
 
-## Configuration notes
+## How to use this repository
 
-- **Bundle identifier**: `com.assignment.NurseryConnect`
-- **Branding / demo names**: `AppConstants` (`keyworkerDisplayName`, `nurseryDisplayName`)
-- **Navigation chrome**: Optimised for current iOS versions, including Liquid Glass–friendly bar styling on **iOS 26** where applicable.
-
----
-
-## Author
-
-Developed as part of a **Mobile Application Design and Development (MADD)** coursework submission.
+1. **Accept the assignment** through the link shared on the course LMS. This creates your own private copy of this repository under the `SE4020` organisation.
+2. **Open `STUDENT_DETAILS.md` and fill it in** as your very first commit, so we can identify your submission.
+3. Develop Part A inside `PartA-iPadOS-macOS/`.
+4. Develop your chosen Part B option inside the matching folder under `PartB/`.
+5. Add your mockups, AI logs, report, and demo link to their folders.
+6. **Commit and push regularly.** We look at your commit history. A single large commit on the deadline is a red flag for plagiarism and for AI code you cannot explain.
 
 ---
 
-## License
+## Submission checklist
 
-This project is provided for **educational and assessment purposes**. Reuse beyond your course is at your own discretion; there is no separate open-source license attached unless one is added by the author.
+Tick these off before the deadline. Each folder has its own README with detail.
+
+- [ ] `STUDENT_DETAILS.md` completed (name, student ID, Part A platform, Part B option chosen)
+- [ ] **Part A** Xcode project committed and builds without errors
+- [ ] Part A integrates at least one approved advanced library (not MapKit, Core Data, or Localisation)
+- [ ] Part A uses at least one iPadOS/macOS native feature
+- [ ] **Part B** (your chosen option) committed
+- [ ] **At least 3** distinct AI-generated UI mockup variations added to `UI-Mockups/`
+- [ ] **Report** added to `Report/` covering both Part A and Part B
+- [ ] AI usage logs completed in `AI-Usage/` (both code generation and UI mockup)
+- [ ] Demo video link added in `Demo/README.md`
+- [ ] All code is your own and you can explain every line in the viva
+
+---
+
+## Important rules
+
+- **No login or authentication.** Your app launches straight into its main functionality.
+- **Write your own code.** AI assistance is allowed, but you must attach all prompts and responses, and you must be able to explain everything in the viva. Code that closely matches public tutorials or other students will be treated as plagiarism.
+- **This is an individual assignment.** Do not share code, mockups, or design decisions with other students.
+- Your mark depends on the quality, depth, and thoughtfulness of your work, not on picking a unique feature.
+
+If anything here is unclear, raise it on the course forum before the deadline, not after.
