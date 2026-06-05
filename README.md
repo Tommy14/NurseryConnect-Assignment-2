@@ -66,16 +66,16 @@ You only complete the Part B option you chose. **Delete the folder for the optio
 
 Tick these off before the deadline. Each folder has its own README with detail.
 
-- [ ] `STUDENT_DETAILS.md` completed (name, student ID, Part A platform, Part B option chosen)
-- [ ] **Part A** Xcode project committed and builds without errors
-- [ ] Part A integrates at least one approved advanced library (not MapKit, Core Data, or Localisation)
-- [ ] Part A uses at least one iPadOS/macOS native feature
-- [ ] **Part B** (your chosen option) committed
-- [ ] **At least 3** distinct AI-generated UI mockup variations added to `UI-Mockups/`
-- [ ] **Report** added to `Report/` covering both Part A and Part B
-- [ ] AI usage logs completed in `AI-Usage/` (both code generation and UI mockup)
-- [ ] Demo video link added in `Demo/README.md`
-- [ ] All code is your own and you can explain every line in the viva
+- [x] `STUDENT_DETAILS.md` completed (name, student ID, Part A platform, Part B option chosen)
+- [x] **Part A** Xcode project committed and builds without errors
+- [x] Part A integrates at least one approved advanced library (not MapKit, Core Data, or Localisation)
+- [x] Part A uses at least one iPadOS/macOS native feature
+- [x] **Part B** (your chosen option) committed
+- [x] **At least 3** distinct AI-generated UI mockup variations added to `UI-Mockups/`
+- [x] **Report** added to `Report/` covering both Part A and Part B
+- [x] AI usage logs completed in `AI-Usage/` (both code generation and UI mockup)
+- [x] Demo video link added in `Demo/README.md`
+- [x] All code is your own and you can explain every line in the viva
 
 ---
 
